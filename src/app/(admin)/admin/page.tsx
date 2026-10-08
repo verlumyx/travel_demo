@@ -1,12 +1,6 @@
 import { requireAuth } from '@/modules/shared/auth/require-auth';
 import { getSessionUserWithRole } from '@/modules/shared/auth/require-permission';
-import { db } from '@/db/client';
-import { bookings } from '@/modules/booking/models/booking.model';
-import { payments } from '@/modules/payment/models/payment.model';
-import { departures } from '@/modules/departure/models/departure.model';
-import { tours } from '@/modules/tour/models/tour.model';
-import { customers } from '@/modules/customer/models/customer.model';
-import { eq, ne, and, gte, inArray, sum, count, desc, asc } from 'drizzle-orm';
+import { createDashboardContainer } from '@/modules/dashboard/container';
 import Link from 'next/link';
 import {
   DollarSign,
@@ -22,9 +16,7 @@ import {
   ExternalLink,
   Percent,
 } from 'lucide-react';
-import { PaymentStatusBadge } from '@/modules/payment/ui/PaymentStatusBadge';
 import { PaymentMethodBadge } from '@/modules/payment/ui/PaymentMethodBadge';
-import { BookingStatusBadge } from '@/modules/booking/ui/BookingStatusBadge';
 
 export const instant = false;
 
@@ -32,113 +24,21 @@ export default async function AdminDashboardPage() {
   await requireAuth();
   const user = await getSessionUserWithRole();
 
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  // 1. Metrics query in parallel
-  const [
-    monthBookingsResult,
-    verifiedPaymentsResult,
-    pendingPaymentsResult,
-    activeDeparturesResult,
+  const container = createDashboardContainer();
+  const {
+    monthSales,
+    monthBookingsCount,
+    verifiedAmount,
+    pendingAmount,
+    pendingPaymentsCount,
+    totalCapacity,
+    totalBooked,
+    activeDeparturesCount,
+    globalOccupationRate,
     priorityPendingPayments,
     upcomingDepartures,
     pendingBalanceBookings,
-  ] = await Promise.all([
-    // Total ventas del mes en curso (reservas no canceladas)
-    db
-      .select({
-        totalAmount: sum(bookings.totalAmount),
-        count: count(),
-      })
-      .from(bookings)
-      .where(and(gte(bookings.createdAt, startOfMonth), ne(bookings.status, 'cancelled'))),
-
-    // Ingresos conciliados (verified)
-    db
-      .select({
-        totalAmount: sum(payments.amount),
-        count: count(),
-      })
-      .from(payments)
-      .where(eq(payments.status, 'verified')),
-
-    // Ingresos pendientes por auditar (pending)
-    db
-      .select({
-        totalAmount: sum(payments.amount),
-        count: count(),
-      })
-      .from(payments)
-      .where(eq(payments.status, 'pending')),
-
-    // Ocupación global de flota en salidas activas
-    db
-      .select({
-        totalCapacity: sum(departures.totalCapacity),
-        totalBooked: sum(departures.bookedSlots),
-        count: count(),
-      })
-      .from(departures)
-      .where(inArray(departures.status, ['scheduled', 'confirmed'])),
-
-    // Lista prioritaria 1: Pagos pendientes de verificación (últimos 5)
-    db
-      .select({
-        payment: payments,
-        booking: bookings,
-        customer: customers,
-      })
-      .from(payments)
-      .innerJoin(bookings, eq(payments.bookingId, bookings.id))
-      .innerJoin(customers, eq(bookings.customerId, customers.id))
-      .where(eq(payments.status, 'pending'))
-      .orderBy(desc(payments.createdAt))
-      .limit(5),
-
-    // Lista prioritaria 2: Próximas salidas programadas (próximas 5)
-    db
-      .select({
-        departure: departures,
-        tour: tours,
-      })
-      .from(departures)
-      .innerJoin(tours, eq(departures.tourId, tours.id))
-      .where(inArray(departures.status, ['scheduled', 'confirmed']))
-      .orderBy(asc(departures.departureDate))
-      .limit(5),
-
-    // Lista prioritaria 3: Reservas activas con saldo pendiente
-    db
-      .select({
-        booking: bookings,
-        customer: customers,
-        departure: departures,
-      })
-      .from(bookings)
-      .innerJoin(customers, eq(bookings.customerId, customers.id))
-      .innerJoin(departures, eq(bookings.departureId, departures.id))
-      .where(
-        and(
-          inArray(bookings.status, ['pending', 'partial_payment']),
-          ne(bookings.status, 'cancelled'),
-        ),
-      )
-      .orderBy(desc(bookings.createdAt))
-      .limit(5),
-  ]);
-
-  const monthSales = Number(monthBookingsResult[0]?.totalAmount || 0);
-  const monthBookingsCount = Number(monthBookingsResult[0]?.count || 0);
-
-  const verifiedAmount = Number(verifiedPaymentsResult[0]?.totalAmount || 0);
-  const pendingAmount = Number(pendingPaymentsResult[0]?.totalAmount || 0);
-  const pendingPaymentsCount = Number(pendingPaymentsResult[0]?.count || 0);
-
-  const totalCapacity = Number(activeDeparturesResult[0]?.totalCapacity || 0);
-  const totalBooked = Number(activeDeparturesResult[0]?.totalBooked || 0);
-  const activeDeparturesCount = Number(activeDeparturesResult[0]?.count || 0);
-  const globalOccupationRate = totalCapacity > 0 ? Math.round((totalBooked / totalCapacity) * 100) : 0;
+  } = await container.metricsService.execute();
 
   return (
     <div className="space-y-8">
@@ -303,7 +203,7 @@ export default async function AdminDashboardPage() {
                       <PaymentMethodBadge method={payment.method} />
                     </div>
                     <p className="text-xs text-slate-300 mt-1 truncate">
-                      {customer.firstName} {customer.lastName} • Reserva <span className="font-mono text-slate-400">{booking.code}</span>
+                      {customer.fullName} • Reserva <span className="font-mono text-slate-400">{booking.code}</span>
                     </p>
                     {payment.reference && (
                       <p className="text-[11px] font-mono text-slate-500">
@@ -448,7 +348,7 @@ export default async function AdminDashboardPage() {
                         {booking.code}
                       </td>
                       <td className="py-2.5 px-3 font-medium text-white">
-                        {customer.firstName} {customer.lastName}
+                        {customer.fullName}
                       </td>
                       <td className="py-2.5 px-3 font-mono text-slate-400">
                         {departure.code} ({new Date(departure.departureDate).toLocaleDateString('es-VE')})

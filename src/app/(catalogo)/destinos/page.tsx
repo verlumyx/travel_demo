@@ -1,7 +1,7 @@
-import { db } from '@/db/client';
-import { destinations } from '@/modules/destination/models/destination.model';
-import { app_categories } from '@/modules/category/models/category.model';
-import { eq, and, ilike, or } from 'drizzle-orm';
+import { createCategoryContainer } from '@/modules/category/container';
+import { createDestinationContainer } from '@/modules/destination/container';
+import { SearchCategoryCommand } from '@/modules/category/commands/search-category.command';
+import { SearchDestinationCommand } from '@/modules/destination/commands/search-destination.command';
 import Link from 'next/link';
 import {
   MapPin,
@@ -40,53 +40,29 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
 export default async function DestinosPublicPage({ searchParams }: PageProps) {
   const { categoria, q } = await searchParams;
 
-  // 1. Fetch active categories for the filter bar
-  const categoriesList = await db
-    .select()
-    .from(app_categories)
-    .where(eq(app_categories.status, 'active'))
-    .orderBy(app_categories.name);
+  const categoryContainer = createCategoryContainer();
+  const destinationContainer = createDestinationContainer();
 
-  // 2. Build where conditions for destinations
-  const conditions = [eq(destinations.status, 'active')];
+  // 1. Fetch active categories via service
+  const { data: categoriesList } = await categoryContainer.searchService.execute(
+    new SearchCategoryCommand({ status: 'active' }, 50, 0),
+  );
 
-  if (categoria) {
-    const matchedCategory = categoriesList.find((c) => c.slug === categoria);
-    if (matchedCategory) {
-      conditions.push(eq(destinations.categoryId, matchedCategory.id));
-    }
-  }
+  const categoryMap = new Map(categoriesList.map((c) => [c.id, c]));
+  const matchedCategory = categoria ? categoriesList.find((c) => c.slug === categoria) : undefined;
 
-  if (q) {
-    conditions.push(
-      or(
-        ilike(destinations.name, `%${q}%`),
-        ilike(destinations.city, `%${q}%`),
-        ilike(destinations.state, `%${q}%`),
-      )!,
-    );
-  }
-
-  // 3. Query destinations joined with categories
-  const destinationsList = await db
-    .select({
-      id: destinations.id,
-      code: destinations.code,
-      name: destinations.name,
-      slug: destinations.slug,
-      description: destinations.description,
-      imageUrl: destinations.imageUrl,
-      state: destinations.state,
-      city: destinations.city,
-      country: destinations.country,
-      categoryName: app_categories.name,
-      categorySlug: app_categories.slug,
-      categoryIcon: app_categories.icon,
-    })
-    .from(destinations)
-    .leftJoin(app_categories, eq(destinations.categoryId, app_categories.id))
-    .where(and(...conditions))
-    .orderBy(destinations.name);
+  // 2. Fetch active destinations via service
+  const { data: destinationsList } = await destinationContainer.searchService.execute(
+    new SearchDestinationCommand(
+      {
+        status: 'active',
+        categoryId: matchedCategory?.id,
+        q,
+      },
+      60,
+      0,
+    ),
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 py-10 md:py-16">
@@ -175,20 +151,24 @@ export default async function DestinosPublicPage({ searchParams }: PageProps) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {destinationsList.map((dest) => {
+              const cat = dest.categoryId ? categoryMap.get(dest.categoryId) : undefined;
+              const categorySlug = cat?.slug;
+              const categoryName = cat?.name;
+
               const fallbackImage =
-                dest.categorySlug === 'playa'
+                categorySlug === 'playa'
                   ? 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'
-                  : dest.categorySlug === 'montana'
+                  : categorySlug === 'montana'
                   ? 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80'
-                  : dest.categorySlug === 'rio'
+                  : categorySlug === 'rio'
                   ? 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80'
-                  : dest.categorySlug === 'selva'
+                  : categorySlug === 'selva'
                   ? 'https://images.unsplash.com/photo-1511497584788-87676104235f?auto=format&fit=crop&w=800&q=80'
                   : 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80';
 
               const imageUrl = dest.imageUrl || fallbackImage;
               const IconComponent =
-                CATEGORY_ICONS[dest.categorySlug || ''] || CATEGORY_ICONS[dest.categoryIcon || ''] || MapPin;
+                CATEGORY_ICONS[categorySlug || ''] || CATEGORY_ICONS[cat?.icon || ''] || MapPin;
 
               const locationText = [dest.city, dest.state, dest.country].filter(Boolean).join(', ');
 
@@ -207,10 +187,10 @@ export default async function DestinosPublicPage({ searchParams }: PageProps) {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
 
-                    {dest.categoryName && (
+                    {categoryName && (
                       <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-[11px] font-bold text-indigo-700 shadow-xs">
                         <IconComponent className="h-3.5 w-3.5 text-indigo-600" />
-                        {dest.categoryName}
+                        {categoryName}
                       </div>
                     )}
 
