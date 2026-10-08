@@ -118,7 +118,7 @@ export type SearchClientInput = z.infer<typeof searchClientSchema>;
 
 ## Authorization
 
-Schemas validate **shape only**. Authorization is permission-string based: a role (resolved per company) holds action strings of the form `{module}.{action}`, checked by `hasPermission()` from `@/modules/shared/auth/require-permission`. A role with `permissionType === 'all'` (e.g. `Administrador`) passes every check.
+Schemas validate **shape only**. Authorization is permission-string based: a role (resolved globally) holds action strings of the form `{module}.{action}`, checked by `hasPermission()` from `@/modules/shared/auth/require-permission`. A role with `permissionType === 'all'` (e.g. `Administrador`) passes every check.
 
 Each server action enforces its own permission as its **first statement**, before parsing the input:
 
@@ -130,7 +130,7 @@ Each server action enforces its own permission as its **first statement**, befor
 | `search{Module}Schema` | Listar `page.tsx` | `{module}.list` |
 
 ```ts
-await requirePermission(companyId, 'clients.create'); // throws ForbiddenError → toActionError()
+await requirePermission('clients.create'); // throws ForbiddenError → toActionError()
 const parsed = createClientSchema.safeParse(Object.fromEntries(formData));
 ```
 
@@ -150,7 +150,7 @@ const parsed = createClientSchema.safeParse(Object.fromEntries(formData));
 if (!parsed.success) {
   return { status: 'error', fieldErrors: parsed.error.flatten().fieldErrors };
 }
-const command = CreateClientCommand.fromInput(parsed.data, companyId);
+const command = CreateClientCommand.fromInput(parsed.data);
 ```
 
 `fieldErrors` is `Record<string, string[] | undefined>`; the form renders `fieldErrors.name?.[0]` under the field. Only `parsed.data` reaches the Command — never the raw `FormData`.

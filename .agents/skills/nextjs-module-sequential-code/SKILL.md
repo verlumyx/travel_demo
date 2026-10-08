@@ -1,14 +1,14 @@
 ---
 name: nextjs-module-sequential-code
-description: "Guide for adding an auto-generated, human-readable sequential code (e.g. CLI000001) to a Next.js module. The code has a module prefix + zero-padded counter, is generated in the Drizzle repository inside the Server Action's transaction, and is unique PER COMPANY (each company has its own sequence). Activates when adding a code/folio/correlative field, a per-company sequential identifier, or a prefixed counter to any module."
+description: "Guide for adding an auto-generated, human-readable sequential code (e.g. CLI000001) to a Next.js module. The code has a module prefix + zero-padded counter, is generated in the Drizzle repository inside the Server Action's transaction, and is unique (unique globally). Activates when adding a code/folio/correlative field, a sequential identifier, or a prefixed counter to any module."
 license: MIT
 metadata:
   author: project
 ---
 
-# Next.js Module — Sequential Code (per company)
+# Next.js Module — Sequential Code
 
-Some entities need a short, human-readable identifier alongside their UUID — e.g. `CLI000001`, `CLI000002`. This skill describes how to add an **auto-generated, per-company sequential `code`** to a module.
+Some entities need a short, human-readable identifier alongside their UUID — e.g. `CLI000001`, `CLI000002`. This skill describes how to add an **auto-generated, sequential `code`** to a module.
 
 Reference implementation: the **Client** module (`src/modules/client`), prefix `CLI`.
 
@@ -16,9 +16,9 @@ Reference implementation: the **Client** module (`src/modules/client`), prefix `
 
 1. **Format:** `{PREFIX}` + the counter zero-padded to **6 digits** → `CLI000001`. The prefix is a 3-letter uppercase module abbreviation exported as a constant from the model file.
 2. **Server-generated.** The `code` is NEVER sent by the client and NEVER part of the Zod schema or the Command. It is created in the Repository. (This is the one exception to the rule "the client always sends the id".)
-3. **Unique per company, not global.** Two companies each have their own `CLI000001`. The sequence is scoped by `company_id`. Uniqueness is enforced with a **composite** unique index `(company_id, code)`.
+3. **Unique globally.** Two companies each have their own `CLI000001`. The sequence is global. Uniqueness is enforced with a unique index `(code)`.
 4. **Atomic generation.** Generate inside the transaction the Server Action already opened (`db.transaction(async (tx) => createClientContainer(tx)...)`) using `.for('update')`, so concurrent creates don't collide.
-5. The module must already follow the architecture (`companyId` column + `companyId` flowing page/action → Command → Repository via the `[companyId]` URL segment). If it isn't, add that first — see `nextjs-module-repositories` (Company Scoping section).
+5. The module must already follow the architecture (standard flow). If it isn't, add that first — see `nextjs-module-repositories` (Scoping section).
 
 ---
 
@@ -34,15 +34,12 @@ export const clients = pgTable(
   'app_clients',
   {
     id: uuid('id').primaryKey(),
-    companyId: uuid('company_id').notNull(),
     code: varchar('code', { length: 12 }).notNull(),
     // ...other columns
   },
   (t) => [
-    index('app_clients_company_id_idx').on(t.companyId),
-    uniqueIndex('app_clients_company_code_unique').on(t.companyId, t.code),
-  ],
-);
+    uniqueIndex('app_clients_code_unique').on(t.code),
+  ]);
 ```
 
 ```bash
@@ -63,11 +60,11 @@ pnpm drizzle-kit generate --custom --name backfill_client_codes
 
 ```sql
 -- drizzle/000N_backfill_client_codes.sql
--- Number existing rows sequentially WITHIN each company, in a deterministic order.
+-- Number existing rows sequentially in a deterministic order.
 UPDATE app_clients AS c
 SET code = 'CLI' || lpad(n.rn::text, 6, '0')
 FROM (
-  SELECT id, ROW_NUMBER() OVER (PARTITION BY company_id ORDER BY created_at, id) AS rn
+  SELECT id, ROW_NUMBER() OVER (ORDER BY created_at, id) AS rn
   FROM app_clients
 ) AS n
 WHERE c.id = n.id AND c.code IS NULL;
@@ -106,21 +103,20 @@ export class DrizzleClientRepository implements ClientRepository {
   constructor(private readonly db: DbExecutor) {}
 
   async create(command: CreateClientCommand): Promise<void> {
-    const code = await this.generateNextCode(command.companyId);
+    const code = await this.generateNextCode();
 
     await this.db.insert(clients).values({
       id: command.id,
-      companyId: command.companyId,
       code,
       name: command.name,
       status: 'active',
     });
   }
 
-  private async generateNextCode(companyId: string): Promise<string> {
-    const scope = and(eq(clients.companyId, companyId), like(clients.code, `${CLIENT_CODE_PREFIX}%`));
+  private async generateNextCode(): Promise<string> {
+    const scope = like(clients.code, `${CLIENT_CODE_PREFIX}%`));
 
-    // 1. Queue behind any concurrent create for this company: FOR UPDATE blocks until the
+    // 1. Queue behind any concurrent create : FOR UPDATE blocks until the
     //    other transaction commits or rolls back. The lock is released with OUR commit.
     await this.db
       .select({ id: clients.id })
@@ -147,8 +143,8 @@ export class DrizzleClientRepository implements ClientRepository {
 
 Why this is safe under concurrency:
 
-- Two actions creating clients for the same company run in two transactions. Both lock the current last row; the second one blocks in step 1 until the first commits, then reads the freshly committed code in step 2 and produces `+1`.
-- The only window not covered by the row lock is the **very first record of a company** (no row exists to lock). There, and for any other unforeseen race, the composite unique index `(company_id, code)` is the safety net: the insert fails, the action's transaction rolls back, `toActionError` is not reached (it is a database error, not a `DomainError`) and the request errors out instead of persisting a duplicate.
+- Two actions creating clients run in two transactions. Both lock the current last row; the second one blocks in step 1 until the first commits, then reads the freshly committed code in step 2 and produces `+1`.
+- The only window not covered by the row lock is the **very first record ** (no row exists to lock). There, and for any other unforeseen race, the unique index `(code)` is the safety net: the insert fails, the action's transaction rolls back, `toActionError` is not reached (it is a database error, not a `DomainError`) and the request errors out instead of persisting a duplicate.
 - Never call `generateNextCode` outside the transaction (e.g. from a page or with the global `db`) — the lock would be released immediately.
 
 Make `code` searchable by adding it to the filter map (`keys == SearchClientCommand.filters keys`):
@@ -166,30 +162,29 @@ Add `code: z.string().optional()` to `searchClientSchema` so the page can forwar
 
 ---
 
-## 4. Command — carry companyId, NOT code
+## 4. Command — carry NOT code
 
-The `code` is not part of the Command. The `companyId` comes from the `[companyId]` URL segment: the action receives it as a bound argument and passes it to `fromInput(input, companyId)`. It is never read from `FormData`, cookies or the session.
+The `code` is not part of the Command. 
 
 ```ts
 // src/modules/client/commands/create-client.command.ts
 export class CreateClientCommand {
   constructor(
     readonly id: string,
-    readonly companyId: string,
     readonly name: string,
     // ...
   ) {}
 
-  static fromInput(input: CreateClientInput, companyId: string): CreateClientCommand {
-    return new CreateClientCommand(input.id, companyId, input.name);
+  static fromInput(input: CreateClientInput): CreateClientCommand {
+    return new CreateClientCommand(input.id, input.name);
   }
 }
 ```
 
 ```ts
-// src/app/[companyId]/clients/actions.ts — inside createClientAction(companyId, _prev, formData)
+// src/app/clients/actions.ts — inside createClientAction(_prev, formData)
 await db.transaction(async (tx) => {
-  await createClientContainer(tx).createService.execute(CreateClientCommand.fromInput(parsed.data, companyId));
+  await createClientContainer(tx).createService.execute(CreateClientCommand.fromInput(parsed.data));
 });
 ```
 
@@ -218,7 +213,7 @@ export function toClientDto(row: ClientRow): ClientDto {
 
 ## 6. Factory
 
-The factory bypasses the repository, so it must produce a unique `code` itself. Keep a **per-company counter** in module scope (any company-unique value works, since uniqueness is per company):
+The factory bypasses the repository, so it must produce a unique `code` itself. Keep a **counter** in module scope (uniqueness is global):
 
 ```ts
 // tests/factories/client.factory.ts
@@ -235,18 +230,16 @@ import {
 
 const sequences = new Map<string, number>();
 
-export function nextClientCode(companyId: string): string {
-  const next = (sequences.get(companyId) ?? 0) + 1;
-  sequences.set(companyId, next);
+export function nextClientCode(): string {
+  const next = (sequence ?? 0) + 1;
+  sequences.set(next);
   return `${CLIENT_CODE_PREFIX}${String(next).padStart(CLIENT_CODE_WIDTH, '0')}`; // CLI000001, CLI000002...
 }
 
 export function buildClient(overrides: Partial<NewClientRow> = {}): NewClientRow {
-  const companyId = overrides.companyId ?? uuidv7();
   return {
     id: uuidv7(),
-    companyId,
-    code: nextClientCode(companyId),
+    code: nextClientCode(),
     name: faker.company.name(),
     status: 'active',
     ...overrides,
@@ -259,7 +252,7 @@ export async function createClient(db: DbExecutor, overrides: Partial<NewClientR
 }
 ```
 
-Factory rows used by integration tests must belong to the acting company: `createClient(db, { companyId })` — otherwise per-company scoping hides them.
+
 
 ---
 
@@ -319,28 +312,26 @@ import { SearchClientCommand } from '@/modules/client/commands/search-client.com
 import { createClient } from '../../../factories/client.factory';
 import { truncate } from '../../helpers/truncate';
 
-const create = (companyId: string, name: string) =>
-  db.transaction((tx) => createClientContainer(tx).createService.execute(new CreateClientCommand(uuidv7(), companyId, name)));
+const create = (name: string) =>
+  db.transaction((tx) => createClientContainer(tx).createService.execute(new CreateClientCommand(uuidv7(), name)));
 
 describe('Client sequential code', () => {
   beforeEach(() => truncate(clients));
 
   it('starts at 000001 and increments', async () => {
-    const companyId = uuidv7();
-    expect((await create(companyId, 'A')).code).toBe('CLI000001');
-    expect((await create(companyId, 'B')).code).toBe('CLI000002');
+    expect((await create('A')).code).toBe('CLI000001');
+    expect((await create('B')).code).toBe('CLI000002');
   });
 
-  it('keeps an independent sequence per company', async () => {
+  it('keeps a sequential sequence', async () => {
     expect((await create(uuidv7(), 'A')).code).toBe('CLI000001');
     expect((await create(uuidv7(), 'B')).code).toBe('CLI000001');
   });
 
   it('assigns distinct codes to concurrent creates', async () => {
-    const companyId = uuidv7();
-    await createClient(db, { companyId, code: 'CLI000001' }); // seed: gives the lock a row to wait on
+    await createClient(db, { code: 'CLI000001' }); // seed: gives the lock a row to wait on
 
-    const rows = await Promise.all([1, 2, 3, 4, 5].map((n) => create(companyId, `Cliente ${n}`)));
+    const rows = await Promise.all([1, 2, 3, 4, 5].map((n) => create(`Cliente ${n}`)));
 
     const codes = rows.map((r) => r.code).sort();
     expect(new Set(codes).size).toBe(5);
@@ -348,11 +339,9 @@ describe('Client sequential code', () => {
   });
 
   it('can be searched by code', async () => {
-    const companyId = uuidv7();
-    await createClient(db, { companyId, code: 'CLI000042' });
+    await createClient(db, { code: 'CLI000042' });
     const { data } = await createClientContainer(db).searchService.execute(
-      new SearchClientCommand({ filters: { code: '000042' }, companyId }),
-    );
+      new SearchClientCommand({ filters: { code: '000042' } }));
     expect(data).toHaveLength(1);
     expect(data[0].code).toBe('CLI000042');
   });
@@ -361,13 +350,13 @@ describe('Client sequential code', () => {
 
 ### Unit (fake repository)
 
-The in-memory fake mirrors the repository contract: it assigns codes sequentially per company in `create()`.
+The in-memory fake mirrors the repository contract: it assigns codes sequentially in `create()`.
 
 ```ts
 // tests/unit/modules/client/fake-client.repository.ts (excerpt)
 async create(command: CreateClientCommand): Promise<void> {
-  const count = this.rows.filter((r) => r.companyId === command.companyId).length;
-  this.rows.push({ ...buildClient({ id: command.id, companyId: command.companyId, name: command.name }),
+  const count = this.rows.length;
+  this.rows.push({ ...buildClient({ id: command.id, name: command.name }),
     code: `CLI${String(count + 1).padStart(6, '0')}`, createdAt: new Date(), updatedAt: null });
 }
 ```
@@ -376,8 +365,8 @@ async create(command: CreateClientCommand): Promise<void> {
 it('assigns the next code on create', async () => {
   const repository = new FakeClientRepository();
   const service = new ClientCreateService(repository);
-  await service.execute(new CreateClientCommand(uuidv7(), 'company-1', 'A'));
-  const second = await service.execute(new CreateClientCommand(uuidv7(), 'company-1', 'B'));
+  await service.execute(new CreateClientCommand(uuidv7(), 'A'));
+  const second = await service.execute(new CreateClientCommand(uuidv7(), 'B'));
   expect(second.code).toBe('CLI000002');
 });
 ```
@@ -386,12 +375,12 @@ it('assigns the next code on create', async () => {
 
 ## Checklist
 
-- [ ] Model: `code: varchar('code', { length: 12 }).notNull()` + `uniqueIndex('app_{module_names}_company_code_unique').on(t.companyId, t.code)`.
-- [ ] Migration generated with `pnpm db:generate`; custom SQL backfill (`ROW_NUMBER() OVER (PARTITION BY company_id ...)`) if the table had rows.
+- [ ] Model: `code: varchar('code', { length: 12 }).notNull()` + `uniqueIndex('app_{module_names}_code_unique').on(t.code)`.
+- [ ] Migration generated with `pnpm db:generate`; custom SQL backfill (`ROW_NUMBER() OVER (...)`) if the table had rows.
 - [ ] Model exports `{MODULE}_CODE_PREFIX` (3 uppercase letters).
-- [ ] Repository: `generateNextCode()` with `.for('update')` on the injected `DbExecutor` (the action's `tx`), scoped by company; `code` filter in the filter map.
-- [ ] Command carries `companyId` (from the URL segment via `fromInput(input, companyId)`), never `code`. No `code` in the Zod schema.
+- [ ] Repository: `generateNextCode()` with `.for('update')` on the injected `DbExecutor` (the action's `tx`), global scope; `code` filter in the filter map.
+- [ ] No `code` in the Zod schema.
 - [ ] Serializer exposes `code`.
-- [ ] Factory generates a unique per-company `code`.
+- [ ] Factory generates a unique `code`.
 - [ ] UI: `code` first column (`hidden lg:table-cell font-mono tabular-nums font-semibold`), shown in the detail card header, `code?` in `ClientFilters`.
-- [ ] Tests: sequence, per-company isolation, concurrent creates, search-by-code (integration); fake repository assigns codes (unit).
+- [ ] Tests: sequence, isolation, concurrent creates, search-by-code (integration); fake repository assigns codes (unit).

@@ -46,7 +46,7 @@ status: varchar('status', { length: 50 })
 
 ```ts
 // Deactivation goes through the existing use case — no new files
-await createClientContainer(db).updateStatusService.execute(id, companyId, new UpdateStatusClientCommand('inactive'));
+await createClientContainer(db).updateStatusService.execute(id, new UpdateStatusClientCommand('inactive'));
 ```
 
 ### Option 2: Soft Delete
@@ -64,11 +64,11 @@ import { and, eq, isNull } from 'drizzle-orm';
 
 const notTrashed = isNull(clients.deletedAt);
 
-async findById(id: string, companyId: string, { withTrashed = false } = {}): Promise<ClientRow | null> {
+async findById(id: string, { withTrashed = false } = {}): Promise<ClientRow | null> {
   const [row] = await this.db
     .select()
     .from(clients)
-    .where(and(eq(clients.id, id), eq(clients.companyId, companyId), withTrashed ? undefined : notTrashed))
+    .where(and(eq(clients.id, id), withTrashed ? undefined : notTrashed))
     .limit(1);
   return row ?? null;
 }
@@ -82,7 +82,7 @@ async softDelete(row: ClientRow): Promise<void> {
 
 ```ts
 // ❌ NEVER — a delete Server Action
-export async function deleteClientAction(companyId: string, id: string) { /* ... */ }
+export async function deleteClientAction(id: string) { /* ... */ }
 
 // ❌ NEVER — a DELETE route handler
 export async function DELETE(request: Request) { /* ... */ }
@@ -102,14 +102,12 @@ await db.delete(clients).where(eq(clients.id, id));
 ## DO Implement
 
 ```ts
-// ✅ Server Action — src/app/[companyId]/clients/actions.ts
+// ✅ Server Action — src/app/clients/actions.ts
 export async function updateClientStatusAction(
-  companyId: string,
   id: string,
-  status: 'active' | 'inactive',
-): Promise<ActionState> {
+  status: 'active' | 'inactive'): Promise<ActionState> {
   try {
-    await requirePermission(companyId, 'clients.update-status');
+    await requirePermission('clients.update-status');
     if (!z.string().uuid().safeParse(id).success) return { status: 'error', message: 'Cliente no encontrado.' };
 
     const parsed = updateStatusClientSchema.safeParse({ status });
@@ -117,16 +115,14 @@ export async function updateClientStatusAction(
 
     await createClientContainer(db).updateStatusService.execute(
       id,
-      companyId,
-      UpdateStatusClientCommand.fromInput(parsed.data),
-    );
+      UpdateStatusClientCommand.fromInput(parsed.data));
   } catch (error) {
     return toActionError(error);
   }
 
-  revalidatePath(clientRoutes.index(companyId));
+  revalidatePath(clientRoutes.index());
   await setFlash('success', 'Estado del cliente actualizado correctamente.');
-  redirect(clientRoutes.index(companyId));
+  redirect(clientRoutes.index());
 }
 ```
 
@@ -135,12 +131,12 @@ export async function updateClientStatusAction(
 export class ClientUpdateStatusService {
   constructor(private readonly repository: ClientRepository) {}
 
-  async execute(id: string, companyId: string, command: UpdateStatusClientCommand): Promise<ClientRow> {
-    const row = await this.repository.findById(id, companyId);
+  async execute(id: string, command: UpdateStatusClientCommand): Promise<ClientRow> {
+    const row = await this.repository.findById(id);
     if (!row) throw new ClientNotFoundException(id);
 
     await this.repository.updateStatus(row, command);
-    return this.repository.findOrFail(id, companyId);
+    return this.repository.findOrFail(id);
   }
 }
 ```
@@ -194,10 +190,10 @@ In tables the toggle lives in the row `DropdownMenu`, last item after the separa
 ```ts
 // ✅ Unit — test deactivation, not deletion
 it('can deactivate a client', async () => {
-  const repository = new FakeClientRepository([buildClient({ id: clientId, companyId, status: 'active' })]);
+  const repository = new FakeClientRepository([buildClient({ id: clientId, status: 'active' })]);
   const service = new ClientUpdateStatusService(repository);
 
-  const result = await service.execute(clientId, companyId, new UpdateStatusClientCommand('inactive'));
+  const result = await service.execute(clientId, new UpdateStatusClientCommand('inactive'));
 
   expect(result.status).toBe('inactive');
   expect(repository.rows).toHaveLength(1); // still there
@@ -207,16 +203,15 @@ it('can deactivate a client', async () => {
 ```ts
 // ✅ Integration — the filter hides, it does not remove
 it('does not show inactive clients when filtering by active', async () => {
-  await createClient(db, { companyId, status: 'active', name: 'Active' });
-  await createClient(db, buildInactiveClient({ companyId, name: 'Inactive' }));
+  await createClient(db, { status: 'active', name: 'Active' });
+  await createClient(db, buildInactiveClient({ name: 'Inactive' }));
 
   const { data, total } = await createClientContainer(db).searchService.execute(
-    new SearchClientCommand({ filters: { status: 'active' }, companyId }),
-  );
+    new SearchClientCommand({ filters: { status: 'active' } }));
 
   expect(total).toBe(1);
   expect(data[0].name).toBe('Active');
-  expect(await db.$count(clients, eq(clients.companyId, companyId))).toBe(2);
+  expect(await db.$count(clients)).toBe(2);
 });
 ```
 

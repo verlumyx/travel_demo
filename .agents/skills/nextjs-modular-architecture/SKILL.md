@@ -10,7 +10,7 @@ metadata:
 
 This skill defines the standard modular architecture for this project. Every new file must follow this structure without exception.
 
-The stack is fixed: **Next.js App Router**, **TypeScript**, **Server Actions** for every mutation, **PostgreSQL + Drizzle ORM**, **better-auth** (email + password, 2FA; company membership and per-company role live in the `user_company` table), **Zod**, **Tailwind v4 + shadcn/ui**, **Vitest** and **Playwright**, **pnpm**.
+The stack is fixed: **Next.js App Router**, **TypeScript**, **Server Actions** for every mutation, **PostgreSQL + Drizzle ORM**, **better-auth** (email + password, 2FA; role lives in the `user` table), **Zod**, **Tailwind v4 + shadcn/ui**, **Vitest** and **Playwright**, **pnpm**.
 
 ---
 
@@ -18,13 +18,13 @@ The stack is fixed: **Next.js App Router**, **TypeScript**, **Server Actions** f
 
 Every module includes by default the following use cases: **Crear, Actualizar, Actualizar Estado, Ver, Editar y Listar**.
 
-A module is split in two places: the HTTP-facing layer (pages + actions) lives under `src/app/[companyId]/`, everything else lives under `src/modules/{module-name}/`.
+A module is split in two places: the HTTP-facing layer (pages + actions) lives under `src/app/`, everything else lives under `src/modules/{module-name}/`.
 
 ```
 src/
 ├── app/
-│   └── [companyId]/
-│       ├── layout.tsx                          requireCompanyAccess(companyId) + <FlashToaster />
+│   └── []/
+│       ├── layout.tsx                          requireAuth() + <FlashToaster />
 │       └── {module-name}s/
 │           ├── page.tsx                        Listar
 │           ├── create/page.tsx                 Crear (form)
@@ -96,11 +96,11 @@ Naming: non-component TypeScript files are **kebab-case with a layer suffix** (`
 
 | Use Case | Method | URL | File | Service |
 |---|---|---|---|---|
-| **Listar** | GET | `/{companyId}/{module}s` | `page.tsx` | `{Module}SearchService` |
-| **Crear (form)** | GET | `/{companyId}/{module}s/create` | `create/page.tsx` | — |
+| **Listar** | GET | `/{}/{module}s` | `page.tsx` | `{Module}SearchService` |
+| **Crear (form)** | GET | `/{}/{module}s/create` | `create/page.tsx` | — |
 | **Crear (action)** | Server Action | — | `actions.ts` → `create{Module}Action` | `{Module}CreateService` |
-| **Ver** | GET | `/{companyId}/{module}s/{id}` | `[id]/page.tsx` | `{Module}FindService` |
-| **Editar (form)** | GET | `/{companyId}/{module}s/{id}/edit` | `[id]/edit/page.tsx` | `{Module}FindService` |
+| **Ver** | GET | `/{}/{module}s/{id}` | `[id]/page.tsx` | `{Module}FindService` |
+| **Editar (form)** | GET | `/{}/{module}s/{id}/edit` | `[id]/edit/page.tsx` | `{Module}FindService` |
 | **Actualizar (action)** | Server Action | — | `actions.ts` → `update{Module}Action` | `{Module}UpdateService` |
 | **Actualizar Estado** | Server Action | — | `actions.ts` → `update{Module}StatusAction` | `{Module}UpdateStatusService` |
 
@@ -150,10 +150,10 @@ Every module depends on these contracts under `src/modules/shared/`. Do not reim
 |---|---|---|
 | `shared/infrastructure/db-executor.ts` | `type DbExecutor` | Union of the Drizzle `db` client and a transaction `tx`. Repositories receive one; they never import the global `db`. |
 | `shared/infrastructure/drizzle-query-filters.ts` | `type FilterMap`, `applyFilters(map, filters)` | Criteria pattern: turns a `filters` object into an array of Drizzle `SQL` conditions, skipping `null`/`undefined`/`''`. |
-| `shared/auth/require-permission.ts` | `getSessionUser()`, `hasPermission(companyId, action)`, `requirePermission(companyId, action)`, `guardPage(companyId, action)` | Permission checks. `hasPermission` is wrapped in `React.cache`. `requirePermission` throws `ForbiddenError` (for actions). `guardPage` redirects (for pages). A role with `permissionType === 'all'` passes every check. |
-| `shared/auth/require-company-access.ts` | `requireCompanyAccess(companyId)` | Verifies the session user belongs to the company. Called once in `src/app/[companyId]/layout.tsx`. |
+| `shared/auth/require-permission.ts` | `getSessionUser()`, `hasPermission(action)`, `requirePermission(action)`, `guardPage(action)` | Permission checks. `hasPermission` is wrapped in `React.cache`. `requirePermission` throws `ForbiddenError` (for actions). `guardPage` redirects (for pages). A role with `permissionType === 'all'` passes every check. |
+| `shared/auth/require-auth.ts` | `requireAuth()` | Verifies the session user is authenticated. Called once in `src/app/layout.tsx`. |
 | `shared/actions/action-state.ts` | `type ActionState`, `toActionError(error)` | Serializable result of a server action: `{ status: 'idle' \| 'error'; message?: string; fieldErrors?: Record<string, string[] \| undefined> }`. `toActionError` maps `DomainError` → `{ status: 'error', message }`, `ForbiddenError` → `'No tienes permiso para realizar esta acción.'`, anything else is rethrown. |
-| `shared/flash/flash.ts` | `setFlash(type, message)`, `readFlash()` | One-shot flash message stored in a cookie by actions and read by `<FlashToaster />` in the company layout. |
+| `shared/flash/flash.ts` | `setFlash(type, message)`, `readFlash()` | One-shot flash message stored in a cookie by actions and read by `<FlashToaster />` in the layout. |
 | `shared/exceptions/domain-error.ts` | `DomainError`, `NotFoundError`, `ForbiddenError` | Base error classes. Module exceptions extend `DomainError`. |
 | `shared/permissions/registry.ts` | `PERMISSION_REGISTRY` | Aggregates every module's `permissions.ts`. Seeded by `pnpm db:seed`. Read by the roles UI. |
 | `shared/menu/menu-registry.ts` | `MENU_REGISTRY` | Sidebar entries (label, url, permission, icon, order, section). Single source of truth for the menu. |
@@ -200,20 +200,20 @@ export const getSessionUser = cache(async () => {
   return session?.user ?? null;
 });
 
-export const hasPermission = cache(async (companyId: string, action: string): Promise<boolean> => {
+export const hasPermission = cache(async (action: string): Promise<boolean> => {
   const user = await getSessionUser();
   if (!user) return false;
-  return userHasPermission(user.id, companyId, action); // role.permissionType === 'all' passes
+  return userHasPermission(user.id, action); // role.permissionType === 'all' passes
 });
 
 /** For server actions: throws, the action returns an error state. */
-export async function requirePermission(companyId: string, action: string): Promise<void> {
-  if (!(await hasPermission(companyId, action))) throw new ForbiddenError(action);
+export async function requirePermission(action: string): Promise<void> {
+  if (!(await hasPermission(action))) throw new ForbiddenError(action);
 }
 
 /** For pages: a Server Component cannot set cookies, so it redirects. */
-export async function guardPage(companyId: string, action: string): Promise<never | void> {
-  if (!(await hasPermission(companyId, action))) redirect(`/${companyId}/dashboard?error=forbidden`);
+export async function guardPage(action: string): Promise<never | void> {
+  if (!(await hasPermission(action))) redirect(`/${}/dashboard?error=forbidden`);
 }
 ```
 
@@ -248,7 +248,7 @@ The examples below use `Client` / `clients` as the module. Replace with the real
 
 ### Command
 
-The `id` is always the **first property** in Create commands. It is generated by the client (UUID v7) and sent in the form — never generated on the server. `companyId` always comes from the `[companyId]` URL segment, never from the form or the session.
+The `id` is always the **first property** in Create commands. It is generated by the client (UUID v7) and sent in the form — never generated on the server. `` always comes from the `[]` URL segment, never from the form or the session.
 
 ```ts
 // commands/create-client.command.ts
@@ -257,13 +257,12 @@ import type { CreateClientInput } from '../validation/create-client.schema';
 export class CreateClientCommand {
   constructor(
     readonly id: string,
-    readonly companyId: string,
     readonly name: string,
     // add properties as needed
   ) {}
 
-  static fromInput(input: CreateClientInput, companyId: string): CreateClientCommand {
-    return new CreateClientCommand(input.id, companyId, input.name);
+  static fromInput(input: CreateClientInput): CreateClientCommand {
+    return new CreateClientCommand(input.id, input.name);
   }
 }
 ```
@@ -274,18 +273,16 @@ export class SearchClientCommand {
   readonly filters: Record<string, string | undefined>;
   readonly limit: number;
   readonly offset: number;
-  readonly companyId: string;
-
   constructor(params: {
     filters?: Record<string, string | undefined>;
     limit?: number;
     offset?: number;
-    companyId: string;
+    ;
   }) {
     this.filters = params.filters ?? {};
     this.limit = params.limit ?? 20;
     this.offset = params.offset ?? 0;
-    this.companyId = params.companyId;
+    this. = params.;
   }
 }
 ```
@@ -306,8 +303,8 @@ import type { SearchClientCommand } from '../commands/search-client.command';
 
 export interface ClientRepository {
   create(command: CreateClientCommand): Promise<void>;
-  findById(id: string, companyId: string): Promise<ClientRow | null>;
-  findOrFail(id: string, companyId: string): Promise<ClientRow>;
+  findById(id: string): Promise<ClientRow | null>;
+  findOrFail(id: string): Promise<ClientRow>;
   update(row: ClientRow, command: UpdateClientCommand): Promise<void>;
   updateStatus(row: ClientRow, command: UpdateStatusClientCommand): Promise<void>;
   search(command: SearchClientCommand): Promise<{ data: ClientRow[]; total: number }>;
@@ -351,23 +348,22 @@ export class DrizzleClientRepository implements ClientRepository {
   async create(command: CreateClientCommand): Promise<void> {
     await this.db.insert(clients).values({
       id: command.id,
-      companyId: command.companyId,
       name: command.name,
       status: 'active',
     });
   }
 
-  async findById(id: string, companyId: string): Promise<ClientRow | null> {
+  async findById(id: string): Promise<ClientRow | null> {
     const [row] = await this.db
       .select()
       .from(clients)
-      .where(and(eq(clients.id, id), eq(clients.companyId, companyId)))
+      .where(and(eq(clients.id, id)))
       .limit(1);
     return row ?? null;
   }
 
-  async findOrFail(id: string, companyId: string): Promise<ClientRow> {
-    const row = await this.findById(id, companyId);
+  async findOrFail(id: string): Promise<ClientRow> {
+    const row = await this.findById(id);
     if (!row) throw new ClientNotFoundException(id);
     return row;
   }
@@ -382,9 +378,8 @@ export class DrizzleClientRepository implements ClientRepository {
 
   async search(command: SearchClientCommand): Promise<{ data: ClientRow[]; total: number }> {
     const where = and(
-      eq(clients.companyId, command.companyId),
-      ...applyFilters(clientFilters, command.filters),
-    );
+      eq(clients.),
+      ...applyFilters(clientFilters, command.filters));
 
     const [{ total }] = await this.db.select({ total: count() }).from(clients).where(where);
 
@@ -416,7 +411,7 @@ export class ClientCreateService {
 
   async execute(command: CreateClientCommand): Promise<ClientRow> {
     await this.repository.create(command);
-    return this.repository.findOrFail(command.id, command.companyId);
+    return this.repository.findOrFail(command.id);
   }
 }
 ```
@@ -431,12 +426,12 @@ import { ClientNotFoundException } from '../exceptions/client-not-found.exceptio
 export class ClientUpdateService {
   constructor(private readonly repository: ClientRepository) {}
 
-  async execute(id: string, companyId: string, command: UpdateClientCommand): Promise<ClientRow> {
-    const row = await this.repository.findById(id, companyId);
+  async execute(id: string, command: UpdateClientCommand): Promise<ClientRow> {
+    const row = await this.repository.findById(id);
     if (!row) throw new ClientNotFoundException(id);
 
     await this.repository.update(row, command);
-    return this.repository.findOrFail(id, companyId);
+    return this.repository.findOrFail(id);
   }
 }
 ```
@@ -451,12 +446,12 @@ import { ClientNotFoundException } from '../exceptions/client-not-found.exceptio
 export class ClientUpdateStatusService {
   constructor(private readonly repository: ClientRepository) {}
 
-  async execute(id: string, companyId: string, command: UpdateStatusClientCommand): Promise<ClientRow> {
-    const row = await this.repository.findById(id, companyId);
+  async execute(id: string, command: UpdateStatusClientCommand): Promise<ClientRow> {
+    const row = await this.repository.findById(id);
     if (!row) throw new ClientNotFoundException(id);
 
     await this.repository.updateStatus(row, command);
-    return this.repository.findOrFail(id, companyId);
+    return this.repository.findOrFail(id);
   }
 }
 ```
@@ -470,8 +465,8 @@ import { ClientNotFoundException } from '../exceptions/client-not-found.exceptio
 export class ClientFindService {
   constructor(private readonly repository: ClientRepository) {}
 
-  async execute(id: string, companyId: string): Promise<ClientRow> {
-    const row = await this.repository.findById(id, companyId);
+  async execute(id: string): Promise<ClientRow> {
+    const row = await this.repository.findById(id);
     if (!row) throw new ClientNotFoundException(id);
     return row;
   }
@@ -528,7 +523,7 @@ export function createClientContainer(db: DbExecutor) {
 ### Pages (GET)
 
 ```tsx
-// src/app/[companyId]/clients/page.tsx — Listar
+// src/app/clients/page.tsx — Listar
 import { db } from '@/db/client';
 import { guardPage } from '@/modules/shared/auth/require-permission';
 import { createClientContainer } from '@/modules/client/container';
@@ -538,27 +533,26 @@ import { toClientDto } from '@/modules/client/serializers/client.serializer';
 import { ClientList } from '@/modules/client/ui/components/ClientList';
 
 type Props = {
-  params: Promise<{ companyId: string }>;
+  params: Promise<{}>;
   searchParams: Promise<Record<string, string | undefined>>;
 };
 
 export default async function ClientsPage({ params, searchParams }: Props) {
-  const { companyId } = await params;
-  await guardPage(companyId, 'clients.list');
+  
+  await guardPage('clients.list');
 
   const filters = searchClientSchema.parse(await searchParams);
   const command = new SearchClientCommand({
     filters: { search: filters.search, status: filters.status },
     limit: filters.limit,
     offset: filters.offset,
-    companyId,
-  });
+    });
 
   const { data, total } = await createClientContainer(db).searchService.execute(command);
 
   return (
     <ClientList
-      companyId={companyId}
+      
       items={data.map(toClientDto)}
       meta={{ total, limit: filters.limit, offset: filters.offset, hasMore: filters.offset + filters.limit < total }}
       filters={filters}
@@ -568,7 +562,7 @@ export default async function ClientsPage({ params, searchParams }: Props) {
 ```
 
 ```tsx
-// src/app/[companyId]/clients/[id]/page.tsx — Ver
+// src/app/clients/[id]/page.tsx — Ver
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/db/client';
@@ -578,17 +572,17 @@ import { toClientDto } from '@/modules/client/serializers/client.serializer';
 import { ClientNotFoundException } from '@/modules/client/exceptions/client-not-found.exception';
 import { ClientCard } from '@/modules/client/ui/components/ClientCard';
 
-type Props = { params: Promise<{ companyId: string; id: string }> };
+type Props = { params: Promise<{ id: string }> };
 
 export default async function ClientShowPage({ params }: Props) {
-  const { companyId, id } = await params;
-  await guardPage(companyId, 'clients.show');
+  const { id } = await params;
+  await guardPage('clients.show');
 
   if (!z.string().uuid().safeParse(id).success) notFound();
 
   try {
-    const row = await createClientContainer(db).findService.execute(id, companyId);
-    return <ClientCard companyId={companyId} client={toClientDto(row)} />;
+    const row = await createClientContainer(db).findService.execute(id);
+    return <ClientCard  client={toClientDto(row)} />;
   } catch (error) {
     if (error instanceof ClientNotFoundException) notFound();
     throw error;
@@ -603,7 +597,7 @@ See `nextjs-module-pages` for `create` and `edit`.
 ### Server Actions
 
 ```ts
-// src/app/[companyId]/clients/actions.ts
+// src/app/clients/actions.ts
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -618,12 +612,10 @@ import { createClientContainer } from '@/modules/client/container';
 import { clientRoutes } from '@/modules/client/routes';
 
 export async function createClientAction(
-  companyId: string,
   _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
+  formData: FormData): Promise<ActionState> {
   try {
-    await requirePermission(companyId, 'clients.create');
+    await requirePermission('clients.create');
 
     const parsed = createClientSchema.safeParse(Object.fromEntries(formData));
     if (!parsed.success) {
@@ -632,16 +624,15 @@ export async function createClientAction(
 
     await db.transaction(async (tx) => {
       await createClientContainer(tx).createService.execute(
-        CreateClientCommand.fromInput(parsed.data, companyId),
-      );
+        CreateClientCommand.fromInput(parsed.data));
     });
   } catch (error) {
     return toActionError(error);
   }
 
-  revalidatePath(clientRoutes.index(companyId));
+  revalidatePath(clientRoutes.index());
   await setFlash('success', 'Cliente creado correctamente.');
-  redirect(clientRoutes.index(companyId)); // MUST be outside try/catch — redirect() throws
+  redirect(clientRoutes.index()); // MUST be outside try/catch — redirect() throws
 }
 ```
 
@@ -696,20 +687,19 @@ export class ClientNotFoundException extends DomainError {
 
 ```ts
 // routes.ts — replaces named routes; never hardcode URLs in components
-const base = (companyId: string) => `/${companyId}/clients`;
+const base = () => `/${}/clients`;
 
 export const clientRoutes = {
-  index: (companyId: string, query?: Record<string, string | number | undefined>) => {
+  index: (query?: Record<string, string | number | undefined>) => {
     const qs = query
       ? new URLSearchParams(
-          Object.entries(query).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)]),
-        ).toString()
+          Object.entries(query).filter(([, v]) => v !== undefined && v !== '').map(([k, v]) => [k, String(v)])).toString()
       : '';
-    return qs ? `${base(companyId)}?${qs}` : base(companyId);
+    return qs ? `${base()}?${qs}` : base();
   },
-  create: (companyId: string) => `${base(companyId)}/create`,
-  show: (companyId: string, id: string) => `${base(companyId)}/${id}`,
-  edit: (companyId: string, id: string) => `${base(companyId)}/${id}/edit`,
+  create: () => `${base()}/create`,
+  show: (id: string) => `${base()}/${id}`,
+  edit: (id: string) => `${base()}/${id}/edit`,
 };
 ```
 
@@ -758,7 +748,7 @@ export const PERMISSION_REGISTRY = [USER_MODULE, ROLE_MODULE, CLIENT_MODULE] as 
 { id: 'clients', label: 'Clientes', url: '/clients', permission: 'clients.list', icon: 'Users', order: 30, section: 'main' },
 ```
 
-- `url` is relative to the company: the sidebar prepends `/${companyId}` at render time.
+- `url` is relative to the app root.
 - `permission` is the module's `.list` action; the entry is hidden if the user lacks it.
 - A parent group with children must use `section: 'main'` (the footer nav does not render children).
 
@@ -775,7 +765,7 @@ These have no equivalent in a classic MVC backend and are easy to get wrong:
 - **Server vs client**: `page.tsx`, `layout.tsx` and everything under `src/modules/*/` except `ui/` are server-only. Add `'use client'` only to leaf interactive components (`ui/components/*List.tsx`, `*Form.tsx`, hooks). Put `import 'server-only'` at the top of `shared/auth/*` and any file that touches `db`.
 - **`params` and `searchParams` are Promises** in pages. Always `await` them.
 - **Only JSON-safe DTOs cross the server → client boundary.** Never pass a Drizzle row, a `Date` or a class instance as a prop to a client component. Use the serializer.
-- **`'use server'`** goes at the top of `actions.ts`. Every exported function there is a public endpoint: validate everything, trust nothing from `FormData`, and bind `companyId`/`id` as arguments instead of reading them from the form.
+- **`'use server'`** goes at the top of `actions.ts`. Every exported function there is a public endpoint: validate everything, trust nothing from `FormData`, and bind ``/`id` as arguments instead of reading them from the form.
 - **`redirect()` and `notFound()` throw.** Never call them inside a `try/catch` that catches everything; place them after the `catch`.
 - **`revalidatePath()`** after every successful mutation, before redirecting, so the listing shows fresh data.
 - **`React.cache`** wraps per-request lookups (`getSessionUser`, `hasPermission`) so layout, page and nested components share one query.
@@ -827,7 +817,7 @@ describe('ClientCreateService', () => {
   it('creates successfully', async () => {
     const repository = new FakeClientRepository();
     const service = new ClientCreateService(repository);
-    const command = new CreateClientCommand('0192f3a0-0000-7000-8000-000000000001', 'company-1', 'Test');
+    const command = new CreateClientCommand('0192f3a0-0000-7000-8000-000000000001', 'Test');
 
     const result = await service.execute(command);
 
@@ -853,7 +843,7 @@ vi.mock('next/navigation', () => ({ redirect: vi.fn(() => { throw new Error('NEX
 vi.mock('@/modules/shared/auth/require-permission', () => ({ requirePermission: vi.fn() }));
 vi.mock('@/modules/shared/flash/flash', () => ({ setFlash: vi.fn() }));
 
-import { createClientAction } from '@/app/[companyId]/clients/actions';
+import { createClientAction } from '@/app/clients/actions';
 
 describe('createClientAction', () => {
   beforeEach(() => truncate(clients));
@@ -863,7 +853,7 @@ describe('createClientAction', () => {
     formData.set('id', '0192f3a0-0000-7000-8000-000000000001');
     formData.set('name', 'Test');
 
-    await expect(createClientAction('company-1', { status: 'idle' }, formData)).rejects.toThrow('NEXT_REDIRECT');
+    await expect(createClientAction({ status: 'idle' }, formData)).rejects.toThrow('NEXT_REDIRECT');
 
     const [row] = await db.select().from(clients).where(eq(clients.name, 'Test'));
     expect(row).toBeDefined();
@@ -881,7 +871,7 @@ describe('createClientAction', () => {
 4. **Always** one Service per action: `CreateService`, `UpdateService`, `UpdateStatusService`, `FindService`, `SearchService`.
 5. **Always** declare Command fields as `readonly`.
 6. **Never** physically delete records — use `UpdateStatusService` to deactivate. Activate the `no-delete-policy` skill.
-7. Each module has its own `container.ts`, `routes.ts`, `permissions.ts` and its own folder under `src/app/[companyId]/`.
+7. Each module has its own `container.ts`, `routes.ts`, `permissions.ts` and its own folder under `src/app/`.
 8. Unit tests use an in-memory fake of the Repository — they never touch the database.
 9. Integration tests run against the test database and exercise the full action/page flow; Playwright covers the browser flow.
 10. IDs are UUIDs — validate `id` with `z.string().uuid()` at the top of every `[id]` page and every action that receives an id; respond with `notFound()` (pages) or an error state (actions).

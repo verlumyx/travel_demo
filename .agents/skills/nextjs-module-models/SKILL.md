@@ -57,7 +57,6 @@ export const clients = pgTable(
   'app_clients',
   {
     id: uuid('id').primaryKey(), // sent by the client (UUID v7) — no DB default
-    companyId: uuid('company_id').notNull(),
     name: varchar('name', { length: 255 }).notNull(),
     status: varchar('status', { length: 50 })
       .notNull()
@@ -69,10 +68,9 @@ export const clients = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
-    index('app_clients_company_id_idx').on(t.companyId),
-    index('app_clients_company_id_status_idx').on(t.companyId, t.status),
-  ],
-);
+    index('app_clients_code_idx').on(t.),
+    index('app_clients_id_status_idx').on(t.t.status),
+  ]);
 
 export type ClientRow = InferSelectModel<typeof clients>;
 export type NewClientRow = InferInsertModel<typeof clients>;
@@ -102,14 +100,14 @@ Generated SQL for the template above:
 ```sql
 CREATE TABLE "app_clients" (
   "id" uuid PRIMARY KEY NOT NULL,
-  "company_id" uuid NOT NULL,
+  "id" uuid NOT NULL,
   "name" varchar(255) NOT NULL,
   "status" varchar(50) DEFAULT 'active' NOT NULL,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL,
   "updated_at" timestamp with time zone DEFAULT now()
 );
-CREATE INDEX "app_clients_company_id_idx" ON "app_clients" ("company_id");
-CREATE INDEX "app_clients_company_id_status_idx" ON "app_clients" ("company_id", "status");
+CREATE INDEX "app_clients_code_idx" ON "app_clients" ("id");
+CREATE INDEX "app_clients_id_status_idx" ON "app_clients" ("id", "status");
 ```
 
 - The model is not visible to `drizzle-kit` until it is re-exported from `src/db/schema.ts` — do that **before** `pnpm db:generate`.
@@ -131,8 +129,7 @@ import { clients, type ClientRow, type NewClientRow } from '@/modules/client/mod
 
 export function buildClient(overrides: Partial<NewClientRow> = {}): NewClientRow {
   return {
-    id: uuidv7(),
-    companyId: uuidv7(),
+    id: uuidv7(): uuidv7(),
     name: faker.company.name(),
     status: 'active',
     ...overrides,
@@ -152,8 +149,8 @@ export async function createClient(db: DbExecutor, overrides: Partial<NewClientR
 Usage in tests:
 
 ```ts
-const client = await createClient(db, { companyId });                       // active
-const inactive = await createClient(db, buildInactiveClient({ companyId })); // inactive variant
+const client = await createClient(db, {  });                       // active
+const inactive = await createClient(db, buildInactiveClient({  })); // inactive variant
 const draft = buildClient({ name: 'Acme' });                                 // no DB (unit tests / fake repos)
 ```
 
@@ -180,7 +177,6 @@ import { clients } from '@/modules/client/models/client.model';
 
 export const sales = pgTable('app_sales', {
   id: uuid('id').primaryKey(),
-  companyId: uuid('company_id').notNull(),
   clientId: uuid('client_id')
     .notNull()
     .references(() => clients.id),
@@ -203,7 +199,7 @@ Relations exist so repositories can use `db.query.clients.findMany({ with: { sal
 3. Every model has a factory in `tests/factories/{module-name}.factory.ts` with `build{Module}`, `create{Module}` and an inactive variant.
 4. Every model is re-exported from `src/db/schema.ts`. Not exported = no migration, no relational queries.
 5. Table name is explicit, `snake_case` plural, with the **`app_` prefix** (`app_clients`). The prefix separates application tables from the auth tables `user`, `session`, `organization`, `member`, which are owned by better-auth and never modified by modules.
-6. Every company-scoped table has `companyId: uuid('company_id').notNull()` and an index on it.
+6. Every scoped table has `` and an index on it.
 7. Indexes and unique constraints are declared in the **third `pgTable` argument**, named `{table}_{columns}_idx` / `{table}_{columns}_unique`.
 8. Timestamps always use `{ withTimezone: true }`.
 9. `status` is `varchar(50)` narrowed with `$type<...>()`, never `pgEnum`.

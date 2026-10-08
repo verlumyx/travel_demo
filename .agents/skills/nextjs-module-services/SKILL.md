@@ -38,7 +38,7 @@ For the `Client` module: `client-create.service.ts` exporting `ClientCreateServi
 
 ## ClientCreateService
 
-`repository.create()` returns `void` — after persisting, fetch the row with `findOrFail(command.id, command.companyId)`.
+`repository.create()` returns `void` — after persisting, fetch the row with `findOrFail(command.id)`.
 
 ```ts
 // services/client-create.service.ts
@@ -52,7 +52,7 @@ export class ClientCreateService {
   async execute(command: CreateClientCommand): Promise<ClientRow> {
     await this.repository.create(command);
 
-    return this.repository.findOrFail(command.id, command.companyId);
+    return this.repository.findOrFail(command.id);
   }
 }
 ```
@@ -61,7 +61,7 @@ export class ClientCreateService {
 
 ## ClientUpdateService
 
-`id` and `companyId` arrive as explicit arguments (bound by the action from the URL); the Command carries only the editable fields.
+`id` arrives as an explicit argument (bound by the action from the URL); the Command carries only the editable fields.
 
 ```ts
 // services/client-update.service.ts
@@ -73,8 +73,8 @@ import { ClientNotFoundException } from '../exceptions/client-not-found.exceptio
 export class ClientUpdateService {
   constructor(private readonly repository: ClientRepository) {}
 
-  async execute(id: string, companyId: string, command: UpdateClientCommand): Promise<ClientRow> {
-    const row = await this.repository.findById(id, companyId);
+  async execute(id: string, command: UpdateClientCommand): Promise<ClientRow> {
+    const row = await this.repository.findById(id);
 
     if (!row) {
       throw new ClientNotFoundException(id);
@@ -82,7 +82,7 @@ export class ClientUpdateService {
 
     await this.repository.update(row, command);
 
-    return this.repository.findOrFail(id, companyId);
+    return this.repository.findOrFail(id);
   }
 }
 ```
@@ -101,8 +101,8 @@ import { ClientNotFoundException } from '../exceptions/client-not-found.exceptio
 export class ClientUpdateStatusService {
   constructor(private readonly repository: ClientRepository) {}
 
-  async execute(id: string, companyId: string, command: UpdateStatusClientCommand): Promise<ClientRow> {
-    const row = await this.repository.findById(id, companyId);
+  async execute(id: string, command: UpdateStatusClientCommand): Promise<ClientRow> {
+    const row = await this.repository.findById(id);
 
     if (!row) {
       throw new ClientNotFoundException(id);
@@ -110,7 +110,7 @@ export class ClientUpdateStatusService {
 
     await this.repository.updateStatus(row, command);
 
-    return this.repository.findOrFail(id, companyId);
+    return this.repository.findOrFail(id);
   }
 }
 ```
@@ -128,8 +128,8 @@ import { ClientNotFoundException } from '../exceptions/client-not-found.exceptio
 export class ClientFindService {
   constructor(private readonly repository: ClientRepository) {}
 
-  async execute(id: string, companyId: string): Promise<ClientRow> {
-    const row = await this.repository.findById(id, companyId);
+  async execute(id: string): Promise<ClientRow> {
+    const row = await this.repository.findById(id);
 
     if (!row) {
       throw new ClientNotFoundException(id);
@@ -159,7 +159,7 @@ export class ClientSearchService {
 }
 ```
 
-The `companyId` used for scoping is already inside `SearchClientCommand` (required) — the service does not add it and does not know where it came from.
+
 
 ---
 
@@ -174,18 +174,18 @@ Additional business logic goes inside `execute()`, between receiving the command
 import { ClientAlreadyExistsException } from '../exceptions/client-already-exists.exception';
 
 async execute(command: CreateClientCommand): Promise<ClientRow> {
-  // ✅ Business rules here — always scoped to the company of the command
-  if (await this.repository.existsByName(command.name, command.companyId)) {
+  // ✅ Business rules here — always handle business rules
+  if (await this.repository.existsByName(command.name)) {
     throw new ClientAlreadyExistsException(command.name);
   }
 
   await this.repository.create(command);
 
-  return this.repository.findOrFail(command.id, command.companyId);
+  return this.repository.findOrFail(command.id);
 }
 ```
 
-`existsByName(name, companyId)` is added to the interface first, then to the Drizzle implementation and to the fake (see `nextjs-module-repositories`). The exception extends `DomainError`, so the action's `toActionError()` turns it into a Spanish toast: `'Ya existe un cliente con el nombre "Ana".'`.
+`existsByName(name)` is added to the interface first, then to the Drizzle implementation and to the fake (see `nextjs-module-repositories`). The exception extends `DomainError`, so the action's `toActionError()` turns it into a Spanish toast: `'Ya existe un cliente con el nombre "Ana".'`.
 
 ### Composing another module's repository
 
@@ -203,17 +203,16 @@ import { ClientInactiveException } from '@/modules/client/exceptions/client-inac
 export class SaleCreateService {
   constructor(
     private readonly repository: SaleRepository,
-    private readonly clientRepository: ClientRepository,
-  ) {}
+    private readonly clientRepository: ClientRepository) {}
 
   async execute(command: CreateSaleCommand): Promise<SaleRow> {
-    const client = await this.clientRepository.findById(command.clientId, command.companyId);
+    const client = await this.clientRepository.findById(command.clientId);
     if (!client) throw new ClientNotFoundException(command.clientId);
     if (client.status !== 'active') throw new ClientInactiveException(client.id);
 
     await this.repository.create(command);
 
-    return this.repository.findOrFail(command.id, command.companyId);
+    return this.repository.findOrFail(command.id);
   }
 }
 ```
@@ -265,7 +264,6 @@ export class FakeClientRepository implements ClientRepository {
   async create(command: CreateClientCommand): Promise<void> {
     this.rows.push({
       id: command.id,
-      companyId: command.companyId,
       name: command.name,
       status: 'active',
       createdAt: new Date(),
@@ -273,12 +271,12 @@ export class FakeClientRepository implements ClientRepository {
     });
   }
 
-  async findById(id: string, companyId: string): Promise<ClientRow | null> {
-    return this.rows.find((row) => row.id === id && row.companyId === companyId) ?? null;
+  async findById(id: string): Promise<ClientRow | null> {
+    return this.rows.find((row) => row.id === id ) ?? null;
   }
 
-  async findOrFail(id: string, companyId: string): Promise<ClientRow> {
-    const row = await this.findById(id, companyId);
+  async findOrFail(id: string): Promise<ClientRow> {
+    const row = await this.findById(id);
     if (!row) throw new ClientNotFoundException(id);
     return row;
   }
@@ -292,12 +290,12 @@ export class FakeClientRepository implements ClientRepository {
   }
 
   async search(command: SearchClientCommand): Promise<{ data: ClientRow[]; total: number }> {
-    const scoped = this.rows.filter((row) => row.companyId === command.companyId);
+    const scoped = this.rows.filter((row) => true );
     return { data: scoped.slice(command.offset, command.offset + command.limit), total: scoped.length };
   }
 
-  async existsByName(name: string, companyId: string): Promise<boolean> {
-    return this.rows.some((row) => row.name === name && row.companyId === companyId);
+  async existsByName(name: string): Promise<boolean> {
+    return this.rows.some((row) => row.name === name );
   }
 }
 ```
@@ -314,7 +312,7 @@ import { UpdateStatusClientCommand } from '@/modules/client/commands/update-stat
 import { ClientNotFoundException } from '@/modules/client/exceptions/client-not-found.exception';
 import { FakeClientRepository } from './fake-client.repository';
 
-const COMPANY_ID = '0192f3a0-0000-7000-8000-00000000c001';
+const = '0192f3a0-0000-7000-8000-00000000c001';
 const CLIENT_ID = '0192f3a0-0000-7000-8000-000000000001';
 
 describe('ClientUpdateStatusService', () => {
@@ -326,7 +324,7 @@ describe('ClientUpdateStatusService', () => {
     service = new ClientUpdateStatusService(repository);
     repository.rows.push({
       id: CLIENT_ID,
-      companyId: COMPANY_ID,
+      D,
       name: 'Ana',
       status: 'active',
       createdAt: new Date(),
@@ -335,18 +333,17 @@ describe('ClientUpdateStatusService', () => {
   });
 
   it('deactivates the client', async () => {
-    const result = await service.execute(CLIENT_ID, COMPANY_ID, new UpdateStatusClientCommand('inactive'));
+    const result = await service.execute(CLIENT_ID, new UpdateStatusClientCommand('inactive'));
 
     expect(result.status).toBe('inactive');
     expect(repository.rows[0].status).toBe('inactive');
   });
 
-  it('throws when the client belongs to another company', async () => {
+  it('throws when the client belongs to another record', async () => {
     await expect(
-      service.execute(CLIENT_ID, '0192f3a0-0000-7000-8000-00000000c002', new UpdateStatusClientCommand('inactive')),
-    ).rejects.toBeInstanceOf(ClientNotFoundException);
+      service.execute(CLIENT_ID, '0192f3a0-0000-7000-8000-00000000c002', new UpdateStatusClientCommand('inactive'))).rejects.toBeInstanceOf(ClientNotFoundException);
   });
 });
 ```
 
-Minimum cases per service: the happy path, the `NotFoundException` path (unknown id **and** wrong company), and one test per business rule added to `execute()` (e.g. `ClientAlreadyExistsException` when `existsByName` is true).
+Minimum cases per service: the happy path, the `NotFoundException` path (unknown id **and** wrong status), and one test per business rule added to `execute()` (e.g. `ClientAlreadyExistsException` when `existsByName` is true).

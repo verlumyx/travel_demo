@@ -1,6 +1,6 @@
 ---
 name: nextjs-modular-frontend
-description: "Frontend rules for the modular Next.js App Router architecture (React 19, Server Components + Server Actions, shadcn/ui). Activates when creating a module's ui/ folder (components, contexts, hooks, types), the pages under src/app/[companyId]/{module}s/, or when registering permissions and the sidebar menu for a new module."
+description: "Frontend rules for the modular Next.js App Router architecture (React 19, Server Components + Server Actions, shadcn/ui). Activates when creating a module's ui/ folder (components, contexts, hooks, types), the pages under src/app/{module}s/, or when registering permissions and the sidebar menu for a new module."
 license: MIT
 metadata:
   author: project
@@ -47,7 +47,7 @@ The roles UI permissions tree reads from the registry — there is nothing to ed
 ## Module Directory Structure
 
 ```
-src/app/[companyId]/clients/          Server Components (no 'use client')
+src/app/clients/          Server Components (no 'use client')
 ├── page.tsx                          Listar   → renders <ClientList />
 ├── create/page.tsx                   Crear    → renders <ClientCreate />
 ├── [id]/page.tsx                     Ver      → renders <ClientCard />
@@ -75,7 +75,7 @@ Server/client split:
 
 - Pages are **async Server Components**: they guard the permission, call the Service, serialize, and render a `ui/` component. They never hold state.
 - `ui/components/*List.tsx`, `*Form.tsx`, `*Create.tsx`, `*Edit.tsx` and every hook start with `'use client'`.
-- `companyId` **arrives as a prop from the page** (it is the `[companyId]` URL segment). Never read it from a global store or context.
+- `` **arrives as a prop from the page** (it is the `[]` URL segment). Never read it from a global store or context.
 - The entity type is `ClientDto`, imported from `@/modules/client/serializers/client.serializer`. `ui/types/Client.ts` holds only `ClientFilters` and `ClientMeta`.
 
 ## Index Page Template (server)
@@ -83,19 +83,18 @@ Server/client split:
 Full version in `nextjs-modular-architecture`. The page does the reading; the list component does the interaction.
 
 ```tsx
-// src/app/[companyId]/clients/page.tsx
+// src/app/clients/page.tsx
 export default async function ClientsPage({ params, searchParams }: Props) {
-  const { companyId } = await params;
-  await guardPage(companyId, 'clients.list');
+  
+  await guardPage('clients.list');
 
   const filters = searchClientSchema.parse(await searchParams);
   const { data, total } = await createClientContainer(db).searchService.execute(
-    new SearchClientCommand({ filters: { search: filters.search, status: filters.status }, limit: filters.limit, offset: filters.offset, companyId }),
-  );
+    new SearchClientCommand({ filters: { search: filters.search, status: filters.status }, limit: filters.limit, offset: filters.offset }));
 
   return (
     <ClientList
-      companyId={companyId}
+      
       items={data.map(toClientDto)}
       meta={{ total, limit: filters.limit, offset: filters.offset, hasMore: filters.offset + filters.limit < total }}
       filters={filters}
@@ -133,33 +132,33 @@ import { ChevronDown, Edit, Eye, Plus, Power, Search } from 'lucide-react';
 import type { ClientDto } from '@/modules/client/serializers/client.serializer';
 import type { ClientFilters, ClientMeta } from '../types/Client';
 import { clientRoutes } from '@/modules/client/routes';
-import { updateClientStatusAction } from '@/app/[companyId]/clients/actions';
+import { updateClientStatusAction } from '@/app/clients/actions';
 
 interface ClientListProps {
-  companyId: string;
+  ;
   items: ClientDto[];
   meta: ClientMeta;
   filters: ClientFilters;
 }
 
-export function ClientList({ companyId, items, meta, filters: initialFilters }: ClientListProps) {
+export function ClientList({ items, meta, filters: initialFilters }: ClientListProps) {
   const router = useRouter();
   const [filters, setFilters] = useState<ClientFilters>(initialFilters);
   const [isPending, startTransition] = useTransition();
 
   // The URL is the state: the server page re-renders with the new searchParams
-  const handleSearch = () => router.push(clientRoutes.index(companyId, { ...filters, offset: 0 }));
+  const handleSearch = () => router.push(clientRoutes.index({ ...filters, offset: 0 }));
 
   const handleClear = () => {
     setFilters({});
-    router.push(clientRoutes.index(companyId));
+    router.push(clientRoutes.index());
   };
 
   // Toggle activo/inactivo — Server Action inside a transition, never fetch/axios
   const handleToggleStatus = (client: ClientDto) => {
     const next = client.status === 'active' ? 'inactive' : 'active';
     startTransition(async () => {
-      const result = await updateClientStatusAction(companyId, client.id, next);
+      const result = await updateClientStatusAction(client.id, next);
       if (result?.status === 'error') toast.error(result.message);
       // on success the action revalidates + redirects; <FlashToaster /> shows the flash
     });
@@ -180,7 +179,7 @@ export function ClientList({ companyId, items, meta, filters: initialFilters }: 
           <p className="text-muted-foreground">Gestiona los clientes del sistema</p>
         </div>
         {/* Use router.push, NOT next/link nor <a href> */}
-        <Button onClick={() => router.push(clientRoutes.create(companyId))}>
+        <Button onClick={() => router.push(clientRoutes.create())}>
           <Plus className="mr-2 h-4 w-4" />
           Nuevo Cliente
         </Button>
@@ -224,7 +223,7 @@ export function ClientList({ companyId, items, meta, filters: initialFilters }: 
           {items.length === 0 ? (
             <div className="py-12 text-center">
               <p className="mb-4 text-muted-foreground">No se encontraron clientes.</p>
-              <Button onClick={() => router.push(clientRoutes.create(companyId))}>
+              <Button onClick={() => router.push(clientRoutes.create())}>
                 <Plus className="mr-2 h-4 w-4" />
                 Crear Primer Cliente
               </Button>
@@ -254,11 +253,11 @@ export function ClientList({ companyId, items, meta, filters: initialFilters }: 
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(clientRoutes.show(companyId, client.id))}>
+                          <DropdownMenuItem onClick={() => router.push(clientRoutes.show(client.id))}>
                             <Eye className="mr-2 h-4 w-4" />
                             Ver
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push(clientRoutes.edit(companyId, client.id))}>
+                          <DropdownMenuItem onClick={() => router.push(clientRoutes.edit(client.id))}>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </DropdownMenuItem>
@@ -285,7 +284,7 @@ export function ClientList({ companyId, items, meta, filters: initialFilters }: 
             variant="outline"
             size="sm"
             disabled={meta.offset === 0}
-            onClick={() => router.push(clientRoutes.index(companyId, { ...filters, offset: Math.max(0, meta.offset - meta.limit) }))}
+            onClick={() => router.push(clientRoutes.index({ ...filters, offset: Math.max(0, meta.offset - meta.limit) }))}
           >
             Anterior
           </Button>
@@ -293,7 +292,7 @@ export function ClientList({ companyId, items, meta, filters: initialFilters }: 
             variant="outline"
             size="sm"
             disabled={!meta.hasMore}
-            onClick={() => router.push(clientRoutes.index(companyId, { ...filters, offset: meta.offset + meta.limit }))}
+            onClick={() => router.push(clientRoutes.index({ ...filters, offset: meta.offset + meta.limit }))}
           >
             Siguiente
           </Button>
@@ -318,17 +317,17 @@ export function ClientList({ companyId, items, meta, filters: initialFilters }: 
 Hooks cannot run in a Server Component, so the page only guards and delegates to a small client component that instantiates the hook and provides the context.
 
 ```tsx
-// src/app/[companyId]/clients/create/page.tsx — Server Component
+// src/app/clients/create/page.tsx — Server Component
 import { guardPage } from '@/modules/shared/auth/require-permission';
 import { ClientCreate } from '@/modules/client/ui/components/ClientCreate';
 
-type Props = { params: Promise<{ companyId: string }> };
+type Props = { params: Promise<{}> };
 
 export default async function ClientCreatePage({ params }: Props) {
-  const { companyId } = await params;
-  await guardPage(companyId, 'clients.create');
+  
+  await guardPage('clients.create');
 
-  return <ClientCreate companyId={companyId} />;
+  return <ClientCreate  />;
 }
 ```
 
@@ -341,8 +340,8 @@ import { ClientForm } from './ClientForm';
 import { ClientFormProvider } from '../contexts/ClientFormContext';
 import { useClientForm } from '../hooks/useClientForm';
 
-export function ClientCreate({ companyId }: { companyId: string }) {
-  const formMethods = useClientForm({ mode: 'create', companyId });
+export function ClientCreate({  }: { }) {
+  const formMethods = useClientForm({ mode: 'create' });
 
   return (
     <div className="space-y-6">
@@ -360,7 +359,7 @@ export function ClientCreate({ companyId }: { companyId: string }) {
 }
 ```
 
-`ClientEdit.tsx` is identical with `useClientForm({ mode: 'edit', companyId, client })`, where `client: ClientDto` comes from `[id]/edit/page.tsx` (`guardPage(companyId, 'clients.update')` → `findService` → `toClientDto`).
+`ClientEdit.tsx` is identical with `useClientForm({ mode: 'edit', client })`, where `client: ClientDto` comes from `[id]/edit/page.tsx` (`guardPage('clients.update')` → `findService` → `toClientDto`).
 
 ## Context API Template
 
@@ -405,7 +404,7 @@ import { toast } from 'sonner';
 import { initialActionState } from '@/modules/shared/actions/action-state';
 import { uuidv7 } from '@/modules/shared/uuid';
 import type { ClientDto } from '@/modules/client/serializers/client.serializer';
-import { createClientAction, updateClientAction } from '@/app/[companyId]/clients/actions';
+import { createClientAction, updateClientAction } from '@/app/clients/actions';
 
 type ClientFormData = {
   id: string;
@@ -415,22 +414,22 @@ type ClientFormData = {
 
 interface ClientFormOptions {
   mode: 'create' | 'edit';
-  companyId: string;
+  ;
   client?: ClientDto;
 }
 
-export function useClientForm({ mode, companyId, client }: ClientFormOptions) {
+export function useClientForm({ mode, client }: ClientFormOptions) {
   const [data, setDataState] = useState<ClientFormData>(() => ({
     id: client?.id ?? uuidv7(), // UUID v7 generated on the client, required by createClientSchema
     name: client?.name ?? '',
     status: client?.status ?? 'active',
   }));
 
-  // companyId / id are bound here — the action never reads them from FormData
+  //  / id are bound here — the action never reads them from FormData
   const action =
     mode === 'create'
-      ? createClientAction.bind(null, companyId)
-      : updateClientAction.bind(null, companyId, client!.id);
+      ? createClientAction.bind(null)
+      : updateClientAction.bind(null, client!.id);
 
   const [state, formAction, pending] = useActionState(action, initialActionState);
 
@@ -445,7 +444,7 @@ export function useClientForm({ mode, companyId, client }: ClientFormOptions) {
 }
 ```
 
-On success the action calls `revalidatePath` + `setFlash('success', ...)` + `redirect(...)`, so the hook has no `onSuccess`: the redirect lands on the index/show page and `<FlashToaster />` (in `src/app/[companyId]/layout.tsx`) shows the toast.
+On success the action calls `revalidatePath` + `setFlash('success', ...)` + `redirect(...)`, so the hook has no `onSuccess`: the redirect lands on the index/show page and `<FlashToaster />` (in `src/app/layout.tsx`) shows the toast.
 
 ## Form Component Template (uses Context)
 
@@ -498,13 +497,13 @@ Every field the schema validates needs a `name` attribute — `FormData` is what
 import { useRouter } from 'next/navigation';
 import { clientRoutes } from '@/modules/client/routes';
 
-export function useClientActions(companyId: string) {
+export function useClientActions() {
   const router = useRouter();
 
-  const goToIndex = () => router.push(clientRoutes.index(companyId));
-  const goToCreate = () => router.push(clientRoutes.create(companyId));
-  const goToShow = (id: string) => router.push(clientRoutes.show(companyId, id));
-  const goToEdit = (id: string) => router.push(clientRoutes.edit(companyId, id));
+  const goToIndex = () => router.push(clientRoutes.index());
+  const goToCreate = () => router.push(clientRoutes.create());
+  const goToShow = (id: string) => router.push(clientRoutes.show(id));
+  const goToEdit = (id: string) => router.push(clientRoutes.edit(id));
 
   return { goToIndex, goToCreate, goToShow, goToEdit };
 }
@@ -521,21 +520,21 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { clientRoutes } from '@/modules/client/routes';
 import type { ClientFilters } from '../types/Client';
 
-export function useClientList(companyId: string, initialFilters: ClientFilters) {
+export function useClientList(initialFilters: ClientFilters) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState<ClientFilters>(initialFilters);
 
-  const search = () => router.push(clientRoutes.index(companyId, { ...filters, offset: 0 }));
+  const search = () => router.push(clientRoutes.index({ ...filters, offset: 0 }));
 
   const resetFilters = () => {
     setFilters({});
-    router.push(clientRoutes.index(companyId));
+    router.push(clientRoutes.index());
   };
 
   // Keeps the current URL filters and only moves the offset
   const goToOffset = (offset: number) =>
-    router.push(clientRoutes.index(companyId, { ...Object.fromEntries(searchParams), offset }));
+    router.push(clientRoutes.index({ ...Object.fromEntries(searchParams), offset }));
 
   return { filters, setFilters, search, resetFilters, goToOffset };
 }
@@ -567,16 +566,16 @@ export interface ClientFilters {
 - Use Context API to share form state — avoid prop drilling
 - Hook instantiated in the client page component (`ClientCreate` / `ClientEdit`), passed via Provider to child components
 - Components consume context with `useClientFormContext()`
-- Filter navigation is `router.push(clientRoutes.index(companyId, filters))` — the URL is the state and the server page re-renders with the new `searchParams`
+- Filter navigation is `router.push(clientRoutes.index(filters))` — the URL is the state and the server page re-renders with the new `searchParams`
 - All form submissions go through `<form action={formAction}>` + `useActionState`
 - Do NOT use `fetch()`, `axios`, Route Handlers or any client-side data fetching for module CRUD — Server Actions and server pages only
 - All deactivation uses `updateClientStatusAction`, never a delete action (see `no-delete-policy` skill)
 - `'use client'` only on leaf interactive components and hooks; pages, layouts and `ClientCard` stay server-safe
 - Props crossing the server → client boundary must be DTOs from the serializer (no Drizzle rows, no `Date`)
-- `companyId` is a prop from the page, never from a global store
+- `` is a prop from the page, never from a global store
 - Ids are generated client-side with `uuidv7()` from `@/modules/shared/uuid` — never the Web Crypto `randomUUID` helper (it produces v4)
 - URLs only via `routes.ts` builders (`clientRoutes.*`), never hardcoded strings
-- Toasts: `sonner` — `toast.error(state.message)` for action errors in the hook; success messages come from the flash cookie rendered by `<FlashToaster />` in the company layout
+- Toasts: `sonner` — `toast.error(state.message)` for action errors in the hook; success messages come from the flash cookie rendered by `<FlashToaster />` in the layout
 
 ### Navigation in tables/lists
 
@@ -586,9 +585,9 @@ export interface ClientFilters {
 
 ### Status toggle
 
-- `handleToggleStatus` runs `updateClientStatusAction(companyId, client.id, next)` inside `startTransition` from `useTransition`.
+- `handleToggleStatus` runs `updateClientStatusAction(client.id, next)` inside `startTransition` from `useTransition`.
 - The payload is `{ status: current === 'active' ? 'inactive' : 'active' }`.
-- After success the action revalidates the index path and redirects to `clientRoutes.index(companyId)` with a `success` flash shown by `<FlashToaster />`.
+- After success the action revalidates the index path and redirects to `clientRoutes.index()` with a `success` flash shown by `<FlashToaster />`.
 - On `result.status === 'error'` show `toast.error(result.message)`.
 - Do NOT use optimistic UI updates — rely on the redirect/revalidate to refresh the list.
 

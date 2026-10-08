@@ -1,3 +1,7 @@
 allowBuilds:
+  esbuild: set this to true or false
+  esbuild@0.18.20: true
+  esbuild@0.25.12: true
+  esbuild@0.28.2: true
   sharp: false
   unrs-resolver: false

@@ -31,14 +31,14 @@ For the `Client` module: `client.repository.ts`, `client.filters.ts`, `drizzle-c
 6. `search()` calls `applyFilters(clientFilters, command.filters)` — never iterate the filters object manually.
 7. Filter map keys **must match** the keys of `SearchClientCommand.filters` exactly.
 8. The wiring between the interface and the implementation happens in the module's `container.ts`.
-9. **Company scoping comes from the Command, NEVER from `cookies()`, `headers()` or the auth session.** A repository must not call `getSessionUser()`, `headers()`, `cookies()` or `auth`. The active company is resolved from the `[companyId]` URL segment in the page/action and passed in through the Command — see below.
+9. **Scoping comes from the Command, NEVER from `cookies()`, `headers()` or the auth session.** A repository must not call `getSessionUser()`, `headers()`, `cookies()` or `auth`. The active user is resolved from the `[]` URL segment in the page/action and passed in through the Command — see below.
 10. `findOrFail()` is the one documented exception to "only services throw": it throws `{Module}NotFoundException` so every caller gets the same error.
 
 ---
 
-## Company Scoping (multi-tenant)
+## Scoping
 
-Every module lives under the `/[companyId]/...` URL prefix, so every listing and every lookup must be scoped to the active company. The company id flows **page/action → Command → Repository**. The repository stays pure and testable — it receives the id, it never fetches it.
+Every module lives under the `/...` URL prefix, so every listing and every lookup must be scoped to the active user. The id flows **page/action → Command → Repository**. The repository stays pure and testable — it receives the id, it never fetches it.
 
 ❌ **Wrong — the repository reaches into the request:**
 
@@ -49,12 +49,12 @@ import { getSessionUser } from '@/modules/shared/auth/require-permission'; // �
 
 async search(command: SearchClientCommand) {
   const user = await getSessionUser();
-  const companyId = (await headers()).get('x-company-id');
+  const  = (await headers()).get('x-user-id');
   // ...
 }
 ```
 
-✅ **Correct — the Command carries `companyId` (required, not optional):**
+✅ **Correct — the Command carries `` (required, not optional):**
 
 ```ts
 // commands/search-client.command.ts
@@ -62,18 +62,18 @@ export class SearchClientCommand {
   readonly filters: Record<string, string | undefined>;
   readonly limit: number;
   readonly offset: number;
-  readonly companyId: string; // REQUIRED
+  // REQUIRED
 
   constructor(params: {
     filters?: Record<string, string | undefined>;
     limit?: number;
     offset?: number;
-    companyId: string;
+    ;
   }) {
     this.filters = params.filters ?? {};
     this.limit = params.limit ?? 20;
     this.offset = params.offset ?? 0;
-    this.companyId = params.companyId;
+    this. = params.;
   }
 }
 ```
@@ -82,55 +82,51 @@ export class SearchClientCommand {
 // drizzle-client.repository.ts — read it from the command
 async search(command: SearchClientCommand): Promise<{ data: ClientRow[]; total: number }> {
   const where = and(
-    eq(clients.companyId, command.companyId),
-    ...applyFilters(clientFilters, command.filters),
-  );
+    eq(clients.),
+    ...applyFilters(clientFilters, command.filters));
   // ... count, page
 }
 ```
 
 ```tsx
-// src/app/[companyId]/clients/page.tsx — pass the URL segment into the command
-const { companyId } = await params;
-await guardPage(companyId, 'clients.list');
+// src/app/clients/page.tsx — pass the URL segment into the command
+
+await guardPage('clients.list');
 
 const filters = searchClientSchema.parse(await searchParams);
 const command = new SearchClientCommand({
   filters: { search: filters.search, status: filters.status },
   limit: filters.limit,
   offset: filters.offset,
-  companyId,
-});
+  });
 ```
 
-Lookups by id are scoped the same way: `findById(id, companyId)` and `findOrFail(id, companyId)` **always** take `companyId`. A row that belongs to another company is simply "not found".
+Lookups by id are scoped the same way: `findById(id)` and `findOrFail(id)` **always** take ``. A row that belongs to another record is simply "not found".
 
-**Many-to-many ownership** (e.g. users belong to companies through the pivot table `app_company_users`, no `company_id` column on `app_users`): scope with an `exists()` subquery instead of a join, so the result set is never duplicated:
+**Many-to-many ownership** (e.g. users belong to companies through the pivot table `app_users`, no `id` column on `app_users`): scope with an `exists()` subquery instead of a join, so the result set is never duplicated:
 
 ```ts
 import { and, eq, exists, sql } from 'drizzle-orm';
 import { users } from '../models/user.model';
-import { companyUsers } from '@/modules/company/models/company-user.model';
+import { users } from '@/modules/user/models/user.model';
 
 const where = and(
   exists(
     this.db
       .select({ one: sql`1` })
-      .from(companyUsers)
-      .where(and(eq(companyUsers.userId, users.id), eq(companyUsers.companyId, command.companyId))),
-  ),
-  ...applyFilters(userFilters, command.filters),
-);
+      .from(users)
+      .where(and(eq(users.userId, users.id), eq(users.)))),
+  ...applyFilters(userFilters, command.filters));
 ```
 
-**Non-search methods that also need scoping** (e.g. `getActive()`): accept the company id as an explicit parameter — `getActive(companyId: string)` — and have the page/action pass it. Same rule: no `headers()`/`cookies()`/session access inside the repository.
+**Non-search methods that also need scoping** (e.g. `getActive()`): accept the explicit parameter — `getActive()` — and have the page/action pass it. Same rule: no `headers()`/`cookies()`/session access inside the repository.
 
 ```ts
-async getActive(companyId: string): Promise<ClientRow[]> {
+async getActive(): Promise<ClientRow[]> {
   return this.db
     .select()
     .from(clients)
-    .where(and(eq(clients.companyId, companyId), eq(clients.status, 'active')))
+    .where(eq(clients.status, 'active')))
     .orderBy(desc(clients.createdAt));
 }
 ```
@@ -201,10 +197,10 @@ import type { SearchClientCommand } from '../commands/search-client.command';
 export interface ClientRepository {
   create(command: CreateClientCommand): Promise<void>;
 
-  findById(id: string, companyId: string): Promise<ClientRow | null>;
+  findById(id: string): Promise<ClientRow | null>;
 
-  /** Throws ClientNotFoundException when the row does not exist in that company. */
-  findOrFail(id: string, companyId: string): Promise<ClientRow>;
+  /** Throws ClientNotFoundException when the row does not exist in the system. */
+  findOrFail(id: string): Promise<ClientRow>;
 
   update(row: ClientRow, command: UpdateClientCommand): Promise<void>;
 
@@ -242,23 +238,22 @@ export class DrizzleClientRepository implements ClientRepository {
   async create(command: CreateClientCommand): Promise<void> {
     await this.db.insert(clients).values({
       id: command.id,
-      companyId: command.companyId,
       name: command.name,
       status: 'active',
     });
   }
 
-  async findById(id: string, companyId: string): Promise<ClientRow | null> {
+  async findById(id: string): Promise<ClientRow | null> {
     const [row] = await this.db
       .select()
       .from(clients)
-      .where(and(eq(clients.id, id), eq(clients.companyId, companyId)))
+      .where(and(eq(clients.id, id)))
       .limit(1);
     return row ?? null;
   }
 
-  async findOrFail(id: string, companyId: string): Promise<ClientRow> {
-    const row = await this.findById(id, companyId);
+  async findOrFail(id: string): Promise<ClientRow> {
+    const row = await this.findById(id);
     if (!row) throw new ClientNotFoundException(id);
     return row;
   }
@@ -273,9 +268,8 @@ export class DrizzleClientRepository implements ClientRepository {
 
   async search(command: SearchClientCommand): Promise<{ data: ClientRow[]; total: number }> {
     const where = and(
-      eq(clients.companyId, command.companyId),
-      ...applyFilters(clientFilters, command.filters),
-    );
+      eq(clients.),
+      ...applyFilters(clientFilters, command.filters));
 
     const [{ total }] = await this.db.select({ total: count() }).from(clients).where(where);
 
@@ -294,7 +288,7 @@ export class DrizzleClientRepository implements ClientRepository {
 
 Notes on the implementation:
 
-- `update()` / `updateStatus()` receive the already-loaded `row` (the service fetched it with `findById(id, companyId)`), so the `where` only needs `row.id` — the company check already happened.
+- `update()` / `updateStatus()` receive the already-loaded `row` (the service fetched it with `findById(id)`), so the `where` only needs `row.id` — the existence check already happened.
 - Ordering is always `orderBy(desc(clients.createdAt))` for listings: newest first.
 - `count()` from `drizzle-orm` already maps to a `number`; no raw ``sql`count(*)` `` needed.
 - Modules with soft deletion (`deletedAt`) add `isNull(clients.deletedAt)` to every `where` — see `no-delete-policy`.
@@ -309,13 +303,11 @@ page.tsx                         SearchClientCommand              DrizzleClientR
 searchClientSchema.parse(        filters: {                       applyFilters(clientFilters, filters)
   await searchParams   ──────►     search: 'foo',       ──────►     calls clientFilters.search('foo')
 )                                  status: 'active',                calls clientFilters.status('active')
-                                 }
-                                 companyId: '0192…'     ──────►   eq(clients.companyId, companyId)
-```
+                                 }```
 
 Keys in `command.filters` → must match keys in `clientFilters`.
 Empty/null values are automatically skipped inside `applyFilters()`.
-`companyId` is **not** a filter — it is a mandatory condition added by the repository itself.
+
 
 ---
 
@@ -338,20 +330,20 @@ No changes needed in the Command, the Service, or the repository's `search()` me
 
 ## Adding Extra Non-Filter Methods
 
-Add to the interface first, then implement in the Drizzle repository. Scoped methods take `companyId` explicitly.
+Add to the interface first, then implement in the Drizzle repository. 
 
 ```ts
 // In the interface (client.repository.ts)
-existsByName(name: string, companyId: string): Promise<boolean>;
+existsByName(name: string): Promise<boolean>;
 ```
 
 ```ts
 // In the implementation (drizzle-client.repository.ts)
-async existsByName(name: string, companyId: string): Promise<boolean> {
+async existsByName(name: string): Promise<boolean> {
   const [row] = await this.db
     .select({ id: clients.id })
     .from(clients)
-    .where(and(eq(clients.companyId, companyId), eq(clients.name, name)))
+    .where(eq(clients.name, name)))
     .limit(1);
   return row !== undefined;
 }
@@ -406,26 +398,21 @@ import { DrizzleClientRepository } from '@/modules/client/repositories/drizzle-c
 import { SearchClientCommand } from '@/modules/client/commands/search-client.command';
 import { truncate } from '../../helpers/truncate';
 
-const COMPANY_A = '0192f3a0-0000-7000-8000-00000000c0a1';
-const COMPANY_B = '0192f3a0-0000-7000-8000-00000000c0b2';
-
 describe('DrizzleClientRepository', () => {
   beforeEach(() => truncate(clients));
 
-  it('search only returns rows of the given company', async () => {
+  it('search returns the correct rows', async () => {
     await db.insert(clients).values([
-      { id: '0192f3a0-0000-7000-8000-000000000001', companyId: COMPANY_A, name: 'Ana', status: 'active' },
-      { id: '0192f3a0-0000-7000-8000-000000000002', companyId: COMPANY_B, name: 'Ana', status: 'active' },
+      { id: '0192f3a0-0000-7000-8000-000000000001', name: 'Ana', status: 'active' },
+      { id: '0192f3a0-0000-7000-8000-000000000002', name: 'Ana', status: 'active' },
     ]);
 
     const { data, total } = await new DrizzleClientRepository(db).search(
-      new SearchClientCommand({ filters: { search: 'an' }, companyId: COMPANY_A }),
-    );
+      new SearchClientCommand({ filters: { search: 'an' }, }));
 
     expect(total).toBe(1);
-    expect(data[0].companyId).toBe(COMPANY_A);
   });
 });
 ```
 
-Always include one test per repository asserting company isolation, and one per filter key asserting it narrows the result.
+Always include one test per repository asserting each filter key narrows the result.

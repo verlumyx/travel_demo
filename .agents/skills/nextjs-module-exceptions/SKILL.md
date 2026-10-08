@@ -116,8 +116,8 @@ Exceptions are thrown in Services and in the repository's `findOrFail`, never in
 
 ```ts
 // ✅ In Service
-async execute(id: string, companyId: string): Promise<ClientRow> {
-  const row = await this.repository.findById(id, companyId);
+async execute(id: string): Promise<ClientRow> {
+  const row = await this.repository.findById(id);
   if (!row) throw new ClientNotFoundException(id);
   return row;
 }
@@ -125,8 +125,8 @@ async execute(id: string, companyId: string): Promise<ClientRow> {
 
 ```ts
 // ✅ In Repository — the only repository method that throws a domain exception
-async findOrFail(id: string, companyId: string): Promise<ClientRow> {
-  const row = await this.findById(id, companyId);
+async findOrFail(id: string): Promise<ClientRow> {
+  const row = await this.findById(id);
   if (!row) throw new ClientNotFoundException(id);
   return row;
 }
@@ -146,7 +146,7 @@ Every action wraps permission + validation + service in one `try/catch` and dele
 
 ```ts
 try {
-  await requirePermission(companyId, 'clients.update');
+  await requirePermission('clients.update');
   // validate, build the command, run the service inside db.transaction(...)
 } catch (error) {
   return toActionError(error);
@@ -160,8 +160,8 @@ Ver and Editar pages catch the module's not-found exception (or `NotFoundError`)
 
 ```tsx
 try {
-  const row = await createClientContainer(db).findService.execute(id, companyId);
-  return <ClientCard companyId={companyId} client={toClientDto(row)} />;
+  const row = await createClientContainer(db).findService.execute(id);
+  return <ClientCard  client={toClientDto(row)} />;
 } catch (error) {
   if (error instanceof ClientNotFoundException) notFound();
   throw error;
@@ -175,5 +175,5 @@ try {
 Unit tests assert the exception type, never the message text:
 
 ```ts
-await expect(service.execute(missingId, companyId)).rejects.toBeInstanceOf(ClientNotFoundException);
+await expect(service.execute(missingId)).rejects.toBeInstanceOf(ClientNotFoundException);
 ```

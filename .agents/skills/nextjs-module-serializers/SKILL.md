@@ -65,18 +65,14 @@ A relation is an optional field, present only when the repository loaded it. Two
 **Optional second argument** for a single relation the repository sometimes joins:
 
 ```ts
-import type { CompanyRow } from '@/modules/company/models/company.model';
-import { toCompanyDto, type CompanyDto } from '@/modules/company/serializers/company.serializer';
 
 export type ClientDto = {
   // ...fields above
-  company?: CompanyDto;
 };
 
-export function toClientDto(row: ClientRow, relations: { company?: CompanyRow } = {}): ClientDto {
+export function toClientDto(row: ClientRow): ClientDto {
   return {
     // ...fields above
-    ...(relations.company ? { company: toCompanyDto(relations.company) } : {}),
   };
 }
 ```
@@ -145,12 +141,12 @@ export function toSaleWithProfilesDto(row: SaleWithProfilesRow): SaleDto {
 
 ```tsx
 // Single — Ver page
-const row = await createClientContainer(db).findService.execute(id, companyId);
-return <ClientCard companyId={companyId} client={toClientDto(row)} />;
+const row = await createClientContainer(db).findService.execute(id);
+return <ClientCard  client={toClientDto(row)} />;
 
 // Collection — Listar page
 const { data, total } = await createClientContainer(db).searchService.execute(command);
-return <ClientList companyId={companyId} items={data.map(toClientDto)} meta={{ total, limit, offset, hasMore }} filters={filters} />;
+return <ClientList  items={data.map(toClientDto)} meta={{ total, limit, offset, hasMore }} filters={filters} />;
 
 // Server Action that returns data (rare — most actions redirect)
 return { status: 'idle', data: toClientDto(row) };
