@@ -6,7 +6,7 @@ import { payments } from '@/modules/payment/models/payment.model';
 import { departures } from '@/modules/departure/models/departure.model';
 import { tours } from '@/modules/tour/models/tour.model';
 import { customers } from '@/modules/customer/models/customer.model';
-import { eq, ne, sql, desc, asc, inArray } from 'drizzle-orm';
+import { eq, ne, and, gte, inArray, sum, count, desc, asc } from 'drizzle-orm';
 import Link from 'next/link';
 import {
   DollarSign,
@@ -48,17 +48,17 @@ export default async function AdminDashboardPage() {
     // Total ventas del mes en curso (reservas no canceladas)
     db
       .select({
-        totalAmount: sql<string>`COALESCE(SUM(${bookings.totalAmount}), 0)`,
-        count: sql<number>`COUNT(*)`,
+        totalAmount: sum(bookings.totalAmount),
+        count: count(),
       })
       .from(bookings)
-      .where(sql`${bookings.createdAt} >= ${startOfMonth} AND ${bookings.status} != 'cancelled'`),
+      .where(and(gte(bookings.createdAt, startOfMonth), ne(bookings.status, 'cancelled'))),
 
     // Ingresos conciliados (verified)
     db
       .select({
-        totalAmount: sql<string>`COALESCE(SUM(${payments.amount}), 0)`,
-        count: sql<number>`COUNT(*)`,
+        totalAmount: sum(payments.amount),
+        count: count(),
       })
       .from(payments)
       .where(eq(payments.status, 'verified')),
@@ -66,8 +66,8 @@ export default async function AdminDashboardPage() {
     // Ingresos pendientes por auditar (pending)
     db
       .select({
-        totalAmount: sql<string>`COALESCE(SUM(${payments.amount}), 0)`,
-        count: sql<number>`COUNT(*)`,
+        totalAmount: sum(payments.amount),
+        count: count(),
       })
       .from(payments)
       .where(eq(payments.status, 'pending')),
@@ -75,9 +75,9 @@ export default async function AdminDashboardPage() {
     // Ocupación global de flota en salidas activas
     db
       .select({
-        totalCapacity: sql<number>`COALESCE(SUM(${departures.totalCapacity}), 0)`,
-        totalBooked: sql<number>`COALESCE(SUM(${departures.bookedSlots}), 0)`,
-        count: sql<number>`COUNT(*)`,
+        totalCapacity: sum(departures.totalCapacity),
+        totalBooked: sum(departures.bookedSlots),
+        count: count(),
       })
       .from(departures)
       .where(inArray(departures.status, ['scheduled', 'confirmed'])),
@@ -119,7 +119,10 @@ export default async function AdminDashboardPage() {
       .innerJoin(customers, eq(bookings.customerId, customers.id))
       .innerJoin(departures, eq(bookings.departureId, departures.id))
       .where(
-        sql`${bookings.status} IN ('pending', 'partial_payment') AND ${bookings.status} != 'cancelled'`,
+        and(
+          inArray(bookings.status, ['pending', 'partial_payment']),
+          ne(bookings.status, 'cancelled'),
+        ),
       )
       .orderBy(desc(bookings.createdAt))
       .limit(5),
