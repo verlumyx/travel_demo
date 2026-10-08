@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { guardPage } from '@/modules/shared/auth/require-permission';
+import { guardPage, hasPermission } from '@/modules/shared/auth/require-permission';
 import { createTourContainer } from '@/modules/tour/container';
 import { SearchTourCommand } from '@/modules/tour/commands/search-tour.command';
 import { tourRoutes } from '@/modules/tour/routes';
@@ -15,6 +15,12 @@ interface PageProps {
 
 export default async function ToursListPage({ searchParams }: PageProps) {
   await guardPage('tours.list');
+
+  const [canCreate, canUpdate, canUpdateStatus] = await Promise.all([
+    hasPermission('tours.create'),
+    hasPermission('tours.update'),
+    hasPermission('tours.update-status'),
+  ]);
 
   const params = await searchParams;
   const q = params.q || undefined;
@@ -42,13 +48,15 @@ export default async function ToursListPage({ searchParams }: PageProps) {
           </p>
         </div>
 
-        <Link
-          href={tourRoutes.create()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer self-start sm:self-auto"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo Tour
-        </Link>
+        {canCreate && (
+          <Link
+            href={tourRoutes.create()}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer self-start sm:self-auto"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo Tour
+          </Link>
+        )}
       </div>
 
       {/* Filters Bar */}
@@ -152,7 +160,7 @@ export default async function ToursListPage({ searchParams }: PageProps) {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <TourStatusToggle id={tour.id} currentStatus={tour.status} />
+                        {canUpdateStatus && <TourStatusToggle id={tour.id} currentStatus={tour.status} />}
                         <Link
                           href={tourRoutes.show(tour.id)}
                           title="Ver detalle e itinerario"
@@ -160,13 +168,15 @@ export default async function ToursListPage({ searchParams }: PageProps) {
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        <Link
-                          href={tourRoutes.edit(tour.id)}
-                          title="Editar"
-                          className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </Link>
+                        {canUpdate && (
+                          <Link
+                            href={tourRoutes.edit(tour.id)}
+                            title="Editar"
+                            className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>

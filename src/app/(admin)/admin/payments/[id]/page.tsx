@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { guardPage } from '@/modules/shared/auth/require-permission';
+import { guardPage, hasPermission } from '@/modules/shared/auth/require-permission';
 import { createPaymentContainer } from '@/modules/payment/container';
 import { paymentRoutes } from '@/modules/payment/routes';
 import { bookingRoutes } from '@/modules/booking/routes';
@@ -32,6 +32,9 @@ interface PageProps {
 
 export default async function PaymentDetailPage({ params }: PageProps) {
   await guardPage('payments.show');
+  const [canVerifyPayment] = await Promise.all([
+    hasPermission('payments.update-status'),
+  ]);
   const { id } = await params;
 
   const paymentContainer = createPaymentContainer();
@@ -73,7 +76,13 @@ export default async function PaymentDetailPage({ params }: PageProps) {
         </div>
 
         <div className="flex items-center gap-3 self-start sm:self-auto">
-          <PaymentVerifyActions paymentId={payment.id} status={payment.status} />
+          {canVerifyPayment ? (
+            <PaymentVerifyActions paymentId={payment.id} status={payment.status} />
+          ) : (
+            <span className="text-xs text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg border border-border">
+              Solo lectura (Conciliación reservada para Operador y Admin)
+            </span>
+          )}
         </div>
       </div>
 

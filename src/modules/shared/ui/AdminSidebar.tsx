@@ -40,9 +40,11 @@ interface AdminSidebarProps {
     email?: string | null;
     role?: string | null;
   } | null;
+  roleName?: string;
+  allowedItemIds?: string[];
 }
 
-export function AdminSidebar({ user }: AdminSidebarProps) {
+export function AdminSidebar({ user, roleName, allowedItemIds }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -51,8 +53,14 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
     router.push('/admin/login');
   };
 
-  const mainItems = MENU_REGISTRY.filter((item) => item.section === 'main').sort((a, b) => a.order - b.order);
-  const configItems = MENU_REGISTRY.filter((item) => item.section === 'config').sort((a, b) => a.order - b.order);
+  const mainItems = MENU_REGISTRY.filter(
+    (item) => item.section === 'main' && (!allowedItemIds || allowedItemIds.includes(item.id))
+  ).sort((a, b) => a.order - b.order);
+
+  const configItems = MENU_REGISTRY.filter(
+    (item) => item.section === 'config' && (!allowedItemIds || allowedItemIds.includes(item.id))
+  ).sort((a, b) => a.order - b.order);
+
 
   return (
     <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col min-h-screen border-r border-slate-800 shrink-0">
@@ -144,7 +152,20 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
       <div className="p-4 border-t border-slate-800 bg-slate-950/40">
         <div className="flex items-center justify-between">
           <div className="truncate pr-2">
-            <p className="text-sm font-medium text-white truncate">{user?.name || 'Usuario'}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-medium text-white truncate">{user?.name || 'Usuario'}</p>
+              {roleName && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                  roleName === 'Admin'
+                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                    : roleName === 'Operador'
+                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                }`}>
+                  {roleName}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-400 truncate">{user?.email || 'admin@traveldemo.com'}</p>
           </div>
           <button

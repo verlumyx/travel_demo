@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { guardPage } from '@/modules/shared/auth/require-permission';
+import { guardPage, hasPermission } from '@/modules/shared/auth/require-permission';
 import { createDepartureContainer } from '@/modules/departure/container';
 import { createTourContainer } from '@/modules/tour/container';
 import { SearchDepartureCommand } from '@/modules/departure/commands/search-departure.command';
@@ -32,6 +32,12 @@ interface PageProps {
 
 export default async function DeparturesListPage({ searchParams }: PageProps) {
   await guardPage('departures.list');
+
+  const [canCreate, canUpdate, canUpdateStatus] = await Promise.all([
+    hasPermission('departures.create'),
+    hasPermission('departures.update'),
+    hasPermission('departures.update-status'),
+  ]);
 
   const params = await searchParams;
   const q = params.q || undefined;
@@ -84,13 +90,15 @@ export default async function DeparturesListPage({ searchParams }: PageProps) {
           </p>
         </div>
 
-        <Link
-          href={departureRoutes.create()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm transition shadow-sm self-start sm:self-auto"
-        >
-          <Plus className="h-4 w-4" />
-          Nueva Salida
-        </Link>
+        {canCreate && (
+          <Link
+            href={departureRoutes.create()}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm transition shadow-sm self-start sm:self-auto"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva Salida
+          </Link>
+        )}
       </div>
 
       {/* Metrics Cards */}
@@ -304,7 +312,7 @@ export default async function DeparturesListPage({ searchParams }: PageProps) {
 
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <DepartureStatusSelect id={dep.id} currentStatus={dep.status} />
+                          {canUpdateStatus && <DepartureStatusSelect id={dep.id} currentStatus={dep.status} />}
                           <Link
                             href={departureRoutes.show(dep.id)}
                             title="Ver detalle y flota"
@@ -312,13 +320,15 @@ export default async function DeparturesListPage({ searchParams }: PageProps) {
                           >
                             <Eye className="h-4 w-4" />
                           </Link>
-                          <Link
-                            href={departureRoutes.edit(dep.id)}
-                            title="Editar salida"
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Link>
+                          {canUpdate && (
+                            <Link
+                              href={departureRoutes.edit(dep.id)}
+                              title="Editar salida"
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>
