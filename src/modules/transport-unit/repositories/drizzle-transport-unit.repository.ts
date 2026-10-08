@@ -1,7 +1,13 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, desc, eq, like, count } from 'drizzle-orm';
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
 import { applyFilters } from '@/modules/shared/infrastructure/drizzle-query-filters';
-import { transportUnits, TRANSPORT_UNIT_CODE_PREFIX, TRANSPORT_UNIT_CODE_WIDTH, type TransportUnitRow, type NewTransportUnitRow } from '../models/transport-unit.model';
+import {
+  transportUnits,
+  TRANSPORT_UNIT_CODE_PREFIX,
+  TRANSPORT_UNIT_CODE_WIDTH,
+  type TransportUnitRow,
+  type NewTransportUnitRow,
+} from '../models/transport-unit.model';
 import type { TransportUnitRepository } from './transport-unit.repository';
 import { TransportUnitNotFoundException } from '../exceptions/transport-unit-not-found.exception';
 import { transportUnitFilterMap } from './transport-unit.filters';
@@ -10,28 +16,40 @@ export class DrizzleTransportUnitRepository implements TransportUnitRepository {
   constructor(private readonly db: DbExecutor) {}
 
   private async generateNextCode(): Promise<string> {
-    const [{ nextval }] = await this.db.execute<{ nextval: number }>(sql`SELECT nextval('app_transport_units_code_seq')`);
-    return `${TRANSPORT_UNIT_CODE_PREFIX}${String(nextval).padStart(TRANSPORT_UNIT_CODE_WIDTH, '0')}`;
+    const scope = like(transportUnits.code, `${TRANSPORT_UNIT_CODE_PREFIX}%`);
+
+    await this.db
+      .select({ id: transportUnits.id })
+      .from(transportUnits)
+      .where(scope)
+      .orderBy(desc(transportUnits.code))
+      .limit(1)
+      .for('update');
+
+    const [last] = await this.db
+      .select({ code: transportUnits.code })
+      .from(transportUnits)
+      .where(scope)
+      .orderBy(desc(transportUnits.code))
+      .limit(1);
+
+    const next = last ? Number(last.code.slice(TRANSPORT_UNIT_CODE_PREFIX.length)) + 1 : 1;
+    return `${TRANSPORT_UNIT_CODE_PREFIX}${String(next).padStart(TRANSPORT_UNIT_CODE_WIDTH, '0')}`;
   }
 
   async create(data: Omit<NewTransportUnitRow, 'code' | 'status' | 'createdAt' | 'updatedAt'>): Promise<TransportUnitRow> {
-    // Note: Assuming a sequence exists or code generation logic is handled differently.
-    // We can also just count or use a sequence.
-    return this.db.transaction(async (tx) => {
-      // Create sequence if not exists logic ideally should be in migrations.
-      const [{ max_code }] = await tx.execute<{ max_code: string | null }>(
-        sql`SELECT MAX(code) as max_code FROM app_transport_units FOR UPDATE`
-      );
-      
-      let nextNum = 1;
-      if (max_code && max_code.startsWith(TRANSPORT_UNIT_CODE_PREFIX)) {
-        nextNum = parseInt(max_code.replace(TRANSPORT_UNIT_CODE_PREFIX, ''), 10) + 1;
-      }
-      const code = `${TRANSPORT_UNIT_CODE_PREFIX}${String(nextNum).padStart(TRANSPORT_UNIT_CODE_WIDTH, '0')}`;
-      
-      const [row] = await tx.insert(transportUnits).values({ ...data, code }).returning();
-      return row;
-    });
+    const code = await this.generateNextCode();
+
+    const [row] = await this.db
+      .insert(transportUnits)
+      .values({
+        ...data,
+        code,
+        status: 'active',
+      })
+      .returning();
+
+    return row;
   }
 
   async findById(id: string): Promise<TransportUnitRow | null> {
@@ -46,8 +64,14 @@ export class DrizzleTransportUnitRepository implements TransportUnitRepository {
   }
 
   async update(id: string, data: Partial<NewTransportUnitRow>): Promise<TransportUnitRow> {
-    const [row] = await this.db.update(transportUnits).set(data).where(eq(transportUnits.id, id)).returning();
-    if (!row) throw new TransportUnitNotFoundException(id);
+    await this.findOrFail(id);
+
+    const [row] = await this.db
+      .update(transportUnits)
+      .set(data)
+      .where(eq(transportUnits.id, id))
+      .returning();
+
     return row;
   }
 
@@ -55,14 +79,35 @@ export class DrizzleTransportUnitRepository implements TransportUnitRepository {
     return this.update(id, { status });
   }
 
-  async search(filters: { q?: string; status?: string; type?: string }, limit: number, offset: number): Promise<{ items: TransportUnitRow[]; total: number }> {
-    const whereClause = applyFilters(filters, transportUnitFilterMap);
-    
-    const [totalRow] = await this.db.select({ count: sql<number>`count(*)` }).from(transportUnits).where(whereClause);
-    const total = Number(totalRow.count);
-    
-    const items = await this.db.select().from(transportUnits).where(whereClause).limit(limit).offset(offset);
-    
-    return { items, total };
+  async search(
+    filters: { q?: string; status?: string; type?: string },
+    limit: number,
+    offset: number,
+  ): Promise<{ items: TransportUnitRow[]; total: number }> {
+    const conditions = applyFilters(transportUnitFilterMap, filters);
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [{ total }] = await this.db
+      .select({ total: count() })
+      .from(transportUnits)
+      .where(where);
+
+    const items = await this.db
+      .select()
+      .from(transportUnits)
+      .where(where)
+      .orderBy(desc(transportUnits.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return { items, total: Number(total) };
+  }
+
+  async getActive(): Promise<TransportUnitRow[]> {
+    return this.db
+      .select()
+      .from(transportUnits)
+      .where(eq(transportUnits.status, 'active'))
+      .orderBy(transportUnits.name);
   }
 }

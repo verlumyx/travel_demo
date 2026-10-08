@@ -3,6 +3,7 @@ import type { DestinationRow } from '../models/destination.model';
 export interface DestinationDto {
   id: string;
   code: string;
+  categoryId?: string | null;
   name: string;
   slug: string;
   description?: string | null;
@@ -10,7 +11,7 @@ export interface DestinationDto {
   state?: string | null;
   city?: string | null;
   country: string;
-  status: string;
+  status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string | null;
 }
@@ -19,6 +20,7 @@ export function toDestinationDto(row: DestinationRow): DestinationDto {
   return {
     id: row.id,
     code: row.code,
+    categoryId: row.categoryId,
     name: row.name,
     slug: row.slug,
     description: row.description,

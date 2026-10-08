@@ -5,9 +5,12 @@ import { ItineraryStopUpdateService } from './services/itinerary-stop-update.ser
 import { ItineraryStopFindService } from './services/itinerary-stop-find.service';
 import { ItineraryStopSearchService } from './services/itinerary-stop-search.service';
 
-export function createItineraryStopContainer(db: DbExecutor) {
+import { db as defaultDb } from '@/db/client';
+
+export function createItineraryStopContainer(db: DbExecutor = defaultDb) {
   const repository = new DrizzleItineraryStopRepository(db);
   return {
+    repository,
     createService: new ItineraryStopCreateService(repository),
     updateService: new ItineraryStopUpdateService(repository),
     findService: new ItineraryStopFindService(repository),

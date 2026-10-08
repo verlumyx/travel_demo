@@ -1,21 +1,25 @@
+import type { SearchTourInput } from '../validation/search-tour.schema';
+
 export class SearchTourCommand {
-  public readonly name?: string;
-  public readonly status?: 'draft' | 'active' | 'inactive';
-  public readonly limit: number;
-  public readonly offset: number;
+  constructor(
+    public readonly filters: {
+      q?: string;
+      name?: string;
+      status?: 'draft' | 'active' | 'inactive';
+    },
+    public readonly limit: number = 20,
+    public readonly offset: number = 0,
+  ) {}
 
-  constructor(init: {
-    readonly name?: string;
-  readonly status?: 'draft' | 'active' | 'inactive';
-    readonly limit?: number;
-    readonly offset?: number;
-  }) {
-    Object.assign(this, init);
-    this.limit = init.limit ?? 20;
-    this.offset = init.offset ?? 0;
-  }
-
-  static fromInput(data: any): SearchTourCommand {
-    return new SearchTourCommand(data);
+  static fromInput(input: SearchTourInput): SearchTourCommand {
+    return new SearchTourCommand(
+      {
+        q: input.q,
+        name: input.name,
+        status: input.status,
+      },
+      input.limit,
+      input.offset,
+    );
   }
 }

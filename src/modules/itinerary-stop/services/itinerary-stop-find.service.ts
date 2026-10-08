@@ -7,4 +7,8 @@ export class ItineraryStopFindService {
   async execute(id: string): Promise<ItineraryStopRow> {
     return this.repository.findOrFail(id);
   }
+
+  async findByTourId(tourId: string): Promise<ItineraryStopRow[]> {
+    return this.repository.findByTourId(tourId);
+  }
 }

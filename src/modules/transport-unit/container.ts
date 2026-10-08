@@ -6,7 +6,9 @@ import { TransportUnitUpdateStatusService } from './services/transport-unit-upda
 import { TransportUnitFindService } from './services/transport-unit-find.service';
 import { TransportUnitSearchService } from './services/transport-unit-search.service';
 
-export function createTransportUnitContainer(db: DbExecutor) {
+import { db as defaultDb } from '@/db/client';
+
+export function createTransportUnitContainer(db: DbExecutor = defaultDb) {
   const repository = new DrizzleTransportUnitRepository(db);
   return {
     createService: new TransportUnitCreateService(repository),

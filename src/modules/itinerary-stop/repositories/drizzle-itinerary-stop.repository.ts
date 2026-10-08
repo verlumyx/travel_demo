@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, desc, eq, count } from 'drizzle-orm';
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
 import { applyFilters } from '@/modules/shared/infrastructure/drizzle-query-filters';
 import { itineraryStops, type ItineraryStopRow, type NewItineraryStopRow } from '../models/itinerary-stop.model';
@@ -31,14 +31,34 @@ export class DrizzleItineraryStopRepository implements ItineraryStopRepository {
     return row;
   }
 
-  async search(filters: { tourId?: string; destinationId?: string }, limit: number, offset: number): Promise<{ items: ItineraryStopRow[]; total: number }> {
-    const whereClause = applyFilters(filters, itineraryStopFilterMap);
-    
-    const [totalRow] = await this.db.select({ count: sql<number>`count(*)` }).from(itineraryStops).where(whereClause);
-    const total = Number(totalRow.count);
-    
-    const items = await this.db.select().from(itineraryStops).where(whereClause).limit(limit).offset(offset);
-    
-    return { items, total };
+  async search(
+    filters: { tourId?: string; destinationId?: string },
+    limit: number,
+    offset: number,
+  ): Promise<{ items: ItineraryStopRow[]; total: number }> {
+    const conditions = applyFilters(itineraryStopFilterMap, filters);
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [{ total }] = await this.db
+      .select({ total: count() })
+      .from(itineraryStops)
+      .where(where);
+
+    const items = await this.db
+      .select()
+      .from(itineraryStops)
+      .where(where)
+      .limit(limit)
+      .offset(offset);
+
+    return { items, total: Number(total) };
+  }
+
+  async findByTourId(tourId: string): Promise<ItineraryStopRow[]> {
+    return this.db
+      .select()
+      .from(itineraryStops)
+      .where(eq(itineraryStops.tourId, tourId))
+      .orderBy(itineraryStops.dayNumber, itineraryStops.sortOrder);
   }
 }

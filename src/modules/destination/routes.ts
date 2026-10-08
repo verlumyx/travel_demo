@@ -1,3 +1,10 @@
+export const destinationRoutes = {
+  list: () => '/admin/destinations',
+  create: () => '/admin/destinations/create',
+  show: (id: string) => `/admin/destinations/${id}`,
+  edit: (id: string) => `/admin/destinations/${id}/edit`,
+};
+
 export const DestinationRoutes = {
   base: '/admin/destinations',
   create: '/admin/destinations/create',

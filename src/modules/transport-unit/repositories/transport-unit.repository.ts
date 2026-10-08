@@ -7,4 +7,5 @@ export interface TransportUnitRepository {
   update(id: string, data: Partial<NewTransportUnitRow>): Promise<TransportUnitRow>;
   updateStatus(id: string, status: TransportUnitRow['status']): Promise<TransportUnitRow>;
   search(filters: { q?: string; status?: string; type?: string }, limit: number, offset: number): Promise<{ items: TransportUnitRow[]; total: number }>;
+  getActive(): Promise<TransportUnitRow[]>;
 }

@@ -6,7 +6,9 @@ import { DestinationUpdateStatusService } from './services/destination-update-st
 import { DestinationFindService } from './services/destination-find.service';
 import { DestinationSearchService } from './services/destination-search.service';
 
-export function createDestinationContainer(db: DbExecutor) {
+import { db as defaultDb } from '@/db/client';
+
+export function createDestinationContainer(db: DbExecutor = defaultDb) {
   const repository = new DrizzleDestinationRepository(db);
   return {
     createService: new DestinationCreateService(repository),

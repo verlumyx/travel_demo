@@ -20,7 +20,16 @@ export const hasPermission = cache(async (action: string): Promise<boolean> => {
     | undefined;
   if (!role) return false;
   if (role.permissionType === 'all') return true;
-  return role.permissions.includes(action);
+
+  const perms = role.permissions || [];
+  if (perms.includes(action)) return true;
+
+  const [mod, act] = action.includes('.') ? action.split('.') : [];
+  if (mod && act) {
+    if (perms.includes(`${act}_${mod}`)) return true;
+    if (act === 'list' && perms.includes(`read_${mod}`)) return true;
+  }
+  return false;
 });
 
 /** For server actions: throws, the action returns an error state. */

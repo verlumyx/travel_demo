@@ -6,7 +6,9 @@ import { TourUpdateStatusService } from './services/tour-update-status.service';
 import { TourFindService } from './services/tour-find.service';
 import { TourSearchService } from './services/tour-search.service';
 
-export function createTourContainer(db: DbExecutor) {
+import { db as defaultDb } from '@/db/client';
+
+export function createTourContainer(db: DbExecutor = defaultDb) {
   const repository = new DrizzleTourRepository(db);
   return {
     createService: new TourCreateService(repository),

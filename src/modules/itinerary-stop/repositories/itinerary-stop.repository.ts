@@ -6,4 +6,5 @@ export interface ItineraryStopRepository {
   findOrFail(id: string): Promise<ItineraryStopRow>;
   update(id: string, data: Partial<NewItineraryStopRow>): Promise<ItineraryStopRow>;
   search(filters: { tourId?: string; destinationId?: string }, limit: number, offset: number): Promise<{ items: ItineraryStopRow[]; total: number }>;
+  findByTourId(tourId: string): Promise<ItineraryStopRow[]>;
 }
