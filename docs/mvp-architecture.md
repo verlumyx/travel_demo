@@ -12,6 +12,7 @@
 8. [Roles y Permisos](#8-roles-y-permisos)
 9. [Flujos de Negocio](#9-flujos-de-negocio)
 10. [Reglas de Negocio](#10-reglas-de-negocio)
+11. [Fases de Desarrollo](#11-fases-de-desarrollo)
 
 ---
 
@@ -111,6 +112,7 @@ src/
 │   │   └── admin/
 │   │       ├── login/page.tsx              # Login better-auth (email + password)
 │   │       ├── page.tsx                    # Dashboard general
+│   │       ├── categories/page.tsx         # CRUD de categorías de destinos
 │   │       ├── destinations/page.tsx       # CRUD de destinos
 │   │       ├── tours/page.tsx              # Creación y control de salidas
 │   │       ├── departures/page.tsx         # Programación de salidas específicas
@@ -130,6 +132,7 @@ src/
     ├── shared/                             # Infraestructura compartida
     ├── user/                               # Usuarios admin (better-auth)
     ├── role/                               # Roles y permisos
+    ├── category/                           # Categorías de destinos (playa, montaña, río, etc.)
     ├── destination/                        # Destinos turísticos
     ├── tour/                               # Tours / experiencias
     ├── itinerary-stop/                     # Paradas del itinerario
@@ -152,22 +155,23 @@ src/
 |----|--------------------|-------------------|----------------------------------------------------------------|
 | 1  | **User**           | `users`           | Gestión de cuentas del equipo administrativo (better-auth)     |
 | 2  | **Role**           | `roles`           | Roles y permisos granulares                                    |
-| 3  | **Destination**    | `destinations`    | Catálogo de destinos turísticos                                |
-| 4  | **Tour**           | `tours`           | Experiencias / paquetes turísticos con itinerario multi-parada |
-| 5  | **Itinerary Stop** | `itinerary-stops` | Paradas del itinerario de un tour                              |
-| 6  | **Departure**      | `departures`      | Salidas programadas (fecha, hora, cupos)                       |
-| 7  | **Transport Unit** | `transport-units` | Autobuses, vans, lanchas (con capacidad)                       |
-| 8  | **Departure Unit** | `departure-units` | Asignación de unidades de transporte a una salida              |
-| 9  | **Customer**       | `customers`       | Directorio CRM de pasajeros                                    |
-| 10 | **Booking**        | `bookings`        | Reservas de pasajeros con control de cupos                     |
-| 11 | **Passenger**      | `passengers`      | Pasajeros individuales registrados en una reserva              |
-| 12 | **Payment**        | `payments`        | Comprobantes de pago y conciliación                            |
+| 3  | **Category**       | `categories`      | Categorías de destinos turísticos (Playa, Montaña, Río, etc.)  |
+| 4  | **Destination**    | `destinations`    | Catálogo de destinos turísticos                                |
+| 5  | **Tour**           | `tours`           | Experiencias / paquetes turísticos con itinerario multi-parada |
+| 6  | **Itinerary Stop** | `itinerary-stops` | Paradas del itinerario de un tour                              |
+| 7  | **Departure**      | `departures`      | Salidas programadas (fecha, hora, cupos)                       |
+| 8  | **Transport Unit** | `transport-units` | Autobuses, vans, lanchas (con capacidad)                       |
+| 9  | **Departure Unit** | `departure-units` | Asignación de unidades de transporte a una salida              |
+| 10 | **Customer**       | `customers`       | Directorio CRM de pasajeros                                    |
+| 11 | **Booking**        | `bookings`        | Reservas de pasajeros con control de cupos                     |
+| 12 | **Passenger**      | `passengers`      | Pasajeros individuales registrados en una reserva              |
+| 13 | **Payment**        | `payments`        | Comprobantes de pago y conciliación                            |
 
 ### 5.2 Módulos del Portal del Cliente
 
 El portal del cliente no tiene módulos backend propios. Consume los mismos módulos de la sección admin pero con:
 
-- Servicios de solo lectura (Search/Find) para tours, destinos y salidas
+- Servicios de solo lectura (Search/Find) para tours, destinos, categorías y salidas (filtros y catálogo)
 - Servicios de escritura limitados para bookings y payments (solo crear, solo los propios)
 - Todo filtrado por el `customer_id` vinculado al `supabase_user_id`
 
@@ -259,13 +263,49 @@ export const roles = pgTable('app_roles', {
 
 ---
 
-### 6.3 `app_destinations` — Destinos turísticos
+### 6.3 `app_categories` — Categorías de destinos
+
+```ts
+// src/modules/category/models/category.model.ts
+export const categories = pgTable('app_categories', {
+    id: uuid('id').primaryKey(),
+    code: varchar('code', {length: 20}).notNull().unique(),
+    name: varchar('name', {length: 100}).notNull(),
+    slug: varchar('slug', {length: 100}).notNull().unique(),
+    description: text('description'),
+    icon: varchar('icon', {length: 100}),
+    imageUrl: varchar('image_url', {length: 500}),
+    status: varchar('status', {length: 50}).notNull().default('active')
+        .$type<'active' | 'inactive'>(),
+    createdAt: timestamp('created_at', {withTimezone: true}).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', {withTimezone: true}).defaultNow()
+        .$onUpdate(() => new Date()),
+});
+```
+
+| Columna       | Tipo                  | Nullable | Default    | Descripción                                        |
+|---------------|-----------------------|----------|------------|----------------------------------------------------|
+| `id`          | `uuid` PK             | No       | —          | UUID v7                                            |
+| `code`        | `varchar(20)` UNIQUE  | No       | —          | Código secuencial (`CAT000001`)                    |
+| `name`        | `varchar(100)`        | No       | —          | Nombre (ej: "Playa", "Montaña", "Río", "Selva")    |
+| `slug`        | `varchar(100)` UNIQUE | No       | —          | Slug URL-friendly (`playa`, `montana`, `rio`)      |
+| `description` | `text`                | Sí       | —          | Descripción opcional de la categoría               |
+| `icon`        | `varchar(100)`        | Sí       | —          | Identificador de icono (ej: Lucide `waves`, `mountain`) |
+| `image_url`   | `varchar(500)`        | Sí       | —          | Imagen representativa para filtros visuales        |
+| `status`      | `varchar(50)`         | No       | `'active'` | `active` \| `inactive`                             |
+| `created_at`  | `timestamptz`         | No       | `now()`    | —                                                  |
+| `updated_at`  | `timestamptz`         | Sí       | `now()`    | —                                                  |
+
+---
+
+### 6.4 `app_destinations` — Destinos turísticos
 
 ```ts
 // src/modules/destination/models/destination.model.ts
 export const destinations = pgTable('app_destinations', {
     id: uuid('id').primaryKey(),
     code: varchar('code', {length: 20}).notNull().unique(),
+    categoryId: uuid('category_id').references(() => categories.id),
     name: varchar('name', {length: 255}).notNull(),
     slug: varchar('slug', {length: 255}).notNull().unique(),
     description: text('description'),
@@ -281,24 +321,25 @@ export const destinations = pgTable('app_destinations', {
 });
 ```
 
-| Columna       | Tipo                  | Nullable | Default       | Descripción                           |
-|---------------|-----------------------|----------|---------------|---------------------------------------|
-| `id`          | `uuid` PK             | No       | —             | UUID v7                               |
-| `code`        | `varchar(20)` UNIQUE  | No       | —             | Código secuencial (`DES000001`)       |
-| `name`        | `varchar(255)`        | No       | —             | Nombre del destino (ej: "Los Roques") |
-| `slug`        | `varchar(255)` UNIQUE | No       | —             | Slug URL-friendly (`los-roques`)      |
-| `description` | `text`                | Sí       | —             | Descripción para el catálogo público  |
-| `image_url`   | `varchar(500)`        | Sí       | —             | Imagen principal                      |
-| `state`       | `varchar(100)`        | Sí       | —             | Estado/provincia                      |
-| `city`        | `varchar(100)`        | Sí       | —             | Ciudad                                |
-| `country`     | `varchar(100)`        | No       | `'Venezuela'` | País                                  |
-| `status`      | `varchar(50)`         | No       | `'active'`    | `active` \| `inactive`                |
-| `created_at`  | `timestamptz`         | No       | `now()`       | —                                     |
-| `updated_at`  | `timestamptz`         | Sí       | `now()`       | —                                     |
+| Columna       | Tipo                       | Nullable | Default       | Descripción                                    |
+|---------------|----------------------------|----------|---------------|------------------------------------------------|
+| `id`          | `uuid` PK                  | No       | —             | UUID v7                                        |
+| `code`        | `varchar(20)` UNIQUE       | No       | —             | Código secuencial (`DES000001`)                |
+| `category_id` | `uuid` FK → `app_categories`| Sí      | —             | Categoría asignada (Playa, Montaña, Río, etc.)  |
+| `name`        | `varchar(255)`             | No       | —             | Nombre del destino (ej: "Los Roques")          |
+| `slug`        | `varchar(255)` UNIQUE      | No       | —             | Slug URL-friendly (`los-roques`)               |
+| `description` | `text`                     | Sí       | —             | Descripción para el catálogo público           |
+| `image_url`   | `varchar(500)`             | Sí       | —             | Imagen principal                               |
+| `state`       | `varchar(100)`             | Sí       | —             | Estado/provincia                               |
+| `city`        | `varchar(100)`             | Sí       | —             | Ciudad                                         |
+| `country`     | `varchar(100)`             | No       | `'Venezuela'` | País                                           |
+| `status`      | `varchar(50)`              | No       | `'active'`    | `active` \| `inactive`                         |
+| `created_at`  | `timestamptz`              | No       | `now()`       | —                                              |
+| `updated_at`  | `timestamptz`              | Sí       | `now()`       | —                                              |
 
 ---
 
-### 6.4 `app_tours` — Tours / Experiencias
+### 6.5 `app_tours` — Tours / Experiencias
 
 ```ts
 // src/modules/tour/models/tour.model.ts
@@ -347,7 +388,7 @@ export const tours = pgTable('app_tours', {
 
 ---
 
-### 6.5 `app_itinerary_stops` — Paradas del itinerario
+### 6.6 `app_itinerary_stops` — Paradas del itinerario
 
 ```ts
 // src/modules/itinerary-stop/models/itinerary-stop.model.ts
@@ -381,7 +422,7 @@ export const itineraryStops = pgTable('app_itinerary_stops', {
 
 ---
 
-### 6.6 `app_transport_units` — Unidades de transporte
+### 6.7 `app_transport_units` — Unidades de transporte
 
 ```ts
 // src/modules/transport-unit/models/transport-unit.model.ts
@@ -421,7 +462,7 @@ export const transportUnits = pgTable('app_transport_units', {
 
 ---
 
-### 6.7 `app_departures` — Salidas programadas
+### 6.8 `app_departures` — Salidas programadas
 
 ```ts
 // src/modules/departure/models/departure.model.ts
@@ -466,7 +507,7 @@ export const departures = pgTable('app_departures', {
 
 ---
 
-### 6.8 `app_departure_units` — Asignación unidad ↔ salida (pivote)
+### 6.9 `app_departure_units` — Asignación unidad ↔ salida (pivote)
 
 ```ts
 // src/modules/departure-unit/models/departure-unit.model.ts
@@ -498,7 +539,7 @@ export const departureUnits = pgTable('app_departure_units', {
 
 ---
 
-### 6.9 `app_customers` — Pasajeros / Clientes (CRM)
+### 6.10 `app_customers` — Pasajeros / Clientes (CRM)
 
 ```ts
 // src/modules/customer/models/customer.model.ts
@@ -549,7 +590,7 @@ export const customers = pgTable('app_customers', {
 
 ---
 
-### 6.10 `app_bookings` — Reservas
+### 6.11 `app_bookings` — Reservas
 
 ```ts
 // src/modules/booking/models/booking.model.ts
@@ -599,7 +640,7 @@ pending → confirmed → partial_payment → paid
 
 ---
 
-### 6.11 `app_passengers` — Pasajeros de una reserva
+### 6.12 `app_passengers` — Pasajeros de una reserva
 
 ```ts
 // src/modules/passenger/models/passenger.model.ts
@@ -639,7 +680,7 @@ export const passengers = pgTable('app_passengers', {
 
 ---
 
-### 6.12 `app_payments` — Pagos y comprobantes
+### 6.13 `app_payments` — Pagos y comprobantes
 
 ```ts
 // src/modules/payment/models/payment.model.ts
@@ -706,6 +747,7 @@ erDiagram
     ROLES ||--o{ USERS: "tiene"
     USERS ||--o{ BOOKINGS: "crea"
     USERS ||--o{ PAYMENTS: "verifica"
+    CATEGORIES ||--o{ DESTINATIONS: "clasifica"
     DESTINATIONS ||--o{ ITINERARY_STOPS: "aparece en"
     TOURS ||--o{ ITINERARY_STOPS: "tiene"
     TOURS ||--o{ DEPARTURES: "tiene"
@@ -733,9 +775,19 @@ erDiagram
         varchar status
     }
 
+    CATEGORIES {
+        uuid id PK
+        varchar code UK
+        varchar name
+        varchar slug UK
+        varchar icon
+        varchar status
+    }
+
     DESTINATIONS {
         uuid id PK
         varchar code UK
+        uuid category_id FK
         varchar name
         varchar slug UK
         text description
@@ -851,6 +903,7 @@ Cada módulo expone 5 permisos estándar:
 |---------------------|---------|----------|-----------------------|
 | **users**           | ✅ Todo | ❌       | ❌                    |
 | **roles**           | ✅ Todo | ❌       | ❌                    |
+| **categories**      | ✅ Todo | ✅ Todo  | ✅ list, show         |
 | **destinations**    | ✅ Todo | ✅ Todo  | ✅ list, show         |
 | **tours**           | ✅ Todo | ✅ Todo  | ✅ list, show         |
 | **itinerary-stops** | ✅ Todo | ✅ Todo  | ✅ list, show         |
@@ -870,7 +923,8 @@ Cada módulo expone 5 permisos estándar:
 
 ```mermaid
 flowchart TD
-    A["Admin crea Destinos"] --> B["Admin crea Tour (draft)"]
+    A0["Admin crea Categorías (Playa, Montaña, etc.)"] --> A["Admin crea Destinos (asignando Categoría)"]
+    A --> B["Admin crea Tour (draft)"]
     B --> C["Admin agrega Paradas al Itinerario"]
     C --> D["Admin activa el Tour"]
     D --> E["Tour visible en catálogo público"]
@@ -890,7 +944,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["Pasajero navega catálogo"] --> B["Selecciona tour y salida"]
+    A["Pasajero navega catálogo (filtra por categoría / destino)"] --> B["Selecciona tour y salida"]
     B --> C["Indica cantidad de cupos"]
     C --> D{"¿Hay cupos?"}
     D -- Sí --> E["Registra datos de pasajeros"]
@@ -970,6 +1024,7 @@ Cada módulo principal tiene un código auto-generado y legible:
 
 | Módulo         | Prefijo | Ejemplo     |
 |----------------|---------|-------------|
+| Category       | `CAT`   | `CAT000001` |
 | Destination    | `DES`   | `DES000001` |
 | Tour           | `TUR`   | `TUR000001` |
 | Transport Unit | `UNI`   | `UNI000001` |
@@ -979,3 +1034,26 @@ Cada módulo principal tiene un código auto-generado y legible:
 | Payment        | `PAG`   | `PAG000001` |
 
 Los códigos se generan en el repositorio Drizzle dentro de la transacción de la Server Action, garantizando unicidad.
+
+### 10.7 Categorización y Filtros del Catálogo
+
+- Cada destino turístico puede estar asociado a una categoría activa (`app_categories`).
+- La administración puede gestionar libremente las categorías turísticas (`Playa`, `Montaña`, `Río`, `Selva`, `Aventura`, etc.).
+- En el catálogo público, el buscador y el directorio de tours permiten filtrar las salidas y experiencias turísticas por categoría, consultando las paradas del itinerario que correspondan a destinos de esa categoría.
+
+---
+
+## 11. Fases de Desarrollo
+
+El plan de ejecución incremental y secuencial del MVP se encuentra detallado en:
+👉 **[Plan de Implementación por Fases (docs/mvp-fases.md)](file:///home/verlumyx/Documentos/dev/traveldemo/docs/mvp-fases.md)**
+
+- **Fase 0:** Cimientos, Base de Datos y Autenticación Dual (`better-auth` + `Supabase Auth`)
+- **Fase 1:** Catálogo Base y Flota de Transporte (`categories`, `destinations`, `transport-units`, `tours`, `itinerary-stops`)
+- **Fase 2:** Operaciones y Programación de Salidas (`departures`, `departure-units`)
+- **Fase 3:** Operación Comercial Interna, CRM y Conciliación (`customers`, `bookings`, `passengers`, `payments`) — *Backoffice 100% operativo*
+- **Fase 4:** Catálogo Público y Checkout Autoservicio (`(catalogo)`, buscador con filtros por categoría, `/reservar/[id]`)
+- **Fase 5:** Portal Privado del Pasajero (`/cuenta/login`, `/cuenta/reservas`, vouchers digitales)
+- **Fase 6:** Roles Granulares, Seguridad, Métricas y Hardening (RBAC, dashboard KPIs, Playwright E2E)
+
+
