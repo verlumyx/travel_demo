@@ -1,8 +1,6 @@
 export const bookingRoutes = {
-  admin: {
-    base: '/admin/bookings',
-    create: '/admin/bookings/create',
-    edit: (id: string) => `/admin/bookings/${id}/edit`,
-    view: (id: string) => `/admin/bookings/${id}`
-  }
+  list: () => '/admin/bookings',
+  create: () => '/admin/bookings/create',
+  show: (id: string) => `/admin/bookings/${id}`,
+  edit: (id: string) => `/admin/bookings/${id}/edit`,
 };

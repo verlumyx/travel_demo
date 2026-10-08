@@ -1,4 +1,5 @@
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
+import { db as defaultDb } from '@/db/client';
 import { DrizzleBookingRepository } from './repositories/drizzle-booking.repository';
 import { BookingCreateService } from './services/booking-create.service';
 import { BookingUpdateService } from './services/booking-update.service';
@@ -6,13 +7,14 @@ import { BookingUpdateStatusService } from './services/booking-update-status.ser
 import { BookingFindService } from './services/booking-find.service';
 import { BookingSearchService } from './services/booking-search.service';
 
-export function createBookingContainer(db: DbExecutor) {
+export function createBookingContainer(db: DbExecutor = defaultDb) {
   const repository = new DrizzleBookingRepository(db);
   return {
+    repository,
     createService: new BookingCreateService(repository),
     updateService: new BookingUpdateService(repository),
     updateStatusService: new BookingUpdateStatusService(repository),
     findService: new BookingFindService(repository),
-    searchService: new BookingSearchService(repository)
+    searchService: new BookingSearchService(repository),
   };
 }

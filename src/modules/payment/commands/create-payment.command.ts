@@ -11,7 +11,8 @@ export class CreatePaymentCommand {
     public readonly receivedByName?: string,
     public readonly verifiedById?: string,
     public readonly verifiedAt?: Date,
-    public readonly notes?: string
+    public readonly notes?: string,
+    public readonly status?: 'pending' | 'verified' | 'rejected'
   ) {}
 
   static fromInput(input: any): CreatePaymentCommand {
@@ -27,7 +28,8 @@ export class CreatePaymentCommand {
       input.receivedByName,
       input.verifiedById,
       input.verifiedAt,
-      input.notes
+      input.notes,
+      input.status
     );
   }
 }

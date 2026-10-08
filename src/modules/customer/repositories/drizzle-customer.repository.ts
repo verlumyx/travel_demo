@@ -1,34 +1,28 @@
+import { and, count, desc, eq, like } from 'drizzle-orm';
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
-import { CustomerRepository } from './customer.repository';
-import { CreateCustomerCommand } from '../commands/create-customer.command';
-import { UpdateCustomerCommand } from '../commands/update-customer.command';
-import { SearchCustomerCommand } from '../commands/search-customer.command';
-import { CustomerRow, customers, CUSTOMER_CODE_PREFIX, CUSTOMER_CODE_WIDTH } from '../models/customer.model';
+import type { CustomerRepository } from './customer.repository';
+import type { CreateCustomerCommand } from '../commands/create-customer.command';
+import type { UpdateCustomerCommand } from '../commands/update-customer.command';
+import type { SearchCustomerCommand } from '../commands/search-customer.command';
+import {
+  customers,
+  CUSTOMER_CODE_PREFIX,
+  CUSTOMER_CODE_WIDTH,
+  type CustomerRow,
+} from '../models/customer.model';
 import { CustomerNotFoundException } from '../exceptions/customer-not-found.exception';
 import { applyFilters } from '@/modules/shared/infrastructure/drizzle-query-filters';
 import { customerFilters } from './customer.filters';
-import { eq, sql } from 'drizzle-orm';
 
 export class DrizzleCustomerRepository implements CustomerRepository {
   constructor(private readonly db: DbExecutor) {}
 
-  private async generateNextCode(tx: any): Promise<string> {
-    const result = await tx.execute(
-      sql`SELECT code FROM app_customers WHERE code LIKE ${CUSTOMER_CODE_PREFIX || '%'} ORDER BY id DESC LIMIT 1 FOR UPDATE`
-    );
-    const lastCode = result.rows[0]?.code as string | undefined;
-    let nextNumber = 1;
-    if (lastCode) {
-      const match = lastCode.match(/\d+$/);
-      if (match) nextNumber = parseInt(match[0], 10) + 1;
-    }
-    return `${CUSTOMER_CODE_PREFIX}${String(nextNumber).padStart(CUSTOMER_CODE_WIDTH, '0')}`;
-  }
-
   async create(command: CreateCustomerCommand): Promise<CustomerRow> {
-    return await this.db.transaction(async (tx) => {
-      const code = await this.generateNextCode(tx);
-      const [row] = await tx.insert(customers).values({
+    const code = await this.generateNextCode();
+
+    const [row] = await this.db
+      .insert(customers)
+      .values({
         id: command.id,
         code,
         firstName: command.firstName,
@@ -41,16 +35,23 @@ export class DrizzleCustomerRepository implements CustomerRepository {
         emergencyContact: command.emergencyContact,
         emergencyPhone: command.emergencyPhone,
         notes: command.notes,
-        source: command.source,
-        supabaseUserId: command.supabaseUserId
-      }).returning();
-      return row;
-    });
+        source: command.source ?? 'admin',
+        supabaseUserId: command.supabaseUserId,
+        status: 'active',
+      })
+      .returning();
+
+    return row;
   }
 
   async findById(id: string): Promise<CustomerRow | null> {
-    const rows = await this.db.select().from(customers).where(eq(customers.id, id));
-    return rows[0] || null;
+    const [row] = await this.db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, id))
+      .limit(1);
+
+    return row ?? null;
   }
 
   async findOrFail(id: string): Promise<CustomerRow> {
@@ -60,40 +61,96 @@ export class DrizzleCustomerRepository implements CustomerRepository {
   }
 
   async update(id: string, command: UpdateCustomerCommand): Promise<CustomerRow> {
-    const [row] = await this.db.update(customers).set({
-      firstName: command.firstName,
-      lastName: command.lastName,
-      email: command.email,
-      phone: command.phone,
-      documentType: command.documentType,
-      documentNumber: command.documentNumber,
-      birthDate: command.birthDate,
-      emergencyContact: command.emergencyContact,
-      emergencyPhone: command.emergencyPhone,
-      notes: command.notes,
-      source: command.source
-    }).where(eq(customers.id, id)).returning();
+    const [row] = await this.db
+      .update(customers)
+      .set({
+        firstName: command.firstName,
+        lastName: command.lastName,
+        email: command.email,
+        phone: command.phone,
+        documentType: command.documentType,
+        documentNumber: command.documentNumber,
+        birthDate: command.birthDate,
+        emergencyContact: command.emergencyContact,
+        emergencyPhone: command.emergencyPhone,
+        notes: command.notes,
+        source: command.source,
+        updatedAt: new Date(),
+      })
+      .where(eq(customers.id, id))
+      .returning();
+
     if (!row) throw new CustomerNotFoundException(id);
     return row;
   }
 
   async updateStatus(id: string, status: 'active' | 'inactive'): Promise<CustomerRow> {
-    const [row] = await this.db.update(customers).set({ status }).where(eq(customers.id, id)).returning();
+    const [row] = await this.db
+      .update(customers)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(customers.id, id))
+      .returning();
+
     if (!row) throw new CustomerNotFoundException(id);
     return row;
   }
 
-  async search(command: SearchCustomerCommand): Promise<{ data: CustomerRow[], total: number }> {
-    const query = this.db.select().from(customers).$dynamic();
-    applyFilters(query, command.filters, customerFilters);
-    const countQuery = this.db.select({ count: sql<number>`count(*)` }).from(customers).$dynamic();
-    applyFilters(countQuery, command.filters, customerFilters);
-    
-    const [data, [{ count }]] = await Promise.all([
-      query.limit(command.limit).offset(command.offset),
-      countQuery
-    ]);
-    
-    return { data, total: Number(count) };
+  async search(
+    command: SearchCustomerCommand,
+  ): Promise<{ data: CustomerRow[]; total: number }> {
+    const conditions = applyFilters(customerFilters, command.filters);
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [{ total }] = await this.db
+      .select({ total: count() })
+      .from(customers)
+      .where(where);
+
+    const data = await this.db
+      .select()
+      .from(customers)
+      .where(where)
+      .orderBy(desc(customers.createdAt))
+      .limit(command.limit)
+      .offset(command.offset);
+
+    return { data, total: Number(total) };
+  }
+
+  async getActive(): Promise<CustomerRow[]> {
+    return this.db
+      .select()
+      .from(customers)
+      .where(eq(customers.status, 'active'))
+      .orderBy(customers.firstName, customers.lastName);
+  }
+
+  private async generateNextCode(): Promise<string> {
+    const scope = like(customers.code, `${CUSTOMER_CODE_PREFIX}%`);
+
+    // Lock the highest row for update in the transaction
+    await this.db
+      .select({ id: customers.id })
+      .from(customers)
+      .where(scope)
+      .orderBy(desc(customers.code))
+      .limit(1)
+      .for('update');
+
+    const [last] = await this.db
+      .select({ code: customers.code })
+      .from(customers)
+      .where(scope)
+      .orderBy(desc(customers.code))
+      .limit(1);
+
+    const next = last
+      ? Number(last.code.slice(CUSTOMER_CODE_PREFIX.length)) + 1
+      : 1;
+
+    return `${CUSTOMER_CODE_PREFIX}${String(next).padStart(
+      CUSTOMER_CODE_WIDTH,
+      '0',
+    )}`;
   }
 }

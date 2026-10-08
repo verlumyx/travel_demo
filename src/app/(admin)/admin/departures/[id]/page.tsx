@@ -19,6 +19,7 @@ import {
   MapPin,
   Edit3,
   ArrowLeft,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 export const instant = false;
@@ -91,6 +92,13 @@ export default async function DepartureDetailPage({ params }: PageProps) {
         </div>
 
         <div className="flex items-center gap-3 self-start sm:self-auto">
+          <Link
+            href={`/admin/departures/${departure.id}/manifest`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-primary/20 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition shadow-xs"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" />
+            Manifiesto
+          </Link>
           <DepartureStatusSelect id={departure.id} currentStatus={departure.status} />
           <Link
             href={departureRoutes.edit(departure.id)}

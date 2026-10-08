@@ -1,9 +1,11 @@
 export const PAYMENT_MODULE = {
   id: 'payments',
-  label: 'Pagos',
+  label: 'Pagos y Conciliación',
   permissions: [
-    { id: 'payments.view', label: 'Ver pagos' },
-    { id: 'payments.create', label: 'Crear pagos' },
-    { id: 'payments.edit', label: 'Editar pagos' }
-  ]
+    { id: 'payments.list', label: 'Listar pagos' },
+    { id: 'payments.show', label: 'Ver detalle de pago' },
+    { id: 'payments.create', label: 'Registrar abonos y pagos' },
+    { id: 'payments.update', label: 'Editar información de pago' },
+    { id: 'payments.update-status', label: 'Verificar o rechazar pagos' },
+  ],
 };

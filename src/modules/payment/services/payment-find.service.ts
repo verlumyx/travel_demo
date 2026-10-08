@@ -10,4 +10,12 @@ export class PaymentFindService {
   async findOrFail(id: string) {
     return this.paymentRepository.findOrFail(id);
   }
+
+  async findWithDetails(id: string) {
+    return this.paymentRepository.findWithDetails(id);
+  }
+
+  async findOrFailWithDetails(id: string) {
+    return this.paymentRepository.findOrFailWithDetails(id);
+  }
 }
