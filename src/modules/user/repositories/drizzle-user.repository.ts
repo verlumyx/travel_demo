@@ -25,7 +25,7 @@ export class DrizzleUserRepository implements UserRepository {
   }
 
   async findById(id: string) {
-    const [row] = await this.db.db.select().from(app_users).where(eq(app_users.id, id));
+    const [row] = await this.db.select().from(app_users).where(eq(app_users.id, id));
     return row || null;
   }
 
@@ -37,16 +37,16 @@ export class DrizzleUserRepository implements UserRepository {
 
   async update(id: string, command: UpdateUserCommand) {
     await this.findOrFail(id); // verify exists
-    const [row] = await this.db.db.update(app_users)
+    const [row] = await this.db.update(app_users)
       .set(command)
       .where(eq(app_users.id, id))
       .returning();
     return row;
   }
 
-  async updateStatus(id: string, status: string) {
+  async updateStatus(id: string, status: any) {
     await this.findOrFail(id); // verify exists
-    const [row] = await this.db.db.update(app_users)
+    const [row] = await this.db.update(app_users)
       .set({ status })
       .where(eq(app_users.id, id))
       .returning();
@@ -55,7 +55,7 @@ export class DrizzleUserRepository implements UserRepository {
 
   async search(command: SearchUserCommand) {
     const conditions = applyFilters(command, userFilters);
-    const query = this.db.db.select().from(app_users);
+    const query = this.db.select().from(app_users);
     if (conditions.length > 0) {
       query.where(conditions[0]);
     }
@@ -64,7 +64,7 @@ export class DrizzleUserRepository implements UserRepository {
     query.limit(limit).offset(offset);
 
     const rows = await query;
-    const [{ count: totalRows }] = await this.db.db.select({ count: count() }).from(app_users);
+    const [{ count: totalRows }] = await this.db.select({ count: count() }).from(app_users);
     return { data: rows, total: Number(totalRows) };
   }
 }

@@ -27,5 +27,7 @@ export const app_toursRelations = relations(app_tours, ({ many }) => ({ itinerar
 export const TOUR_CODE_PREFIX = 'TUR';
 export const TOUR_CODE_WIDTH = 6;
 
+export const tours = app_tours;
+
 export type TourRow = InferSelectModel<typeof app_tours>;
 export type NewTourRow = InferInsertModel<typeof app_tours>;

@@ -39,3 +39,5 @@ export const departuresRelations = relations(departures, ({ one, many }) => ({
 
 export type DepartureRow = InferSelectModel<typeof departures>;
 export type NewDepartureRow = InferInsertModel<typeof departures>;
+
+export const app_departures = departures;

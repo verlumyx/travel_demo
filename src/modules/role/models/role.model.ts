@@ -15,5 +15,7 @@ export const app_roles = pgTable('app_roles', {
 
 
 
+export const roles = app_roles;
+
 export type RoleRow = InferSelectModel<typeof app_roles>;
 export type NewRoleRow = InferInsertModel<typeof app_roles>;

@@ -14,7 +14,8 @@ export type MenuEntry = {
  */
 export const MENU_REGISTRY: MenuEntry[] = [
   // === Main Section ===
-  { id: 'destinations', label: 'Destinos', url: '/admin/destinations', permission: 'destinations.list', icon: 'MapPin', order: 10, section: 'main' },
+  { id: 'categories', label: 'Categorías', url: '/admin/categories', permission: 'categories.list', icon: 'Tag', order: 10, section: 'main' },
+  { id: 'destinations', label: 'Destinos', url: '/admin/destinations', permission: 'destinations.list', icon: 'MapPin', order: 15, section: 'main' },
   { id: 'tours', label: 'Tours', url: '/admin/tours', permission: 'tours.list', icon: 'Compass', order: 20, section: 'main' },
   { id: 'departures', label: 'Salidas', url: '/admin/departures', permission: 'departures.list', icon: 'CalendarDays', order: 30, section: 'main' },
   { id: 'transport-units', label: 'Unidades', url: '/admin/transport-units', permission: 'transport-units.list', icon: 'Bus', order: 40, section: 'main' },

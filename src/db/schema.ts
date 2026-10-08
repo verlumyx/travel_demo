@@ -3,6 +3,8 @@
 
 export * from '@/modules/role/models/role.model';
 export * from '@/modules/user/models/user.model';
+export * from '@/modules/user/models/auth.model';
+export * from '@/modules/category/models/category.model';
 export * from '@/modules/destination/models/destination.model';
 export * from '@/modules/tour/models/tour.model';
 export * from '@/modules/itinerary-stop/models/itinerary-stop.model';

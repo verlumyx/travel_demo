@@ -25,7 +25,7 @@ export class DrizzleRoleRepository implements RoleRepository {
   }
 
   async findById(id: string) {
-    const [row] = await this.db.db.select().from(app_roles).where(eq(app_roles.id, id));
+    const [row] = await this.db.select().from(app_roles).where(eq(app_roles.id, id));
     return row || null;
   }
 
@@ -37,16 +37,16 @@ export class DrizzleRoleRepository implements RoleRepository {
 
   async update(id: string, command: UpdateRoleCommand) {
     await this.findOrFail(id); // verify exists
-    const [row] = await this.db.db.update(app_roles)
+    const [row] = await this.db.update(app_roles)
       .set(command)
       .where(eq(app_roles.id, id))
       .returning();
     return row;
   }
 
-  async updateStatus(id: string, status: string) {
+  async updateStatus(id: string, status: any) {
     await this.findOrFail(id); // verify exists
-    const [row] = await this.db.db.update(app_roles)
+    const [row] = await this.db.update(app_roles)
       .set({ status })
       .where(eq(app_roles.id, id))
       .returning();
@@ -55,7 +55,7 @@ export class DrizzleRoleRepository implements RoleRepository {
 
   async search(command: SearchRoleCommand) {
     const conditions = applyFilters(command, roleFilters);
-    const query = this.db.db.select().from(app_roles);
+    const query = this.db.select().from(app_roles);
     if (conditions.length > 0) {
       query.where(conditions[0]);
     }
@@ -64,7 +64,7 @@ export class DrizzleRoleRepository implements RoleRepository {
     query.limit(limit).offset(offset);
 
     const rows = await query;
-    const [{ count: totalRows }] = await this.db.db.select({ count: count() }).from(app_roles);
+    const [{ count: totalRows }] = await this.db.select({ count: count() }).from(app_roles);
     return { data: rows, total: Number(totalRows) };
   }
 }

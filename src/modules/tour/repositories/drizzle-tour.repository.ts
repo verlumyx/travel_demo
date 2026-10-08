@@ -41,7 +41,7 @@ export class DrizzleTourRepository implements TourRepository {
   }
 
   async findById(id: string) {
-    const [row] = await this.db.db.select().from(app_tours).where(eq(app_tours.id, id));
+    const [row] = await this.db.select().from(app_tours).where(eq(app_tours.id, id));
     return row || null;
   }
 
@@ -53,16 +53,16 @@ export class DrizzleTourRepository implements TourRepository {
 
   async update(id: string, command: UpdateTourCommand) {
     await this.findOrFail(id); // verify exists
-    const [row] = await this.db.db.update(app_tours)
+    const [row] = await this.db.update(app_tours)
       .set(command)
       .where(eq(app_tours.id, id))
       .returning();
     return row;
   }
 
-  async updateStatus(id: string, status: string) {
+  async updateStatus(id: string, status: any) {
     await this.findOrFail(id); // verify exists
-    const [row] = await this.db.db.update(app_tours)
+    const [row] = await this.db.update(app_tours)
       .set({ status })
       .where(eq(app_tours.id, id))
       .returning();
@@ -71,7 +71,7 @@ export class DrizzleTourRepository implements TourRepository {
 
   async search(command: SearchTourCommand) {
     const conditions = applyFilters(command, tourFilters);
-    const query = this.db.db.select().from(app_tours);
+    const query = this.db.select().from(app_tours);
     if (conditions.length > 0) {
       query.where(conditions[0]);
     }
@@ -80,7 +80,7 @@ export class DrizzleTourRepository implements TourRepository {
     query.limit(limit).offset(offset);
 
     const rows = await query;
-    const [{ count: totalRows }] = await this.db.db.select({ count: count() }).from(app_tours);
+    const [{ count: totalRows }] = await this.db.select({ count: count() }).from(app_tours);
     return { data: rows, total: Number(totalRows) };
   }
 }

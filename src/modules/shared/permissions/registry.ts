@@ -1,5 +1,6 @@
 import { ROLE_MODULE } from '@/modules/role/permissions';
 import { USER_MODULE } from '@/modules/user/permissions';
+import { CATEGORY_MODULE } from '@/modules/category/permissions';
 import { DESTINATION_MODULE } from '@/modules/destination/permissions';
 import { TOUR_MODULE } from '@/modules/tour/permissions';
 import { ITINERARY_STOP_MODULE } from '@/modules/itinerary-stop/permissions';
@@ -14,6 +15,7 @@ import { PAYMENT_MODULE } from '@/modules/payment/permissions';
 export const PERMISSION_REGISTRY = [
   ROLE_MODULE,
   USER_MODULE,
+  CATEGORY_MODULE,
   DESTINATION_MODULE,
   TOUR_MODULE,
   ITINERARY_STOP_MODULE,
