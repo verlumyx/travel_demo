@@ -11,6 +11,7 @@ import { db as defaultDb } from '@/db/client';
 export function createTourContainer(db: DbExecutor = defaultDb) {
   const repository = new DrizzleTourRepository(db);
   return {
+    repository,
     createService: new TourCreateService(repository),
     updateService: new TourUpdateService(repository),
     updateStatusService: new TourUpdateStatusService(repository),

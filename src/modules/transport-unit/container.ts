@@ -11,6 +11,7 @@ import { db as defaultDb } from '@/db/client';
 export function createTransportUnitContainer(db: DbExecutor = defaultDb) {
   const repository = new DrizzleTransportUnitRepository(db);
   return {
+    repository,
     createService: new TransportUnitCreateService(repository),
     updateService: new TransportUnitUpdateService(repository),
     updateStatusService: new TransportUnitUpdateStatusService(repository),

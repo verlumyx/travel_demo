@@ -12,10 +12,10 @@ export class CreateDepartureUnitCommand {
     return new CreateDepartureUnitCommand(
       input.departureId,
       input.transportUnitId,
-      input.assignedCapacity,
-      input.driverNameOverride ?? null,
-      input.driverPhoneOverride ?? null,
-      input.notes ?? null,
+      Number(input.assignedCapacity),
+      input.driverNameOverride || null,
+      input.driverPhoneOverride || null,
+      input.notes || null,
     );
   }
 }

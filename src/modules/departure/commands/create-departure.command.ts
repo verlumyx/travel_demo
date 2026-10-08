@@ -17,11 +17,11 @@ export class CreateDepartureCommand {
       input.tourId,
       new Date(input.departureDate),
       input.returnDate ? new Date(input.returnDate) : null,
-      input.meetingPoint ?? null,
-      input.meetingTime ?? null,
-      input.priceOverride ?? null,
-      input.totalCapacity,
-      input.notes ?? null,
+      input.meetingPoint || null,
+      input.meetingTime || null,
+      input.priceOverride || null,
+      Number(input.totalCapacity ?? 0),
+      input.notes || null,
     );
   }
 }

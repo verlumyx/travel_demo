@@ -13,6 +13,7 @@ export const departureUnits = pgTable('app_departure_units', {
   driverPhoneOverride: varchar('driver_phone_override', { length: 50 }),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
 }, (t) => [
   index('app_departure_units_departure_id_idx').on(t.departureId),
   index('app_departure_units_transport_unit_id_idx').on(t.transportUnitId),
