@@ -125,6 +125,78 @@ export class DrizzleCustomerRepository implements CustomerRepository {
       .orderBy(customers.firstName, customers.lastName);
   }
 
+  async findBySupabaseUserId(supabaseUserId: string): Promise<CustomerRow | null> {
+    const [row] = await this.db
+      .select()
+      .from(customers)
+      .where(eq(customers.supabaseUserId, supabaseUserId))
+      .limit(1);
+
+    return row ?? null;
+  }
+
+  async findByEmail(email: string): Promise<CustomerRow | null> {
+    const [row] = await this.db
+      .select()
+      .from(customers)
+      .where(eq(customers.email, email.toLowerCase().trim()))
+      .limit(1);
+
+    return row ?? null;
+  }
+
+  async linkSupabaseUser(id: string, supabaseUserId: string): Promise<CustomerRow> {
+    const [row] = await this.db
+      .update(customers)
+      .set({
+        supabaseUserId,
+        updatedAt: new Date(),
+      })
+      .where(eq(customers.id, id))
+      .returning();
+
+    if (!row) throw new CustomerNotFoundException(id);
+    return row;
+  }
+
+  async syncFromSupabaseUser(data: {
+    supabaseUserId: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    phone?: string | null;
+  }): Promise<CustomerRow> {
+    // 1. Try to find by supabaseUserId
+    const existingBySupabase = await this.findBySupabaseUserId(data.supabaseUserId);
+    if (existingBySupabase) return existingBySupabase;
+
+    // 2. Try to find by email and link
+    const cleanEmail = data.email.toLowerCase().trim();
+    const existingByEmail = await this.findByEmail(cleanEmail);
+    if (existingByEmail) {
+      return this.linkSupabaseUser(existingByEmail.id, data.supabaseUserId);
+    }
+
+    // 3. Create new customer
+    const code = await this.generateNextCode();
+    const [created] = await this.db
+      .insert(customers)
+      .values({
+        id: crypto.randomUUID(),
+        code,
+        firstName: data.firstName?.trim() || 'Pasajero',
+        lastName: data.lastName?.trim() || 'Web',
+        email: cleanEmail,
+        phone: data.phone ?? null,
+        source: 'portal',
+        supabaseUserId: data.supabaseUserId,
+        status: 'active',
+      })
+      .returning();
+
+    return created;
+  }
+
   private async generateNextCode(): Promise<string> {
     const scope = like(customers.code, `${CUSTOMER_CODE_PREFIX}%`);
 

@@ -11,4 +11,14 @@ export interface CustomerRepository {
   updateStatus(id: string, status: 'active' | 'inactive'): Promise<CustomerRow>;
   search(command: SearchCustomerCommand): Promise<{ data: CustomerRow[]; total: number }>;
   getActive(): Promise<CustomerRow[]>;
+  findBySupabaseUserId(supabaseUserId: string): Promise<CustomerRow | null>;
+  findByEmail(email: string): Promise<CustomerRow | null>;
+  linkSupabaseUser(id: string, supabaseUserId: string): Promise<CustomerRow>;
+  syncFromSupabaseUser(data: {
+    supabaseUserId: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    phone?: string | null;
+  }): Promise<CustomerRow>;
 }
