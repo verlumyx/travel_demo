@@ -118,13 +118,13 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
     <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-10">
       {/* Header & Title */}
       <div className="space-y-3 text-center sm:text-left">
-        <span className="text-xs font-bold uppercase tracking-wider text-primary">
+        <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
           Catálogo Oficial
         </span>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
           Tours y Experiencias Guiadas
         </h1>
-        <p className="text-sm text-muted-foreground max-w-2xl">
+        <p className="text-sm text-slate-600 max-w-2xl">
           Selecciona tu próximo destino, revisa el itinerario detallado y asegura tus cupos con confirmación en tiempo real.
         </p>
       </div>
@@ -137,8 +137,8 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
             href="/tours"
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
               !category
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Todas las categorías
@@ -149,8 +149,8 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
               href={`/tours?category=${c.slug}${q ? `&q=${q}` : ''}`}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition ${
                 category === c.slug
-                  ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
               {c.name}
@@ -159,17 +159,17 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
         </div>
 
         {/* Search bar & Range inputs */}
-        <form method="get" className="bg-card border border-border rounded-2xl p-4 shadow-xs flex flex-col md:flex-row gap-3">
+        <form method="get" className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row gap-3">
           {category && <input type="hidden" name="category" value={category} />}
 
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input
               type="text"
               name="q"
               defaultValue={q ?? ''}
               placeholder="Buscar tour por nombre, destino o palabras clave..."
-              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+              className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
           </div>
 
@@ -179,13 +179,13 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
               name="maxPrice"
               defaultValue={maxPrice ?? ''}
               placeholder="Precio máx ($)"
-              className="w-28 px-3 py-2 text-xs rounded-xl border border-input bg-background font-mono focus:ring-2 focus:ring-ring"
+              className="w-32 px-3 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 font-mono focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             />
 
             <select
               name="duration"
               defaultValue={duration ?? ''}
-              className="px-3 py-2 text-xs rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+              className="px-3 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">Cualquier duración</option>
               <option value="1">1 día (Full Day)</option>
@@ -196,7 +196,7 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
 
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-secondary text-secondary-foreground text-xs font-semibold hover:bg-secondary/80 transition cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500 transition shadow-xs cursor-pointer"
             >
               Filtrar
             </button>
@@ -206,13 +206,13 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
 
       {/* Tours Grid */}
       {filteredTours.length === 0 ? (
-        <div className="p-16 text-center text-xs text-muted-foreground border border-dashed border-border rounded-3xl space-y-3 bg-card/30">
-          <Compass className="h-8 w-8 text-muted-foreground mx-auto" />
-          <p className="text-sm font-semibold text-foreground">No encontramos tours con estos criterios.</p>
+        <div className="p-16 text-center text-xs text-slate-500 border border-dashed border-slate-300 rounded-3xl space-y-3 bg-white">
+          <Compass className="h-8 w-8 text-slate-400 mx-auto" />
+          <p className="text-sm font-semibold text-slate-800">No encontramos tours con estos criterios.</p>
           <p>Prueba limpiando los filtros o buscando con otro término.</p>
           <Link
             href="/tours"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition pt-2"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500 transition pt-2"
           >
             Ver todos los tours
           </Link>
@@ -222,11 +222,11 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
           {filteredTours.map((t) => (
             <div
               key={t.id}
-              className="group bg-card border border-border hover:border-primary/40 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="group bg-white border border-slate-200 hover:border-indigo-300 rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all flex flex-col justify-between"
             >
               <div>
                 {/* Image Cover */}
-                <div className="relative aspect-16/10 bg-slate-800 overflow-hidden">
+                <div className="relative aspect-16/10 bg-slate-100 overflow-hidden">
                   {t.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -235,7 +235,7 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-slate-900 to-indigo-900 text-indigo-300">
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-indigo-900 to-slate-900 text-indigo-300">
                       <Compass className="h-12 w-12 opacity-40" />
                     </div>
                   )}
@@ -260,29 +260,29 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
                 {/* Content */}
                 <div className="p-5 space-y-3">
                   <div>
-                    <span className="text-[10px] font-mono font-bold text-primary block">
+                    <span className="text-[10px] font-mono font-bold text-indigo-600 block">
                       {t.code} {t.destinationName ? `• ${t.destinationName}` : ''}
                     </span>
-                    <h3 className="text-base font-bold text-foreground leading-snug group-hover:text-primary transition mt-0.5">
+                    <h3 className="text-base font-bold text-slate-900 leading-snug group-hover:text-indigo-600 transition mt-0.5">
                       {t.name}
                     </h3>
                   </div>
 
                   {t.shortDescription && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                       {t.shortDescription}
                     </p>
                   )}
 
                   {/* Highlights pills */}
-                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground pt-1">
+                  <div className="flex items-center gap-3 text-[11px] text-slate-500 pt-1">
                     {t.includesFood && (
-                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <span className="flex items-center gap-1 text-emerald-600 font-medium">
                         <Utensils className="h-3 w-3" /> Comida
                       </span>
                     )}
                     {t.includesLodging && (
-                      <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-medium">
+                      <span className="flex items-center gap-1 text-indigo-600 font-medium">
                         <BedDouble className="h-3 w-3" /> Hotel
                       </span>
                     )}
@@ -291,14 +291,14 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
               </div>
 
               {/* Bottom Card Footer */}
-              <div className="p-5 pt-0 border-t border-border/60 mt-3 flex items-center justify-between">
+              <div className="p-5 pt-0 border-t border-slate-100 mt-3 flex items-center justify-between">
                 <div>
                   {t.upcomingDeparturesCount > 0 ? (
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block">
+                    <span className="text-[11px] text-emerald-600 font-semibold block">
                       {t.upcomingDeparturesCount} salida(s) disponible(s)
                     </span>
                   ) : (
-                    <span className="text-[11px] text-muted-foreground block">
+                    <span className="text-[11px] text-slate-400 block">
                       Próximas fechas por abrir
                     </span>
                   )}
@@ -306,7 +306,7 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
 
                 <Link
                   href={`/tours/${t.slug}`}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500 transition shadow-xs"
                 >
                   Ver Ficha <ArrowRight className="h-3 w-3" />
                 </Link>

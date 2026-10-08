@@ -22,7 +22,7 @@ export default async function AdminLayout({
   // If there is no authenticated user (e.g. on /admin/login), render full-screen content without sidebar
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center">
+      <div className="dark min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center">
         <FlashToaster flash={flash} />
         {children}
       </div>
@@ -39,7 +39,7 @@ export default async function AdminLayout({
   const allowedItemIds = allowedChecks.filter((id): id is string => id !== null);
 
   return (
-    <div className="min-h-screen flex bg-slate-950 text-slate-100">
+    <div className="dark min-h-screen flex bg-slate-950 text-slate-100">
       <AdminSidebar
         user={user}
         roleName={user.roleName}

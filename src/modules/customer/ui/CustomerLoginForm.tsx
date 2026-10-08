@@ -177,7 +177,7 @@ export function CustomerLoginForm({ demoCustomers = [] }: CustomerLoginFormProps
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@correo.com"
                   required
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-input bg-background text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring"
                 />
               </div>
             </div>

@@ -166,7 +166,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
               id="slotsSelect"
               value={slotsCount}
               onChange={(e) => handleSlotsChange(parseInt(e.target.value, 10))}
-              className="px-4 py-2 text-sm font-bold rounded-xl border border-input bg-background font-mono focus:ring-2 focus:ring-ring"
+              className="px-4 py-2 text-sm font-bold rounded-xl border border-input bg-background text-foreground font-mono focus:ring-2 focus:ring-ring"
             >
               {Array.from({ length: Math.min(departure.availableSlots, 10) }, (_, i) => i + 1).map((n) => (
                 <option key={n} value={n}>
@@ -235,7 +235,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 type="text"
                 placeholder="Ej: María Alejandra"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
               {state.fieldErrors?.holderFirstName && (
                 <p className="text-destructive text-[11px]">{state.fieldErrors.holderFirstName[0]}</p>
@@ -252,7 +252,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 type="text"
                 placeholder="Ej: Pérez Rodríguez"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
               {state.fieldErrors?.holderLastName && (
                 <p className="text-destructive text-[11px]">{state.fieldErrors.holderLastName[0]}</p>
@@ -269,7 +269,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 type="email"
                 placeholder="tu@correo.com"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
               {state.fieldErrors?.holderEmail && (
                 <p className="text-destructive text-[11px]">{state.fieldErrors.holderEmail[0]}</p>
@@ -286,7 +286,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 type="tel"
                 placeholder="Ej: +58 412 1234567"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
               {state.fieldErrors?.holderPhone && (
                 <p className="text-destructive text-[11px]">{state.fieldErrors.holderPhone[0]}</p>
@@ -301,7 +301,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 id="holderDocumentType"
                 name="holderDocumentType"
                 defaultValue="cedula"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               >
                 <option value="cedula">Cédula de Identidad (V / E)</option>
                 <option value="passport">Pasaporte</option>
@@ -319,7 +319,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 type="text"
                 placeholder="Ej: 18492019"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background font-mono focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground font-mono focus:ring-2 focus:ring-ring"
               />
               {state.fieldErrors?.holderDocumentNumber && (
                 <p className="text-destructive text-[11px]">{state.fieldErrors.holderDocumentNumber[0]}</p>
@@ -335,7 +335,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 name="emergencyContact"
                 type="text"
                 placeholder="Ej: Carlos Pérez (Hermano)"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
             </div>
 
@@ -348,7 +348,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 name="emergencyPhone"
                 type="tel"
                 placeholder="Ej: 0414 9876543"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>
@@ -385,7 +385,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                           onChange={(e) => updateCompanion(idx, 'firstName', e.target.value)}
                           placeholder="Nombres"
                           required
-                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-xs"
+                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-xs"
                         />
                       </div>
 
@@ -397,7 +397,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                           onChange={(e) => updateCompanion(idx, 'lastName', e.target.value)}
                           placeholder="Apellidos"
                           required
-                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-xs"
+                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-xs"
                         />
                       </div>
 
@@ -408,7 +408,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                           value={comp.documentNumber}
                           onChange={(e) => updateCompanion(idx, 'documentNumber', e.target.value)}
                           placeholder="V-00000000"
-                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-xs font-mono"
+                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-xs font-mono"
                         />
                       </div>
 
@@ -419,7 +419,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                           value={comp.phone}
                           onChange={(e) => updateCompanion(idx, 'phone', e.target.value)}
                           placeholder="Teléfono móvil"
-                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-xs"
+                          className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-xs"
                         />
                       </div>
                     </div>
@@ -473,7 +473,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
               name="paymentMethod"
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-xs focus:ring-2 focus:ring-ring font-medium"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground text-xs focus:ring-2 focus:ring-ring font-medium"
             >
               <option value="pago_movil">Pago Móvil (Bolívares - VES)</option>
               <option value="zelle">Zelle (USD)</option>
@@ -550,7 +550,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 type="text"
                 placeholder="Ej: 048291, Ref #9821374"
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background font-mono focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground font-mono focus:ring-2 focus:ring-ring"
               />
               {state.fieldErrors?.paymentReference && (
                 <p className="text-destructive text-[11px]">{state.fieldErrors.paymentReference[0]}</p>
@@ -566,7 +566,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 name="proofImageUrl"
                 type="url"
                 placeholder="https://... o enlace a tu comprobante en la nube"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
             </div>
 
@@ -579,7 +579,7 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
                 name="notes"
                 rows={2}
                 placeholder="Ej: Asiento en pasillo, requerimiento dietético, etc."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background focus:ring-2 focus:ring-ring"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>

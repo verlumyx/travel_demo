@@ -84,7 +84,7 @@ export function CustomerReportPaymentForm({
                 id="method"
                 name="method"
                 defaultValue="pago_movil"
-                className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-xl border border-input bg-background text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring"
                 required
               >
                 <option value="pago_movil">Pago Móvil (VES)</option>
@@ -111,7 +111,7 @@ export function CustomerReportPaymentForm({
                   type="text"
                   defaultValue={pendingBalance}
                   placeholder="0.00"
-                  className="w-full pl-7 pr-3 py-2 rounded-xl border border-input bg-background font-mono font-bold focus:outline-hidden focus:ring-2 focus:ring-ring"
+                  className="w-full pl-7 pr-3 py-2 rounded-xl border border-input bg-background text-foreground font-mono font-bold focus:outline-hidden focus:ring-2 focus:ring-ring"
                   required
                 />
               </div>
@@ -129,7 +129,7 @@ export function CustomerReportPaymentForm({
                 name="reference"
                 type="text"
                 placeholder="Ej: Ref 0847291, Hash #92819"
-                className="w-full px-3 py-2 rounded-xl border border-input bg-background font-mono focus:outline-hidden focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-xl border border-input bg-background text-foreground font-mono focus:outline-hidden focus:ring-2 focus:ring-ring"
                 required
               />
               {state.fieldErrors?.reference && (
@@ -146,7 +146,7 @@ export function CustomerReportPaymentForm({
                 name="proofImageUrl"
                 type="url"
                 placeholder="https://... o enlace a tu comprobante"
-                className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-xl border border-input bg-background text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring"
               />
             </div>
 
@@ -159,7 +159,7 @@ export function CustomerReportPaymentForm({
                 name="notes"
                 rows={2}
                 placeholder="Indica cualquier detalle sobre tu pago (ej. banco emisor, titular de la cuenta)..."
-                className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
+                className="w-full px-3 py-2 rounded-xl border border-input bg-background text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>
