@@ -6,9 +6,8 @@ import { toCategoryDto } from '@/modules/category/serializers/category.serialize
 import { categoryRoutes } from '@/modules/category/routes';
 import { CategoryStatusBadge } from '@/modules/category/ui/CategoryStatusBadge';
 import { CategoryStatusToggle } from '@/modules/category/ui/CategoryStatusToggle';
-import { db } from '@/db/client';
-import { app_destinations } from '@/modules/destination/models/destination.model';
-import { eq } from 'drizzle-orm';
+import { createDestinationContainer } from '@/modules/destination/container';
+import { toDestinationDto, type DestinationDto } from '@/modules/destination/serializers/destination.serializer';
 import { ArrowLeft, Edit3, Tag, MapPin, Calendar, Globe } from 'lucide-react';
 
 export const instant = false;
@@ -22,6 +21,8 @@ export default async function CategoryDetailPage({ params }: PageProps) {
   const { id } = await params;
 
   const container = createCategoryContainer();
+  const destContainer = createDestinationContainer();
+
   let category;
   try {
     const row = await container.findService.execute(id);
@@ -31,10 +32,8 @@ export default async function CategoryDetailPage({ params }: PageProps) {
   }
 
   // Find destinations linked to this category
-  const linkedDestinations = await db
-    .select()
-    .from(app_destinations)
-    .where(eq(app_destinations.categoryId, id));
+  const rawDestinations = await destContainer.repository.findByCategoryId(id);
+  const linkedDestinations = rawDestinations.map(toDestinationDto);
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -129,7 +128,7 @@ export default async function CategoryDetailPage({ params }: PageProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {linkedDestinations.map((dest) => (
+            {linkedDestinations.map((dest: DestinationDto) => (
               <Link
                 key={dest.id}
                 href={`/admin/destinations/${dest.id}`}

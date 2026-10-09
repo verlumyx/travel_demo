@@ -1,11 +1,7 @@
 import Link from 'next/link';
-import { and, desc, eq, ilike, lte, or } from 'drizzle-orm';
-import { db } from '@/db/client';
-import { app_tours } from '@/modules/tour/models/tour.model';
-import { app_categories } from '@/modules/category/models/category.model';
-import { app_destinations } from '@/modules/destination/models/destination.model';
-import { itineraryStops } from '@/modules/itinerary-stop/models/itinerary-stop.model';
-import { departures } from '@/modules/departure/models/departure.model';
+import { createCategoryContainer } from '@/modules/category/container';
+import { createTourContainer } from '@/modules/tour/container';
+import { toCategoryDto } from '@/modules/category/serializers/category.serializer';
 import {
   Compass,
   Calendar,
@@ -35,79 +31,21 @@ interface PageProps {
 export default async function ToursCatalogPage({ searchParams }: PageProps) {
   const { q, category, maxPrice, duration } = await searchParams;
 
-  // 1. Fetch all categories for filter chips
-  const categories = await db.select().from(app_categories);
-  const selectedCat = categories.find((c) => c.slug === category);
+  const catContainer = createCategoryContainer();
+  const tourContainer = createTourContainer();
 
-  // 2. Build where conditions for tours
-  const conditions = [eq(app_tours.status, 'active')];
-
-  if (q && q.trim()) {
-    conditions.push(
-      or(
-        ilike(app_tours.name, `%${q.trim()}%`),
-        ilike(app_tours.description, `%${q.trim()}%`),
-        ilike(app_tours.shortDescription, `%${q.trim()}%`),
-      )!,
-    );
-  }
-
-  if (maxPrice && Number(maxPrice) > 0) {
-    conditions.push(lte(app_tours.basePrice, String(maxPrice)));
-  }
-
-  if (duration && Number(duration) > 0) {
-    conditions.push(lte(app_tours.durationDays, Number(duration)));
-  }
-
-  const allActiveTours = await db
-    .select()
-    .from(app_tours)
-    .where(and(...conditions))
-    .orderBy(desc(app_tours.createdAt));
-
-  // 3. For each tour, fetch upcoming departures and destination category
-  const tourCards = await Promise.all(
-    allActiveTours.map(async (t) => {
-      // Find upcoming departures
-      const futureDepartures = await db
-        .select()
-        .from(departures)
-        .where(
-          and(
-            eq(departures.tourId, t.id),
-            eq(departures.status, 'scheduled'),
-          ),
-        )
-        .orderBy(departures.departureDate)
-        .limit(3);
-
-      // Find primary destination and category if available
-      const [stop] = await db
-        .select({
-          destinationName: app_destinations.name,
-          categoryName: app_categories.name,
-          categorySlug: app_categories.slug,
-        })
-        .from(itineraryStops)
-        .innerJoin(app_destinations, eq(itineraryStops.destinationId, app_destinations.id))
-        .leftJoin(app_categories, eq(app_destinations.categoryId, app_categories.id))
-        .where(eq(itineraryStops.tourId, t.id))
-        .limit(1);
-
-      return {
-        ...t,
-        destinationName: stop?.destinationName,
-        categoryName: stop?.categoryName,
-        categorySlug: stop?.categorySlug,
-        upcomingDeparturesCount: futureDepartures.length,
-        nextDepartureDate: futureDepartures[0]?.departureDate,
-        nextDepartureSlots: futureDepartures[0]
-          ? futureDepartures[0].totalCapacity - futureDepartures[0].bookedSlots
-          : 0,
-      };
+  // 1. Fetch categories and catalog tours via repositories
+  const [rawCategories, tourCards] = await Promise.all([
+    catContainer.repository.getActive(),
+    tourContainer.repository.getCatalogTours({
+      q,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      duration: duration ? Number(duration) : undefined,
     }),
-  );
+  ]);
+
+  const categories = rawCategories.map(toCategoryDto);
+  const selectedCat = categories.find((c) => c.slug === category);
 
   // If a category was chosen, filter tours whose stops match that category
   const filteredTours = selectedCat

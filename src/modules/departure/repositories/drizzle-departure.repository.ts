@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like } from 'drizzle-orm';
+import { and, count, desc, eq, like, ne } from 'drizzle-orm';
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
 import { applyFilters } from '@/modules/shared/infrastructure/drizzle-query-filters';
 import {
@@ -11,6 +11,7 @@ import { tours, type TourRow } from '@/modules/tour/models/tour.model';
 import type {
   DepartureRepository,
   DepartureWithTourRow,
+  DepartureForBookingOption,
 } from './departure.repository';
 import type { CreateDepartureCommand } from '../commands/create-departure.command';
 import type { UpdateDepartureCommand } from '../commands/update-departure.command';
@@ -181,6 +182,30 @@ export class DrizzleDepartureRepository implements DepartureRepository {
       .select()
       .from(departures)
       .where(eq(departures.tourId, tourId))
+      .orderBy(desc(departures.departureDate));
+  }
+
+  async getActiveScheduled(): Promise<DepartureForBookingOption[]> {
+    return this.db
+      .select({
+        id: departures.id,
+        code: departures.code,
+        departureDate: departures.departureDate,
+        totalCapacity: departures.totalCapacity,
+        bookedSlots: departures.bookedSlots,
+        priceOverride: departures.priceOverride,
+        tourName: tours.name,
+        tourCode: tours.code,
+        tourBasePrice: tours.basePrice,
+      })
+      .from(departures)
+      .innerJoin(tours, eq(departures.tourId, tours.id))
+      .where(
+        and(
+          ne(departures.status, 'completed'),
+          ne(departures.status, 'cancelled'),
+        ),
+      )
       .orderBy(desc(departures.departureDate));
   }
 

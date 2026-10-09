@@ -1,7 +1,8 @@
-import { db } from '@/db/client';
-import { app_categories } from '@/modules/category/models/category.model';
-import { app_tours } from '@/modules/tour/models/tour.model';
-import { eq, desc } from 'drizzle-orm';
+import { createCategoryContainer } from '@/modules/category/container';
+import { createTourContainer } from '@/modules/tour/container';
+import { SearchTourCommand } from '@/modules/tour/commands/search-tour.command';
+import { toCategoryDto } from '@/modules/category/serializers/category.serializer';
+import { toTourDto } from '@/modules/tour/serializers/tour.serializer';
 import Link from 'next/link';
 import {
   Compass,
@@ -32,15 +33,16 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 export const instant = false;
 
 export default async function HomePage() {
-  const [categories, featuredTours] = await Promise.all([
-    db.select().from(app_categories),
-    db
-      .select()
-      .from(app_tours)
-      .where(eq(app_tours.status, 'active'))
-      .orderBy(desc(app_tours.createdAt))
-      .limit(3),
+  const catContainer = createCategoryContainer();
+  const tourContainer = createTourContainer();
+
+  const [rawCategories, toursResult] = await Promise.all([
+    catContainer.repository.getActive(),
+    tourContainer.repository.search(SearchTourCommand.fromInput({ status: 'active', limit: 3, offset: 0 })),
   ]);
+
+  const categories = rawCategories.map(toCategoryDto);
+  const featuredTours = toursResult.data.map(toTourDto);
 
   return (
     <div className="space-y-16 pb-20">

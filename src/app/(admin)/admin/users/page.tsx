@@ -1,8 +1,6 @@
 import { guardPage, hasPermission } from '@/modules/shared/auth/require-permission';
-import { db } from '@/db/client';
-import { app_users } from '@/modules/user/models/user.model';
-import { app_roles } from '@/modules/role/models/role.model';
-import { eq } from 'drizzle-orm';
+import { createUserContainer } from '@/modules/user/container';
+import { toUserWithRoleDto } from '@/modules/user/serializers/user.serializer';
 import { UserStatusToggle } from '@/modules/user/ui/UserStatusToggle';
 import { Users, Shield, Mail, Calendar, CheckCircle2, XCircle } from 'lucide-react';
 
@@ -13,21 +11,9 @@ export default async function UsersListPage() {
 
   const canUpdateStatus = await hasPermission('users.update-status');
 
-  const usersWithRoles = await db
-    .select({
-      id: app_users.id,
-      name: app_users.name,
-      email: app_users.email,
-      phone: app_users.phone,
-      status: app_users.status,
-      createdAt: app_users.createdAt,
-      lastLoginAt: app_users.lastLoginAt,
-      roleName: app_roles.name,
-      rolePermissionType: app_roles.permissionType,
-    })
-    .from(app_users)
-    .innerJoin(app_roles, eq(app_users.roleId, app_roles.id))
-    .orderBy(app_users.createdAt);
+  const container = createUserContainer();
+  const rawUsers = await container.repository.getAllWithRole();
+  const usersWithRoles = rawUsers.map(toUserWithRoleDto);
 
   return (
     <div className="space-y-6">

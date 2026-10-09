@@ -1,6 +1,6 @@
 import { guardPage } from '@/modules/shared/auth/require-permission';
-import { db } from '@/db/client';
-import { app_roles } from '@/modules/role/models/role.model';
+import { createRoleContainer } from '@/modules/role/container';
+import { toRoleDto } from '@/modules/role/serializers/role.serializer';
 import { Shield, CheckCircle2, Lock, Key } from 'lucide-react';
 
 export const instant = false;
@@ -8,7 +8,9 @@ export const instant = false;
 export default async function RolesListPage() {
   await guardPage('roles.list');
 
-  const roles = await db.select().from(app_roles).orderBy(app_roles.createdAt);
+  const container = createRoleContainer();
+  const rawRoles = await container.repository.getAll();
+  const roles = rawRoles.map(toRoleDto);
 
   return (
     <div className="space-y-6">

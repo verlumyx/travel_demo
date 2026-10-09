@@ -1,10 +1,7 @@
 import { guardPage } from '@/modules/shared/auth/require-permission';
 import { createCustomerContainer } from '@/modules/customer/container';
+import { createDepartureContainer } from '@/modules/departure/container';
 import { BookingForm } from '@/modules/booking/ui/BookingForm';
-import { db } from '@/db/client';
-import { departures } from '@/modules/departure/models/departure.model';
-import { tours } from '@/modules/tour/models/tour.model';
-import { eq, and, ne, desc } from 'drizzle-orm';
 import { Ticket } from 'lucide-react';
 
 export const instant = false;
@@ -21,29 +18,10 @@ export default async function CreateBookingPage({ searchParams }: PageProps) {
   const params = await searchParams;
 
   const customerContainer = createCustomerContainer();
+  const departureContainer = createDepartureContainer();
   const [rawCustomers, rawDepartures] = await Promise.all([
     customerContainer.repository.getActive(),
-    db
-      .select({
-        id: departures.id,
-        code: departures.code,
-        departureDate: departures.departureDate,
-        totalCapacity: departures.totalCapacity,
-        bookedSlots: departures.bookedSlots,
-        priceOverride: departures.priceOverride,
-        tourName: tours.name,
-        tourCode: tours.code,
-        tourBasePrice: tours.basePrice,
-      })
-      .from(departures)
-      .innerJoin(tours, eq(departures.tourId, tours.id))
-      .where(
-        and(
-          ne(departures.status, 'completed'),
-          ne(departures.status, 'cancelled'),
-        ),
-      )
-      .orderBy(desc(departures.departureDate)),
+    departureContainer.repository.getActiveScheduled(),
   ]);
 
   const customerOptions = rawCustomers.map((c) => ({

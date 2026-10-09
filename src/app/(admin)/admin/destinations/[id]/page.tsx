@@ -6,10 +6,7 @@ import { createCategoryContainer } from '@/modules/category/container';
 import { destinationRoutes } from '@/modules/destination/routes';
 import { DestinationStatusBadge } from '@/modules/destination/ui/DestinationStatusBadge';
 import { DestinationStatusToggle } from '@/modules/destination/ui/DestinationStatusToggle';
-import { db } from '@/db/client';
-import { itineraryStops } from '@/modules/itinerary-stop/models/itinerary-stop.model';
-import { app_tours } from '@/modules/tour/models/tour.model';
-import { eq } from 'drizzle-orm';
+import { createItineraryStopContainer } from '@/modules/itinerary-stop/container';
 import { ArrowLeft, Edit3, MapPin, Tag, Calendar, Globe, Compass } from 'lucide-react';
 
 export const instant = false;
@@ -43,18 +40,8 @@ export default async function DestinationDetailPage({ params }: PageProps) {
   }
 
   // Find tours that visit this destination via itinerary stops
-  const stops = await db
-    .select({
-      stopId: itineraryStops.id,
-      dayNumber: itineraryStops.dayNumber,
-      title: itineraryStops.title,
-      tourId: app_tours.id,
-      tourName: app_tours.name,
-      tourCode: app_tours.code,
-    })
-    .from(itineraryStops)
-    .innerJoin(app_tours, eq(itineraryStops.tourId, app_tours.id))
-    .where(eq(itineraryStops.destinationId, id));
+  const stopContainer = createItineraryStopContainer();
+  const stops = await stopContainer.repository.findByDestinationIdWithTour(id);
 
   return (
     <div className="space-y-8 max-w-4xl">

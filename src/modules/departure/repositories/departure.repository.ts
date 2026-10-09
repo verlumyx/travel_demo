@@ -9,6 +9,18 @@ export type DepartureWithTourRow = DepartureRow & {
   tourCode: string;
 };
 
+export interface DepartureForBookingOption {
+  id: string;
+  code: string;
+  departureDate: Date;
+  totalCapacity: number;
+  bookedSlots: number;
+  priceOverride: string | null;
+  tourName: string;
+  tourCode: string;
+  tourBasePrice: string;
+}
+
 export interface DepartureRepository {
   create(command: CreateDepartureCommand): Promise<DepartureRow>;
   findById(id: string): Promise<DepartureRow | null>;
@@ -20,4 +32,5 @@ export interface DepartureRepository {
   updateCapacity(id: string, totalCapacity: number): Promise<DepartureRow>;
   search(command: SearchDepartureCommand): Promise<{ data: DepartureWithTourRow[]; total: number }>;
   findByTourId(tourId: string): Promise<DepartureRow[]>;
+  getActiveScheduled(): Promise<DepartureForBookingOption[]>;
 }

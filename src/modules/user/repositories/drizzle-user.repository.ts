@@ -2,7 +2,8 @@ import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
 import { applyFilters } from '@/modules/shared/infrastructure/drizzle-query-filters';
 import { app_users } from '../models/user.model';
 
-import type { UserRepository } from './user.repository';
+import type { UserRepository, UserWithRoleRow } from './user.repository';
+import { app_roles } from '@/modules/role/models/role.model';
 import { UserNotFoundException } from '../exceptions/user-not-found.exception';
 import { userFilters } from './user.filters';
 import type { CreateUserCommand } from '../commands/create-user.command';
@@ -66,5 +67,23 @@ export class DrizzleUserRepository implements UserRepository {
     const rows = await query;
     const [{ count: totalRows }] = await this.db.select({ count: count() }).from(app_users);
     return { data: rows, total: Number(totalRows) };
+  }
+
+  async getAllWithRole(): Promise<UserWithRoleRow[]> {
+    return this.db
+      .select({
+        id: app_users.id,
+        name: app_users.name,
+        email: app_users.email,
+        phone: app_users.phone,
+        status: app_users.status,
+        createdAt: app_users.createdAt,
+        lastLoginAt: app_users.lastLoginAt,
+        roleName: app_roles.name,
+        rolePermissionType: app_roles.permissionType,
+      })
+      .from(app_users)
+      .innerJoin(app_roles, eq(app_users.roleId, app_roles.id))
+      .orderBy(app_users.createdAt);
   }
 }

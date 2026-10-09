@@ -10,4 +10,5 @@ export interface RoleRepository {
   update(id: string, command: UpdateRoleCommand): Promise<RoleRow>;
   updateStatus(id: string, status: string): Promise<RoleRow>;
   search(command: SearchRoleCommand): Promise<{ data: RoleRow[], total: number }>;
+  getAll(): Promise<RoleRow[]>;
 }

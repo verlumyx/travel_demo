@@ -127,6 +127,14 @@ export class DrizzleDestinationRepository implements DestinationRepository {
       .orderBy(app_destinations.name);
   }
 
+  async findByCategoryId(categoryId: string): Promise<DestinationRow[]> {
+    return this.db
+      .select()
+      .from(app_destinations)
+      .where(eq(app_destinations.categoryId, categoryId))
+      .orderBy(app_destinations.name);
+  }
+
   private async generateNextCode(): Promise<string> {
     const scope = like(app_destinations.code, `${DESTINATION_CODE_PREFIX}%`);
 

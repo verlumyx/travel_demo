@@ -3,27 +3,14 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { eq, like, desc } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { departures } from '@/modules/departure/models/departure.model';
-import { tours } from '@/modules/tour/models/tour.model';
-import {
-  customers,
-  CUSTOMER_CODE_PREFIX,
-  CUSTOMER_CODE_WIDTH,
-} from '@/modules/customer/models/customer.model';
-import {
-  bookings,
-  BOOKING_CODE_PREFIX,
-  BOOKING_CODE_WIDTH,
-} from '@/modules/booking/models/booking.model';
-import { passengers } from '@/modules/passenger/models/passenger.model';
-import {
-  payments,
-  PAYMENT_CODE_PREFIX,
-  PAYMENT_CODE_WIDTH,
-} from '@/modules/payment/models/payment.model';
-import { DomainError } from '@/modules/shared/exceptions/domain-error';
+import { createDepartureContainer } from '@/modules/departure/container';
+import { createCustomerContainer } from '@/modules/customer/container';
+import { createBookingContainer } from '@/modules/booking/container';
+import { createPaymentContainer } from '@/modules/payment/container';
+import { CreateCustomerCommand } from '@/modules/customer/commands/create-customer.command';
+import { CreateBookingCommand } from '@/modules/booking/commands/create-booking.command';
+import { CreatePaymentCommand } from '@/modules/payment/commands/create-payment.command';
 import { toActionError, type ActionState } from '@/modules/shared/actions/action-state';
 
 const passengerInputSchema = z.object({
@@ -113,80 +100,23 @@ export async function clientCheckoutAction(
     }
 
     await db.transaction(async (tx) => {
-      // 1. Lock departure and check capacity
-      const [dep] = await tx
-        .select()
-        .from(departures)
-        .where(eq(departures.id, data.departureId))
-        .for('update');
+      const departureContainer = createDepartureContainer(tx);
+      const customerContainer = createCustomerContainer(tx);
+      const bookingContainer = createBookingContainer(tx);
+      const paymentContainer = createPaymentContainer(tx);
 
-      if (!dep) {
-        throw new DomainError('La salida programada no existe.');
-      }
-
-      if (dep.status === 'completed' || dep.status === 'cancelled') {
-        throw new DomainError('Esta salida se encuentra cerrada o cancelada.');
-      }
-
-      const availableSlots = dep.totalCapacity - dep.bookedSlots;
-      if (data.slotsCount > availableSlots) {
-        throw new DomainError(
-          `Solo quedan ${availableSlots} cupos disponibles para esta salida. Has solicitado ${data.slotsCount}.`,
-        );
-      }
-
-      // 2. Fetch tour price
-      const [tour] = await tx
-        .select()
-        .from(tours)
-        .where(eq(tours.id, dep.tourId));
-
-      if (!tour) {
-        throw new DomainError('El tour seleccionado no existe.');
-      }
-
+      // 1. Fetch departure with tour to determine unit price & capacity
+      const { departure: dep, tour } = await departureContainer.findService.executeWithTour(data.departureId);
       const effectiveUnitPrice = dep.priceOverride ? Number(dep.priceOverride) : Number(tour.basePrice);
       const totalAmount = (effectiveUnitPrice * data.slotsCount).toFixed(2);
 
-      // 3. Find or create customer
+      // 2. Find or create customer
       const cleanEmail = data.holderEmail.toLowerCase().trim();
-      let [customer] = await tx
-        .select()
-        .from(customers)
-        .where(eq(customers.email, cleanEmail))
-        .limit(1);
-
+      let customer = await customerContainer.repository.findByEmail(cleanEmail);
       if (!customer) {
-        // Generate atomic customer code
-        const custScope = like(customers.code, `${CUSTOMER_CODE_PREFIX}%`);
-        await tx
-          .select({ id: customers.id })
-          .from(customers)
-          .where(custScope)
-          .orderBy(desc(customers.code))
-          .limit(1)
-          .for('update');
-
-        const [lastCust] = await tx
-          .select({ code: customers.code })
-          .from(customers)
-          .where(custScope)
-          .orderBy(desc(customers.code))
-          .limit(1);
-
-        const nextCustNum = lastCust
-          ? Number(lastCust.code.slice(CUSTOMER_CODE_PREFIX.length)) + 1
-          : 1;
-        const custCode = `${CUSTOMER_CODE_PREFIX}${String(nextCustNum).padStart(
-          CUSTOMER_CODE_WIDTH,
-          '0',
-        )}`;
-
-        const [newCust] = await tx
-          .insert(customers)
-          .values({
+        customer = await customerContainer.createService.execute(
+          CreateCustomerCommand.fromInput({
             id: crypto.randomUUID(),
-            code: custCode,
             firstName: data.holderFirstName.trim(),
             lastName: data.holderLastName.trim(),
             email: cleanEmail,
@@ -197,59 +127,13 @@ export async function clientCheckoutAction(
             emergencyPhone: data.emergencyPhone,
             source: 'portal',
             status: 'active',
-          })
-          .returning();
-        customer = newCust;
+          }),
+        );
       }
 
-      // 4. Generate atomic booking code
-      const bookScope = like(bookings.code, `${BOOKING_CODE_PREFIX}%`);
-      await tx
-        .select({ id: bookings.id })
-        .from(bookings)
-        .where(bookScope)
-        .orderBy(desc(bookings.code))
-        .limit(1)
-        .for('update');
-
-      const [lastBook] = await tx
-        .select({ code: bookings.code })
-        .from(bookings)
-        .where(bookScope)
-        .orderBy(desc(bookings.code))
-        .limit(1);
-
-      const nextBookNum = lastBook
-        ? Number(lastBook.code.slice(BOOKING_CODE_PREFIX.length)) + 1
-        : 1;
-      const bookingCode = `${BOOKING_CODE_PREFIX}${String(nextBookNum).padStart(
-        BOOKING_CODE_WIDTH,
-        '0',
-      )}`;
-
-      const bookingId = crypto.randomUUID();
-      createdBookingId = bookingId;
-      createdBookingCode = bookingCode;
-
-      // 5. Insert booking (starts as pending)
-      await tx.insert(bookings).values({
-        id: bookingId,
-        code: bookingCode,
-        departureId: dep.id,
-        customerId: customer.id,
-        slotsReserved: data.slotsCount,
-        totalAmount,
-        paidAmount: '0.00',
-        notes: data.notes || 'Reserva online autoservicio desde el catálogo web.',
-        source: 'portal',
-        status: 'pending',
-      });
-
-      // 6. Insert Main passenger (Titular)
-      const allPassengersToInsert = [
+      // 3. Prepare all passengers
+      const allPassengers = [
         {
-          id: crypto.randomUUID(),
-          bookingId,
           firstName: data.holderFirstName.trim(),
           lastName: data.holderLastName.trim(),
           documentType: data.holderDocumentType,
@@ -259,68 +143,51 @@ export async function clientCheckoutAction(
           notes: 'Titular de la reserva',
         },
         ...companionPassengers.map((cp, idx) => ({
-          id: crypto.randomUUID(),
-          bookingId,
           firstName: cp.firstName.trim(),
           lastName: cp.lastName.trim(),
           documentType: cp.documentType || 'cedula',
-          documentNumber: cp.documentNumber?.trim() || null,
-          phone: cp.phone?.trim() || null,
+          documentNumber: cp.documentNumber?.trim() || undefined,
+          phone: cp.phone?.trim() || undefined,
           isMainContact: false,
           notes: `Acompañante #${idx + 2}`,
         })),
       ];
 
-      await tx.insert(passengers).values(allPassengersToInsert);
+      // 4. Create booking via BookingCreateService (handles code generation, capacity check & lock, booking insert, passenger insert, departure slots update)
+      const bookingId = crypto.randomUUID();
+      const booking = await bookingContainer.createService.execute(
+        CreateBookingCommand.fromInput({
+          id: bookingId,
+          departureId: dep.id,
+          customerId: customer.id,
+          slotsReserved: data.slotsCount,
+          totalAmount,
+          paidAmount: '0.00',
+          notes: data.notes || 'Reserva online autoservicio desde el catálogo web.',
+          source: 'portal',
+          passengers: allPassengers,
+        }),
+      );
 
-      // 7. Increment departure bookedSlots atomically
-      await tx
-        .update(departures)
-        .set({
-          bookedSlots: dep.bookedSlots + data.slotsCount,
-          updatedAt: new Date(),
-        })
-        .where(eq(departures.id, dep.id));
+      createdBookingId = booking.id;
+      createdBookingCode = booking.code;
 
-      // 8. Generate atomic payment code and record reported payment
-      const payScope = like(payments.code, `${PAYMENT_CODE_PREFIX}%`);
-      await tx
-        .select({ id: payments.id })
-        .from(payments)
-        .where(payScope)
-        .orderBy(desc(payments.code))
-        .limit(1)
-        .for('update');
-
-      const [lastPay] = await tx
-        .select({ code: payments.code })
-        .from(payments)
-        .where(payScope)
-        .orderBy(desc(payments.code))
-        .limit(1);
-
-      const nextPayNum = lastPay
-        ? Number(lastPay.code.slice(PAYMENT_CODE_PREFIX.length)) + 1
-        : 1;
-      const paymentCode = `${PAYMENT_CODE_PREFIX}${String(nextPayNum).padStart(
-        PAYMENT_CODE_WIDTH,
-        '0',
-      )}`;
-
-      await tx.insert(payments).values({
-        id: crypto.randomUUID(),
-        code: paymentCode,
-        bookingId,
-        method: data.paymentMethod,
-        amount: totalAmount,
-        currency: 'USD',
-        reference: data.paymentReference.trim(),
-        proofImageUrl: data.proofImageUrl || null,
-        paymentDate: new Date(),
-        receivedByName: 'Reportado por cliente en checkout web',
-        notes: `Comprobante ingresado durante el autoservicio online.`,
-        status: 'pending',
-      });
+      // 5. Create payment via PaymentCreateService (handles atomic payment code generation and insert)
+      await paymentContainer.createService.execute(
+        CreatePaymentCommand.fromInput({
+          id: crypto.randomUUID(),
+          bookingId: booking.id,
+          method: data.paymentMethod,
+          amount: totalAmount,
+          currency: 'USD',
+          reference: data.paymentReference.trim(),
+          proofImageUrl: data.proofImageUrl || undefined,
+          paymentDate: new Date(),
+          receivedByName: 'Reportado por cliente en checkout web',
+          notes: 'Comprobante ingresado durante el autoservicio online.',
+          status: 'pending',
+        }),
+      );
     });
   } catch (error) {
     return toActionError(error);

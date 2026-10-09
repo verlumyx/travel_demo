@@ -1,12 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { and, desc, eq } from 'drizzle-orm';
-import { db } from '@/db/client';
-import { app_tours } from '@/modules/tour/models/tour.model';
-import { app_destinations } from '@/modules/destination/models/destination.model';
-import { app_categories } from '@/modules/category/models/category.model';
-import { itineraryStops } from '@/modules/itinerary-stop/models/itinerary-stop.model';
-import { departures } from '@/modules/departure/models/departure.model';
+import { createTourContainer } from '@/modules/tour/container';
+import { createItineraryStopContainer } from '@/modules/itinerary-stop/container';
+import { createDepartureContainer } from '@/modules/departure/container';
 import {
   Compass,
   Calendar,
@@ -32,48 +28,24 @@ interface PageProps {
 export default async function TourDetailPage({ params }: PageProps) {
   const { slug } = await params;
 
-  // 1. Fetch tour by slug
-  const [tour] = await db
-    .select()
-    .from(app_tours)
-    .where(and(eq(app_tours.slug, slug), eq(app_tours.status, 'active')))
-    .limit(1);
+  const tourContainer = createTourContainer();
+  const itineraryContainer = createItineraryStopContainer();
+  const departureContainer = createDepartureContainer();
 
-  if (!tour) {
+  // 1. Fetch tour by slug
+  const tour = await tourContainer.repository.findBySlug(slug);
+  if (!tour || tour.status !== 'active') {
     notFound();
   }
 
   // 2. Fetch itinerary stops with destinations and categories
-  const stops = await db
-    .select({
-      id: itineraryStops.id,
-      dayNumber: itineraryStops.dayNumber,
-      sortOrder: itineraryStops.sortOrder,
-      title: itineraryStops.title,
-      description: itineraryStops.description,
-      overnightStay: itineraryStops.overnightStay,
-      destinationName: app_destinations.name,
-      destinationState: app_destinations.state,
-      destinationCity: app_destinations.city,
-      categoryName: app_categories.name,
-    })
-    .from(itineraryStops)
-    .innerJoin(app_destinations, eq(itineraryStops.destinationId, app_destinations.id))
-    .leftJoin(app_categories, eq(app_destinations.categoryId, app_categories.id))
-    .where(eq(itineraryStops.tourId, tour.id))
-    .orderBy(itineraryStops.dayNumber, itineraryStops.sortOrder);
+  const stops = await itineraryContainer.repository.findByTourIdWithDetails(tour.id);
 
   // 3. Fetch scheduled upcoming departures
-  const upcomingDepartures = await db
-    .select()
-    .from(departures)
-    .where(
-      and(
-        eq(departures.tourId, tour.id),
-        eq(departures.status, 'scheduled'),
-      ),
-    )
-    .orderBy(departures.departureDate);
+  const allDepartures = await departureContainer.repository.findByTourId(tour.id);
+  const upcomingDepartures = allDepartures
+    .filter((d) => d.status === 'scheduled')
+    .sort((a, b) => new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime());
 
   const primaryCategory = stops[0]?.categoryName;
 

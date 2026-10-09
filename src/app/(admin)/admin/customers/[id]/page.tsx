@@ -7,11 +7,8 @@ import { bookingRoutes } from '@/modules/booking/routes';
 import { toCustomerDto } from '@/modules/customer/serializers/customer.serializer';
 import { CustomerStatusBadge } from '@/modules/customer/ui/CustomerStatusBadge';
 import { CustomerStatusToggle } from '@/modules/customer/ui/CustomerStatusToggle';
-import { db } from '@/db/client';
-import { bookings } from '@/modules/booking/models/booking.model';
-import { departures } from '@/modules/departure/models/departure.model';
-import { tours } from '@/modules/tour/models/tour.model';
-import { eq, desc } from 'drizzle-orm';
+import { createBookingContainer } from '@/modules/booking/container';
+import { SearchBookingCommand } from '@/modules/booking/commands/search-booking.command';
 import {
   Users,
   ArrowLeft,
@@ -36,6 +33,7 @@ export default async function CustomerDetailPage({ params }: PageProps) {
   const { id } = await params;
 
   const customerContainer = createCustomerContainer();
+  const bookingContainer = createBookingContainer();
 
   let rawCustomer;
   try {
@@ -46,20 +44,24 @@ export default async function CustomerDetailPage({ params }: PageProps) {
 
   const customer = toCustomerDto(rawCustomer);
 
-  // Fetch customer's bookings with departure and tour info
-  const customerBookings = await db
-    .select({
-      booking: bookings,
-      departureDate: departures.departureDate,
-      departureCode: departures.code,
-      tourName: tours.name,
-      tourCode: tours.code,
-    })
-    .from(bookings)
-    .innerJoin(departures, eq(bookings.departureId, departures.id))
-    .innerJoin(tours, eq(departures.tourId, tours.id))
-    .where(eq(bookings.customerId, id))
-    .orderBy(desc(bookings.createdAt));
+  // Fetch customer's bookings with departure and tour info via booking search service
+  const bookingsResult = await bookingContainer.searchService.execute(
+    SearchBookingCommand.fromInput({ customerId: id, limit: 100 }),
+  );
+  const customerBookings = bookingsResult.data.map((b) => ({
+    booking: {
+      id: b.id,
+      code: b.code,
+      slotsReserved: b.slotsReserved,
+      totalAmount: b.totalAmount,
+      paidAmount: b.paidAmount,
+      status: b.status,
+    },
+    departureDate: b.departureDate,
+    departureCode: b.departureCode,
+    tourName: b.tourName,
+    tourCode: b.tourCode,
+  }));
 
   return (
     <div className="space-y-6">

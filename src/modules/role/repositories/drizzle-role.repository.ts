@@ -1,6 +1,6 @@
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
 import { applyFilters } from '@/modules/shared/infrastructure/drizzle-query-filters';
-import { app_roles } from '../models/role.model';
+import { app_roles, type RoleRow } from '../models/role.model';
 
 import type { RoleRepository } from './role.repository';
 import { RoleNotFoundException } from '../exceptions/role-not-found.exception';
@@ -66,5 +66,9 @@ export class DrizzleRoleRepository implements RoleRepository {
     const rows = await query;
     const [{ count: totalRows }] = await this.db.select({ count: count() }).from(app_roles);
     return { data: rows, total: Number(totalRows) };
+  }
+
+  async getAll(): Promise<RoleRow[]> {
+    return this.db.select().from(app_roles).orderBy(app_roles.createdAt);
   }
 }

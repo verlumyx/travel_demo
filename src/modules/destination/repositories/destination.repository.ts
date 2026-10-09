@@ -12,4 +12,5 @@ export interface DestinationRepository {
   updateStatus(id: string, status: 'active' | 'inactive'): Promise<DestinationRow>;
   search(command: SearchDestinationCommand): Promise<{ data: DestinationRow[]; total: number }>;
   getActive(): Promise<DestinationRow[]>;
+  findByCategoryId(categoryId: string): Promise<DestinationRow[]>;
 }

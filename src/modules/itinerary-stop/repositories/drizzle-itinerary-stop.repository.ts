@@ -2,7 +2,14 @@ import { and, desc, eq, count } from 'drizzle-orm';
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
 import { applyFilters } from '@/modules/shared/infrastructure/drizzle-query-filters';
 import { itineraryStops, type ItineraryStopRow, type NewItineraryStopRow } from '../models/itinerary-stop.model';
-import type { ItineraryStopRepository } from './itinerary-stop.repository';
+import { app_tours } from '@/modules/tour/models/tour.model';
+import { app_destinations } from '@/modules/destination/models/destination.model';
+import { app_categories } from '@/modules/category/models/category.model';
+import type {
+  ItineraryStopRepository,
+  ItineraryStopWithTourRow,
+  ItineraryStopDetailRow,
+} from './itinerary-stop.repository';
 import { ItineraryStopNotFoundException } from '../exceptions/itinerary-stop-not-found.exception';
 import { itineraryStopFilterMap } from './itinerary-stop.filters';
 
@@ -58,6 +65,42 @@ export class DrizzleItineraryStopRepository implements ItineraryStopRepository {
     return this.db
       .select()
       .from(itineraryStops)
+      .where(eq(itineraryStops.tourId, tourId))
+      .orderBy(itineraryStops.dayNumber, itineraryStops.sortOrder);
+  }
+
+  async findByDestinationIdWithTour(destinationId: string): Promise<ItineraryStopWithTourRow[]> {
+    return this.db
+      .select({
+        stopId: itineraryStops.id,
+        dayNumber: itineraryStops.dayNumber,
+        title: itineraryStops.title,
+        tourId: app_tours.id,
+        tourName: app_tours.name,
+        tourCode: app_tours.code,
+      })
+      .from(itineraryStops)
+      .innerJoin(app_tours, eq(itineraryStops.tourId, app_tours.id))
+      .where(eq(itineraryStops.destinationId, destinationId));
+  }
+
+  async findByTourIdWithDetails(tourId: string): Promise<ItineraryStopDetailRow[]> {
+    return this.db
+      .select({
+        id: itineraryStops.id,
+        dayNumber: itineraryStops.dayNumber,
+        sortOrder: itineraryStops.sortOrder,
+        title: itineraryStops.title,
+        description: itineraryStops.description,
+        overnightStay: itineraryStops.overnightStay,
+        destinationName: app_destinations.name,
+        destinationState: app_destinations.state,
+        destinationCity: app_destinations.city,
+        categoryName: app_categories.name,
+      })
+      .from(itineraryStops)
+      .innerJoin(app_destinations, eq(itineraryStops.destinationId, app_destinations.id))
+      .leftJoin(app_categories, eq(app_destinations.categoryId, app_categories.id))
       .where(eq(itineraryStops.tourId, tourId))
       .orderBy(itineraryStops.dayNumber, itineraryStops.sortOrder);
   }

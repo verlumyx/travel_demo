@@ -11,6 +11,7 @@ import { db as defaultDb } from '@/db/client';
 export function createDestinationContainer(db: DbExecutor = defaultDb) {
   const repository = new DrizzleDestinationRepository(db);
   return {
+    repository,
     createService: new DestinationCreateService(repository),
     updateService: new DestinationUpdateService(repository),
     updateStatusService: new DestinationUpdateStatusService(repository),
