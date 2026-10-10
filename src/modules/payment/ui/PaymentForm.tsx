@@ -39,7 +39,7 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
   });
 
   const [selectedBookingId, setSelectedBookingId] = useState<string>(
-    initialBookingId || (bookings[0]?.id ?? ''),
+    initialBookingId ?? '',
   );
 
   const selectedBooking = bookings.find((b) => b.id === selectedBookingId);
@@ -52,11 +52,13 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
     const b = bookings.find((item) => item.id === id);
     if (b) {
       setAmount(b.pendingBalance);
+    } else {
+      setAmount('');
     }
   };
 
   return (
-    <form action={formAction} className="space-y-8 max-w-3xl">
+    <form action={formAction} autoComplete="off" className="space-y-8 max-w-3xl">
       {state.message && (
         <div
           className={`p-4 rounded-xl text-xs font-medium ${

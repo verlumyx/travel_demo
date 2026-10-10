@@ -49,7 +49,7 @@ export function CategoryForm({ category }: CategoryFormProps) {
   };
 
   return (
-    <form action={formAction} className="space-y-6 max-w-3xl">
+    <form action={formAction} autoComplete="off" className="space-y-6 max-w-3xl">
       {!isEditing && <input type="hidden" name="id" value={newId} />}
 
       {state.message && (

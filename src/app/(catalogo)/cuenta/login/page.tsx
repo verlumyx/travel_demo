@@ -1,10 +1,9 @@
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getAuthenticatedCustomer } from '@/modules/customer/auth/customer-session';
-import { createCustomerContainer } from '@/modules/customer/container';
 import { CustomerLoginForm } from '@/modules/customer/ui/CustomerLoginForm';
 import Link from 'next/link';
-import { ArrowLeft, Compass } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 export const instant = false;
 
@@ -15,31 +14,19 @@ export default async function CustomerLoginPage() {
     redirect('/cuenta/reservas');
   }
 
-  const customerContainer = createCustomerContainer();
-  const activeCustomers = await customerContainer.repository.getActive();
-
-  const demoCustomers = activeCustomers
-    .filter((c) => Boolean(c.email))
-    .slice(0, 3)
-    .map((c) => ({
-      id: c.id,
-      name: `${c.firstName} ${c.lastName}`.trim(),
-      email: c.email!,
-    }));
-
   return (
-    <div className="min-h-screen bg-muted/20 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md mb-6 text-center">
+    <div className="py-10 sm:py-16 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-start">
+      <div className="w-full max-w-lg mb-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground mb-4 transition"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition"
         >
           <ArrowLeft className="h-4 w-4" />
           Volver a la página principal
         </Link>
       </div>
 
-      <CustomerLoginForm demoCustomers={demoCustomers} />
+      <CustomerLoginForm />
     </div>
   );
 }

@@ -108,7 +108,7 @@ export function ClientCheckoutForm({ departure, tour, paymentMethods }: ClientCh
     : paymentMethod === 'cash_usd' || paymentMethod === 'cash_ves';
 
   return (
-    <form action={formAction} className="space-y-8" encType="multipart/form-data">
+    <form action={formAction} className="space-y-8">
       <input type="hidden" name="departureId" value={departure.id} />
       <input type="hidden" name="slotsCount" value={slotsCount} />
       <input type="hidden" name="passengersJson" value={JSON.stringify(companions)} />

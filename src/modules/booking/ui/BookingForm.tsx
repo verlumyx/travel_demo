@@ -64,10 +64,10 @@ export function BookingForm({
   );
 
   const [selectedDepartureId, setSelectedDepartureId] = useState(
-    preselectedDepartureId ?? (departures[0]?.id || ''),
+    preselectedDepartureId ?? '',
   );
   const [selectedCustomerId, setSelectedCustomerId] = useState(
-    preselectedCustomerId ?? (customers[0]?.id || ''),
+    preselectedCustomerId ?? '',
   );
 
   const selectedDeparture = departures.find((d) => d.id === selectedDepartureId);
@@ -92,7 +92,7 @@ export function BookingForm({
   // Total amount state
   const unitPriceNum = Number(selectedDeparture?.unitPrice ?? 0);
   const [totalAmount, setTotalAmount] = useState<string>(
-    String((unitPriceNum * slotsCount).toFixed(2)),
+    unitPriceNum > 0 ? String((unitPriceNum * slotsCount).toFixed(2)) : '0.00',
   );
 
   // Synchronize passenger count with slotsCount
@@ -159,7 +159,7 @@ export function BookingForm({
   const generatedId = uuidv7();
 
   return (
-    <form action={formAction} className="space-y-6 max-w-4xl">
+    <form action={formAction} autoComplete="off" className="space-y-6 max-w-4xl">
       <input type="hidden" name="id" value={generatedId} />
       <input
         type="hidden"

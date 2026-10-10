@@ -19,7 +19,7 @@ export default async function CreatePaymentMethodPage() {
         </p>
       </div>
 
-      <PaymentMethodForm />
+      <PaymentMethodForm key="create-payment-method" />
     </div>
   );
 }

@@ -21,7 +21,7 @@ export default async function CreateCustomerPage() {
         </p>
       </div>
 
-      <CustomerForm />
+      <CustomerForm key="create-customer" />
     </div>
   );
 }

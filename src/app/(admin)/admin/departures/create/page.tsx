@@ -35,7 +35,7 @@ export default async function CreateDeparturePage() {
         </p>
       </div>
 
-      <DepartureForm tours={tours} />
+      <DepartureForm key="create-departure" tours={tours} />
     </div>
   );
 }

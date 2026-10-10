@@ -19,7 +19,7 @@ export default async function CreateTourPage() {
         </p>
       </div>
 
-      <TourForm />
+      <TourForm key="create-tour" />
     </div>
   );
 }

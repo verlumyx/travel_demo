@@ -23,7 +23,7 @@ export default async function CreateDestinationPage() {
         </p>
       </div>
 
-      <DestinationForm categories={categories} />
+      <DestinationForm key="create-destination" categories={categories} />
     </div>
   );
 }

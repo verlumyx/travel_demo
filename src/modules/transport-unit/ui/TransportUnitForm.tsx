@@ -26,7 +26,7 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
   const [newId] = useState(() => (!isEditing ? uuidv7() : ''));
 
   return (
-    <form action={formAction} className="space-y-6 max-w-3xl">
+    <form action={formAction} autoComplete="off" className="space-y-6 max-w-3xl">
       {!isEditing && <input type="hidden" name="id" value={newId} />}
 
       {state.message && (

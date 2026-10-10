@@ -53,7 +53,7 @@ export function TourForm({ tour }: TourFormProps) {
   };
 
   return (
-    <form action={formAction} className="space-y-8 max-w-4xl">
+    <form action={formAction} autoComplete="off" className="space-y-8 max-w-4xl">
       {!isEditing && <input type="hidden" name="id" value={newId} />}
 
       {state.message && (

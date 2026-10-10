@@ -52,7 +52,7 @@ export function DepartureForm({ initialData, tours }: DepartureFormProps) {
   const generatedId = !isEditing ? uuidv7() : undefined;
 
   return (
-    <form action={formAction} className="space-y-6 max-w-4xl">
+    <form action={formAction} autoComplete="off" className="space-y-6 max-w-4xl">
       {!isEditing && <input type="hidden" name="id" value={generatedId} />}
 
       {state.message && (

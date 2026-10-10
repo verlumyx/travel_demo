@@ -60,6 +60,7 @@ export default async function CreatePaymentPage({ searchParams }: PageProps) {
       </div>
 
       <PaymentForm
+        key={bookingId ?? 'new-payment'}
         bookings={availableBookings}
         initialBookingId={bookingId}
       />

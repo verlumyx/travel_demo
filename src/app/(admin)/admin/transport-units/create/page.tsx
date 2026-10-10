@@ -19,7 +19,7 @@ export default async function CreateTransportUnitPage() {
         </p>
       </div>
 
-      <TransportUnitForm />
+      <TransportUnitForm key="create-transport-unit" />
     </div>
   );
 }

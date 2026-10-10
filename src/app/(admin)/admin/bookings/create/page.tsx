@@ -67,6 +67,7 @@ export default async function CreateBookingPage({ searchParams }: PageProps) {
       </div>
 
       <BookingForm
+        key={params.departureId || params.customerId ? `${params.departureId}-${params.customerId}` : 'new-booking'}
         departures={departureOptions}
         customers={customerOptions}
         preselectedDepartureId={params.departureId}

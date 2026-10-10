@@ -19,7 +19,7 @@ export default async function CreateCategoryPage() {
         </p>
       </div>
 
-      <CategoryForm />
+      <CategoryForm key="create-category" />
     </div>
   );
 }
