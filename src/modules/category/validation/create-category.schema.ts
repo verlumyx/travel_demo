@@ -7,7 +7,6 @@ export const createCategorySchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { message: 'El slug solo puede contener letras minúsculas, números y guiones.' }),
   description: z.string().optional().nullable(),
   icon: z.string().max(100).optional().nullable(),
-  imageUrl: z.string().url({ message: 'URL de imagen no válida' }).max(500).optional().nullable().or(z.literal('')),
 });
 
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;

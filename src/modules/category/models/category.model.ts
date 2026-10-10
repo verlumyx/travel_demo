@@ -11,7 +11,6 @@ export const app_categories = pgTable(
     slug: varchar('slug', { length: 100 }).notNull().unique(),
     description: text('description'),
     icon: varchar('icon', { length: 100 }),
-    imageUrl: varchar('image_url', { length: 500 }),
     status: varchar('status', { length: 50 }).notNull().default('active').$type<'active' | 'inactive'>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().$onUpdate(() => new Date()),

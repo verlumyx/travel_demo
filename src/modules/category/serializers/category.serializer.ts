@@ -7,7 +7,6 @@ export type CategoryDto = {
   slug: string;
   description: string | null;
   icon: string | null;
-  imageUrl: string | null;
   status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string | null;
@@ -21,7 +20,6 @@ export function toCategoryDto(row: CategoryRow): CategoryDto {
     slug: row.slug,
     description: row.description,
     icon: row.icon,
-    imageUrl: row.imageUrl,
     status: row.status,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt ? row.updatedAt.toISOString() : null,

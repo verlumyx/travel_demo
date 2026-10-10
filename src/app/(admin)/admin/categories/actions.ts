@@ -33,7 +33,6 @@ export async function createCategoryAction(
       slug: formData.get('slug'),
       description: formData.get('description') || null,
       icon: formData.get('icon') || null,
-      imageUrl: formData.get('imageUrl') || null,
     };
 
     const parsed = createCategorySchema.safeParse(rawData);
@@ -77,7 +76,6 @@ export async function updateCategoryAction(
       slug: formData.get('slug'),
       description: formData.get('description') || null,
       icon: formData.get('icon') || null,
-      imageUrl: formData.get('imageUrl') || null,
     };
 
     const parsed = updateCategorySchema.safeParse(rawData);

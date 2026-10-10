@@ -10,6 +10,7 @@ import { destinationRoutes } from '../routes';
 import { Loader2, ArrowLeft, Save, MapPin } from 'lucide-react';
 import { Select2 } from '@/components/ui/select2';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 interface DestinationFormProps {
   destination?: DestinationDto;
@@ -114,41 +115,31 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 block">
-              Slug URL <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="slug"
-              value={slug}
-              onChange={handleSlugChange}
-              placeholder="los-roques"
-              required
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm font-mono transition"
-            />
-            {state.fieldErrors?.slug && (
-              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.slug[0]}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 block">
-              URL de Imagen
-            </label>
-            <input
-              type="url"
-              name="imageUrl"
-              defaultValue={destination?.imageUrl || ''}
-              placeholder="https://..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
-            />
-            {state.fieldErrors?.imageUrl && (
-              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.imageUrl[0]}</p>
-            )}
-          </div>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-slate-700 block">
+            Slug URL <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="slug"
+            value={slug}
+            onChange={handleSlugChange}
+            placeholder="los-roques"
+            required
+            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm font-mono transition"
+          />
+          {state.fieldErrors?.slug && (
+            <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.slug[0]}</p>
+          )}
         </div>
+
+        <ImageUpload
+          name="imageUrl"
+          defaultValue={destination?.imageUrl}
+          folder="destinations"
+          label="Fotografía del Destino"
+          error={state.fieldErrors?.imageUrl?.[0]}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="space-y-1.5">

@@ -6,7 +6,6 @@ export class UpdateCategoryCommand {
     public readonly slug: string,
     public readonly description?: string | null,
     public readonly icon?: string | null,
-    public readonly imageUrl?: string | null,
   ) {}
 
   static fromInput(input: UpdateCategoryInput): UpdateCategoryCommand {
@@ -15,7 +14,6 @@ export class UpdateCategoryCommand {
       input.slug,
       input.description,
       input.icon,
-      input.imageUrl,
     );
   }
 }

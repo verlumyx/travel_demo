@@ -98,20 +98,6 @@ export default async function CategoryDetailPage({ params }: PageProps) {
               {new Date(category.createdAt).toLocaleDateString('es-VE', { dateStyle: 'long' })}
             </p>
           </div>
-
-          {category.imageUrl && (
-            <div>
-              <span className="text-xs font-semibold uppercase text-slate-400 tracking-wider">Imagen de Portada</span>
-              <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 max-h-48">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={category.imageUrl}
-                  alt={category.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

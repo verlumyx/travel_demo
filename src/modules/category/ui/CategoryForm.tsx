@@ -125,22 +125,6 @@ export function CategoryForm({ category }: CategoryFormProps) {
               <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.icon[0]}</p>
             )}
           </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700 block">
-              URL de Imagen Ilustrativa
-            </label>
-            <input
-              type="url"
-              name="imageUrl"
-              defaultValue={category?.imageUrl || ''}
-              placeholder="https://images.unsplash.com/..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
-            />
-            {state.fieldErrors?.imageUrl && (
-              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.imageUrl[0]}</p>
-            )}
-          </div>
         </div>
 
         <div className="space-y-1.5">

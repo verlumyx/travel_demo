@@ -30,7 +30,6 @@ export class DrizzleCategoryRepository implements CategoryRepository {
         slug: command.slug,
         description: command.description,
         icon: command.icon,
-        imageUrl: command.imageUrl,
         status: 'active',
       })
       .returning();
@@ -74,7 +73,6 @@ export class DrizzleCategoryRepository implements CategoryRepository {
         slug: command.slug,
         description: command.description,
         icon: command.icon,
-        imageUrl: command.imageUrl,
       })
       .where(eq(app_categories.id, id))
       .returning();

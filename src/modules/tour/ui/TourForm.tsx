@@ -12,6 +12,7 @@ import { CurrencyInput } from '@/components/ui/currency-input';
 import { NumberInput } from '@/components/ui/number-input';
 import { Select2 } from '@/components/ui/select2';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 interface TourFormProps {
   tour?: TourDto;
@@ -156,36 +157,29 @@ export function TourForm({ tour }: TourFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">
-              Estado de Publicación
-            </label>
-            <Select2
-              name="status"
-              defaultValue={tour?.status || 'draft'}
-              options={[
-                { value: 'draft', label: 'Borrador (Oculto al público)' },
-                { value: 'active', label: 'Activo (Visible en catálogo)' },
-                { value: 'inactive', label: 'Inactivo (Deshabilitado)' },
-              ]}
-              size="md"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">
-              URL de Imagen Promocional
-            </label>
-            <input
-              type="url"
-              name="imageUrl"
-              defaultValue={tour?.imageUrl || ''}
-              placeholder="https://images.unsplash.com/..."
-              className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition shadow-2xs"
-            />
-          </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-700">
+            Estado de Publicación
+          </label>
+          <Select2
+            name="status"
+            defaultValue={tour?.status || 'draft'}
+            options={[
+              { value: 'draft', label: 'Borrador (Oculto al público)' },
+              { value: 'active', label: 'Activo (Visible en catálogo)' },
+              { value: 'inactive', label: 'Inactivo (Deshabilitado)' },
+            ]}
+            size="md"
+          />
         </div>
+
+        <ImageUpload
+          name="imageUrl"
+          defaultValue={tour?.imageUrl}
+          folder="tours"
+          label="Imagen Promocional del Tour"
+          error={state.fieldErrors?.imageUrl?.[0]}
+        />
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-slate-700">
