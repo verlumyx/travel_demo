@@ -1,7 +1,6 @@
 export class UpdateUserCommand {
   public readonly name: string;
   public readonly email: string;
-  public readonly password?: string;
   public readonly roleId: string;
   public readonly phone?: string | null;
   public readonly avatarUrl?: string | null;
@@ -9,12 +8,11 @@ export class UpdateUserCommand {
 
   constructor(init: {
     readonly name: string;
-  readonly email: string;
-  readonly password?: string;
-  readonly roleId: string;
-  readonly phone?: string | null;
-  readonly avatarUrl?: string | null;
-  readonly status: 'active' | 'inactive';
+    readonly email: string;
+    readonly roleId: string;
+    readonly phone?: string | null;
+    readonly avatarUrl?: string | null;
+    readonly status: 'active' | 'inactive';
   }) {
     Object.assign(this, init);
   }

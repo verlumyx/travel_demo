@@ -7,7 +7,6 @@ export const app_users = pgTable('app_users', {
   id: uuid('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).notNull().unique(),
-  password: varchar('password', { length: 255 }).notNull(),
   roleId: uuid('role_id').notNull().references(() => app_roles.id),
   phone: varchar('phone', { length: 50 }),
   avatarUrl: varchar('avatar_url', { length: 500 }),

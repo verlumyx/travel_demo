@@ -195,7 +195,6 @@ export const users = pgTable('app_users', {
     id: uuid('id').primaryKey(),
     name: varchar('name', {length: 255}).notNull(),
     email: varchar('email', {length: 255}).notNull().unique(),
-    password: varchar('password', {length: 255}).notNull(),
     roleId: uuid('role_id').notNull().references(() => roles.id),
     phone: varchar('phone', {length: 50}),
     avatarUrl: varchar('avatar_url', {length: 500}),
@@ -213,7 +212,6 @@ export const users = pgTable('app_users', {
 | `id`            | `uuid` PK               | No       | —          | UUID v7                    |
 | `name`          | `varchar(255)`          | No       | —          | Nombre completo            |
 | `email`         | `varchar(255)` UNIQUE   | No       | —          | Correo electrónico (login) |
-| `password`      | `varchar(255)`          | No       | —          | Hash de la contraseña      |
 | `role_id`       | `uuid` FK → `app_roles` | No       | —          | Rol asignado               |
 | `phone`         | `varchar(50)`           | Sí       | —          | Teléfono de contacto       |
 | `avatar_url`    | `varchar(500)`          | Sí       | —          | URL del avatar             |

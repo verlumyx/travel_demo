@@ -114,7 +114,6 @@ async function seed() {
       id: uuidv7(),
       name: 'Super Admin',
       email: adminEmail,
-      password: adminPassword, // hash handled by auth layer
       roleId: adminRole.id,
       status: 'active',
     });
