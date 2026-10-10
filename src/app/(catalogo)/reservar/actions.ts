@@ -1,5 +1,7 @@
 'use server';
-
+ 
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -46,8 +48,8 @@ const clientCheckoutSchema = z.object({
     'cash_usd',
     'cash_ves',
   ]),
-  paymentReference: z.string().min(2, 'Número de referencia bancaria obligatorio.'),
-  proofImageUrl: z.string().url('URL de captura no válida.').optional().or(z.literal('')),
+  paymentReference: z.string().optional().nullable(),
+  paymentDate: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 });
 
@@ -60,6 +62,9 @@ export async function clientCheckoutAction(
   let departureId: string | null = null;
 
   try {
+    const rawPaymentMethod = formData.get('paymentMethod');
+    const isCash = rawPaymentMethod === 'cash_usd' || rawPaymentMethod === 'cash_ves';
+
     const rawData = {
       departureId: formData.get('departureId'),
       slotsCount: formData.get('slotsCount'),
@@ -72,11 +77,33 @@ export async function clientCheckoutAction(
       emergencyContact: formData.get('emergencyContact') || null,
       emergencyPhone: formData.get('emergencyPhone') || null,
       passengersJson: formData.get('passengersJson') || '[]',
-      paymentMethod: formData.get('paymentMethod'),
+      paymentMethod: rawPaymentMethod,
       paymentReference: formData.get('paymentReference'),
-      proofImageUrl: formData.get('proofImageUrl') || '',
+      paymentDate: formData.get('paymentDate'),
       notes: formData.get('notes') || null,
     };
+
+    if (!isCash) {
+      const refStr = (rawData.paymentReference || '').toString().trim();
+      if (refStr.length < 2) {
+        return {
+          status: 'error',
+          fieldErrors: {
+            paymentReference: ['Número de referencia bancaria obligatorio.'],
+          },
+        };
+      }
+
+      const dateStr = (rawData.paymentDate || '').toString().trim();
+      if (!dateStr) {
+        return {
+          status: 'error',
+          fieldErrors: {
+            paymentDate: ['Fecha de realización del pago obligatoria.'],
+          },
+        };
+      }
+    }
 
     const parsed = clientCheckoutSchema.safeParse(rawData);
     if (!parsed.success) {
@@ -98,6 +125,35 @@ export async function clientCheckoutAction(
         return { status: 'error', message: 'Datos de acompañantes con formato inválido.' };
       }
     }
+
+    // Process file upload if provided
+    const proofFile = formData.get('proofFile') as File | null;
+    let uploadedProofUrl: string | undefined = undefined;
+
+    if (!isCash && proofFile && typeof proofFile === 'object' && proofFile.size > 0 && proofFile.name) {
+      const bytes = await proofFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const ext = path.extname(proofFile.name) || '.png';
+      const allowedExts = ['.png', '.jpg', '.jpeg', '.webp', '.pdf'];
+      const cleanExt = allowedExts.includes(ext.toLowerCase()) ? ext.toLowerCase() : '.png';
+      const fileName = `proof_${Date.now()}_${crypto.randomUUID().slice(0, 8)}${cleanExt}`;
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payments');
+      await fs.mkdir(uploadDir, { recursive: true });
+      await fs.writeFile(path.join(uploadDir, fileName), buffer);
+      uploadedProofUrl = `/uploads/payments/${fileName}`;
+    }
+
+    let effectivePaymentDate = new Date();
+    if (data.paymentDate && data.paymentDate.trim()) {
+      const parsedDate = new Date(`${data.paymentDate.trim()}T12:00:00Z`);
+      if (!isNaN(parsedDate.getTime())) {
+        effectivePaymentDate = parsedDate;
+      }
+    }
+
+    const effectiveReference = isCash
+      ? 'PAGO EN EFECTIVO'
+      : (data.paymentReference?.trim() || 'SIN REFERENCIA');
 
     await db.transaction(async (tx) => {
       const departureContainer = createDepartureContainer(tx);
@@ -180,11 +236,15 @@ export async function clientCheckoutAction(
           method: data.paymentMethod,
           amount: totalAmount,
           currency: 'USD',
-          reference: data.paymentReference.trim(),
-          proofImageUrl: data.proofImageUrl || undefined,
-          paymentDate: new Date(),
-          receivedByName: 'Reportado por cliente en checkout web',
-          notes: 'Comprobante ingresado durante el autoservicio online.',
+          reference: effectiveReference,
+          proofImageUrl: uploadedProofUrl,
+          paymentDate: effectivePaymentDate,
+          receivedByName: isCash
+            ? 'Pago en efectivo acordado en checkout web'
+            : 'Reportado por cliente en checkout web',
+          notes: isCash
+            ? 'Pago en efectivo directo acordado durante la reserva online.'
+            : 'Comprobante y referencia ingresados durante el autoservicio online.',
           status: 'pending',
         }),
       );

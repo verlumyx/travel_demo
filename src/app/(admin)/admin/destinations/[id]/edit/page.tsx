@@ -31,10 +31,10 @@ export default async function EditDestinationPage({ params }: PageProps) {
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2">
-          <MapPin className="h-6 w-6 text-cyan-400" />
-          <h1 className="text-2xl font-bold tracking-tight text-white">Editar Destino: {destination.name}</h1>
+          <MapPin className="h-6 w-6 text-teal-600" />
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Editar Destino: {destination.name}</h1>
         </div>
-        <p className="text-sm text-slate-400 mt-1">
+        <p className="text-sm text-slate-500 mt-1">
           Actualiza los datos, categoría o ubicación del destino ({destination.code}).
         </p>
       </div>

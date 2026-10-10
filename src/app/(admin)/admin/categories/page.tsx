@@ -163,13 +163,13 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <div className="p-4 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
             <span>Página {page} de {totalPages}</span>
             <div className="flex items-center gap-2">
               {page > 1 && (
                 <Link
                   href={`/admin/categories?page=${page - 1}${q ? `&q=${q}` : ''}${status ? `&status=${status}` : ''}`}
-                  className="px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800 text-white"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium transition shadow-2xs"
                 >
                   Anterior
                 </Link>
@@ -177,7 +177,7 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
               {page < totalPages && (
                 <Link
                   href={`/admin/categories?page=${page + 1}${q ? `&q=${q}` : ''}${status ? `&status=${status}` : ''}`}
-                  className="px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800 text-white"
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium transition shadow-2xs"
                 >
                   Siguiente
                 </Link>

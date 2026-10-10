@@ -278,7 +278,7 @@ export function AdminSidebar({
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 bg-white text-slate-800 border-r border-slate-200 shadow-2xl flex flex-col md:hidden transition-transform duration-300 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 w-72 bg-white text-slate-800 border-r border-slate-200 shadow-2xl flex flex-col md:hidden transition-transform duration-300 ease-in-out print:hidden',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
@@ -312,7 +312,7 @@ export function AdminSidebar({
       {/* 2. Desktop Sticky Sidebar (Desplegable / Plegable) */}
       <aside
         className={cn(
-          'hidden md:flex flex-col h-screen sticky top-0 bg-white text-slate-800 border-r border-slate-200/90 shrink-0 z-30 select-none transition-all duration-300 ease-in-out shadow-xs',
+          'hidden md:flex flex-col h-screen sticky top-0 bg-white text-slate-800 border-r border-slate-200/90 shrink-0 z-30 select-none transition-all duration-300 ease-in-out shadow-xs print:hidden',
           isCollapsed ? 'w-20' : 'w-64'
         )}
       >

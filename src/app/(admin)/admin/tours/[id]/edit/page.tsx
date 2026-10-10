@@ -26,10 +26,10 @@ export default async function EditTourPage({ params }: PageProps) {
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2">
-          <Compass className="h-6 w-6 text-emerald-400" />
-          <h1 className="text-2xl font-bold tracking-tight text-white">Editar Tour: {tour.name}</h1>
+          <Compass className="h-6 w-6 text-teal-600" />
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Editar Tour: {tour.name}</h1>
         </div>
-        <p className="text-sm text-slate-400 mt-1">
+        <p className="text-sm text-slate-500 mt-1">
           Modifica las tarifas, descripción, duraciones o detalles del paquete ({tour.code}).
         </p>
       </div>

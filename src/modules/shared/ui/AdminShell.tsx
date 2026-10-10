@@ -76,7 +76,7 @@ export function AdminShell({
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header Bar */}
-        <header className="h-16 border-b border-slate-200/90 bg-white/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-2xs">
+        <header className="h-16 border-b border-slate-200/90 bg-white/95 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-2xs print:hidden">
           <div className="flex items-center gap-3">
             {/* Botón toggle para Desktop */}
             <button
@@ -123,8 +123,8 @@ export function AdminShell({
 
         <FlashToaster flash={flash ?? null} />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-slate-50">
-          <div className="max-w-7xl mx-auto">{children}</div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-slate-50 print:bg-white print:p-0 print:overflow-visible">
+          <div className="max-w-7xl mx-auto print:max-w-none print:w-full">{children}</div>
         </main>
       </div>
     </div>

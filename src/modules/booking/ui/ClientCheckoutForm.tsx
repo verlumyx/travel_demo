@@ -88,9 +88,10 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
 
   const totalPrice = (slotsCount * departure.effectivePrice).toFixed(2);
   const depDate = new Date(departure.departureDate);
+  const isCash = paymentMethod === 'cash_usd' || paymentMethod === 'cash_ves';
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={formAction} className="space-y-8" encType="multipart/form-data">
       <input type="hidden" name="departureId" value={departure.id} />
       <input type="hidden" name="slotsCount" value={slotsCount} />
       <input type="hidden" name="passengersJson" value={JSON.stringify(companions)} />
@@ -488,91 +489,120 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
             />
           </div>
 
-          {/* Bank Coordinates Display Card */}
-          <div className="p-5 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 text-xs space-y-2">
-            <span className="font-bold text-indigo-950 dark:text-indigo-200 flex items-center gap-2">
-              <Building className="h-4 w-4 text-indigo-600" />
-              Coordenadas de la Agencia para {paymentMethod.replace('_', ' ').toUpperCase()}:
+          {/* Bank Coordinates / Instructions Display Card */}
+          <div className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 text-xs space-y-2.5 shadow-2xs">
+            <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <Building className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+              Coordenadas e Instrucciones para {paymentMethod.replace('_', ' ').toUpperCase()}:
             </span>
 
             {paymentMethod === 'pago_movil' && (
-              <div className="space-y-1 text-slate-700 dark:text-slate-300 font-mono text-[11px] pt-1">
-                <div>Banco: <strong>Banesco (0134)</strong></div>
-                <div>Teléfono: <strong>0414-1234567</strong></div>
-                <div>RIF / C.I.: <strong>J-50000000-0</strong> (TravelDemo C.A.)</div>
+              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                <div>Banco: <strong className="text-slate-900 dark:text-white font-bold">Banesco (0134)</strong></div>
+                <div>Teléfono: <strong className="text-slate-900 dark:text-white font-bold">0414-1234567</strong></div>
+                <div>RIF / C.I.: <strong className="text-slate-900 dark:text-white font-bold">J-50000000-0</strong> (TravelDemo C.A.)</div>
               </div>
             )}
 
             {paymentMethod === 'zelle' && (
-              <div className="space-y-1 text-slate-700 dark:text-slate-300 font-mono text-[11px] pt-1">
-                <div>Email Zelle: <strong>pagos@traveldemo.com</strong></div>
-                <div>Titular: <strong>Travel Agency LLC</strong></div>
-                <div>Memo: Tu nombre y código de tour</div>
+              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                <div>Email Zelle: <strong className="text-slate-900 dark:text-white font-bold">pagos@traveldemo.com</strong></div>
+                <div>Titular: <strong className="text-slate-900 dark:text-white font-bold">Travel Agency LLC</strong></div>
+                <div>Memo: <span className="text-slate-700 dark:text-slate-300 font-sans">Tu nombre y código de tour</span></div>
               </div>
             )}
 
             {paymentMethod === 'binance' && (
-              <div className="space-y-1 text-slate-700 dark:text-slate-300 font-mono text-[11px] pt-1">
-                <div>Binance Pay ID: <strong>84920194</strong></div>
-                <div>Moneda: <strong>USDT</strong></div>
-                <div>Red sugerida: Binance Pay Direct o TRC-20</div>
+              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                <div>Binance Pay ID: <strong className="text-slate-900 dark:text-white font-bold">84920194</strong></div>
+                <div>Moneda: <strong className="text-slate-900 dark:text-white font-bold">USDT</strong></div>
+                <div>Red sugerida: <span className="text-slate-700 dark:text-slate-300 font-sans">Binance Pay Direct o TRC-20</span></div>
               </div>
             )}
 
             {paymentMethod === 'zinli' && (
-              <div className="space-y-1 text-slate-700 dark:text-slate-300 font-mono text-[11px] pt-1">
-                <div>Correo Zinli: <strong>info@traveldemo.com</strong></div>
-                <div>Nombre: <strong>TravelDemo Oficial</strong></div>
+              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                <div>Correo Zinli: <strong className="text-slate-900 dark:text-white font-bold">info@traveldemo.com</strong></div>
+                <div>Nombre: <strong className="text-slate-900 dark:text-white font-bold">TravelDemo Oficial</strong></div>
               </div>
             )}
 
             {paymentMethod === 'bank_transfer' && (
-              <div className="space-y-1 text-slate-700 dark:text-slate-300 font-mono text-[11px] pt-1">
-                <div>Banco: <strong>Banesco Banco Universal</strong></div>
-                <div>Cuenta Corriente: <strong>0134-0000-00-0000000000</strong></div>
-                <div>Titular: <strong>TravelDemo C.A.</strong> / RIF: <strong>J-50000000-0</strong></div>
+              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                <div>Banco: <strong className="text-slate-900 dark:text-white font-bold">Banesco Banco Universal</strong></div>
+                <div>Cuenta Corriente: <strong className="text-slate-900 dark:text-white font-bold">0134-0000-00-0000000000</strong></div>
+                <div>Titular: <strong className="text-slate-900 dark:text-white font-bold">TravelDemo C.A.</strong> / RIF: <strong className="text-slate-900 dark:text-white font-bold">J-50000000-0</strong></div>
               </div>
             )}
 
             {paymentMethod === 'cash_usd' && (
-              <div className="space-y-1 text-slate-700 dark:text-slate-300 text-[11px] pt-1">
-                <div>Pago en taquilla u oficina de la agencia antes de la salida.</div>
-                <div>Indica en la referencia: <strong>OFICINA</strong> o el nombre del asesor.</div>
+              <div className="space-y-1.5 text-slate-800 dark:text-slate-200 text-xs pt-1 leading-relaxed">
+                <div>
+                  <strong className="text-slate-900 dark:text-white">Pago en taquilla u oficina de la agencia antes de la salida.</strong>
+                </div>
+                <div className="text-slate-600 dark:text-slate-300">
+                  El pago se coordinará y entregará directamente en taquilla o con el asesor del tour. No se requiere número de transferencia ni captura bancaria para reservar.
+                </div>
               </div>
             )}
           </div>
 
-          {/* Reference & Proof Inputs */}
+          {/* Reference, Date & Proof Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div className="space-y-1.5 sm:col-span-2">
-              <label htmlFor="paymentReference" className="font-medium text-foreground">
-                Número de Referencia / ID de Transacción *
-              </label>
-              <input
-                id="paymentReference"
-                name="paymentReference"
-                type="text"
-                placeholder="Ej: 048291, Ref #9821374"
-                required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground font-mono focus:ring-2 focus:ring-ring"
-              />
-              {state.fieldErrors?.paymentReference && (
-                <p className="text-destructive text-[11px]">{state.fieldErrors.paymentReference[0]}</p>
-              )}
-            </div>
+            {!isCash && (
+              <>
+                <div className="space-y-1.5">
+                  <label htmlFor="paymentReference" className="font-medium text-foreground">
+                    Número de Referencia / ID de Transacción *
+                  </label>
+                  <input
+                    id="paymentReference"
+                    name="paymentReference"
+                    type="text"
+                    placeholder="Ej: 048291, Ref #9821374"
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground font-mono focus:ring-2 focus:ring-ring"
+                  />
+                  {state.fieldErrors?.paymentReference && (
+                    <p className="text-destructive text-[11px]">{state.fieldErrors.paymentReference[0]}</p>
+                  )}
+                </div>
 
-            <div className="space-y-1.5 sm:col-span-2">
-              <label htmlFor="proofImageUrl" className="font-medium text-foreground">
-                Enlace / URL de la Captura del Pago (Opcional)
-              </label>
-              <input
-                id="proofImageUrl"
-                name="proofImageUrl"
-                type="url"
-                placeholder="https://... o enlace a tu comprobante en la nube"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
-              />
-            </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="paymentDate" className="font-medium text-foreground">
+                    Fecha de Realización del Pago *
+                  </label>
+                  <input
+                    id="paymentDate"
+                    name="paymentDate"
+                    type="date"
+                    defaultValue={new Date().toISOString().split('T')[0]}
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
+                  />
+                  {state.fieldErrors?.paymentDate && (
+                    <p className="text-destructive text-[11px]">{state.fieldErrors.paymentDate[0]}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label htmlFor="proofFile" className="font-medium text-foreground flex items-center justify-between">
+                    <span>Subir Comprobante / Captura del Pago (Opcional)</span>
+                    <span className="text-[11px] text-muted-foreground font-normal">PNG, JPG, WEBP o PDF</span>
+                  </label>
+                  <input
+                    id="proofFile"
+                    name="proofFile"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,application/pdf"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                  />
+                  {state.fieldErrors?.proofFile && (
+                    <p className="text-destructive text-[11px]">{state.fieldErrors.proofFile[0]}</p>
+                  )}
+                </div>
+              </>
+            )}
 
             <div className="space-y-1.5 sm:col-span-2">
               <label htmlFor="notes" className="font-medium text-foreground">

@@ -79,7 +79,11 @@ export default async function DepartureManifestPage({ params }: PageProps) {
         </div>
 
         <div className="flex items-center gap-3 self-start sm:self-auto">
-          <PrintManifestButton />
+          <PrintManifestButton
+            departure={departure}
+            assignedUnits={assignedUnits}
+            passengers={passengers}
+          />
         </div>
       </div>
 
@@ -192,7 +196,7 @@ export default async function DepartureManifestPage({ params }: PageProps) {
               </thead>
               <tbody className="divide-y divide-border print:divide-black text-[11px]">
                 {passengers.map((p, index) => (
-                  <tr key={p.id} className="hover:bg-muted/10">
+                  <tr key={p.id} className="hover:bg-muted/10 print:break-inside-avoid">
                     <td className="py-2 px-3 font-mono font-bold text-center border-r border-border print:border-black">
                       {index + 1}
                     </td>
@@ -255,7 +259,7 @@ export default async function DepartureManifestPage({ params }: PageProps) {
         </div>
 
         {/* Footer & Signatures */}
-        <div className="pt-8 mt-6 border-t border-foreground/20 grid grid-cols-2 gap-8 text-xs">
+        <div className="pt-8 mt-6 border-t border-foreground/20 grid grid-cols-2 gap-8 text-xs print:break-inside-avoid">
           <div className="space-y-12">
             <div>
               <span className="text-[11px] text-muted-foreground print:text-black block">

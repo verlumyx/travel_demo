@@ -51,25 +51,31 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
   };
 
   return (
-    <form action={formAction} className="space-y-8 max-w-3xl">
+    <form action={formAction} className="space-y-6 max-w-3xl">
       {!isEditing && <input type="hidden" name="id" value={newId} />}
 
       {state.message && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+        <div
+          className={`p-4 rounded-xl text-sm border ${
+            state.status === 'error'
+              ? 'bg-rose-50 border-rose-200 text-rose-700'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+          }`}
+        >
           {state.message}
         </div>
       )}
 
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
-        <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-cyan-400" />
+      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-6">
+        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
+          <MapPin className="h-5 w-5 text-teal-600" />
           Información del Destino
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
-              Nombre del Destino <span className="text-rose-400">*</span>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
+              Nombre del Destino <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -78,15 +84,15 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
               onChange={handleNameChange}
               placeholder="Ej: Archipiélago Los Roques, Roraima"
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />
             {state.fieldErrors?.name && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.name[0]}</p>
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.name[0]}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
               Categoría Turística
             </label>
             <Select2
@@ -103,15 +109,15 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
               size="md"
             />
             {state.fieldErrors?.categoryId && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.categoryId[0]}</p>
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.categoryId[0]}</p>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
-              Slug URL <span className="text-rose-400">*</span>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
+              Slug URL <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -120,15 +126,15 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
               onChange={handleSlugChange}
               placeholder="los-roques"
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm font-mono transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm font-mono transition"
             />
             {state.fieldErrors?.slug && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.slug[0]}</p>
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.slug[0]}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
               URL de Imagen
             </label>
             <input
@@ -136,17 +142,17 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
               name="imageUrl"
               defaultValue={destination?.imageUrl || ''}
               placeholder="https://..."
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />
             {state.fieldErrors?.imageUrl && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.imageUrl[0]}</p>
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.imageUrl[0]}</p>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
               Estado / Región
             </label>
             <input
@@ -154,12 +160,12 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
               name="state"
               defaultValue={destination?.state || ''}
               placeholder="Ej: Falcón, Bolívar, Mérida"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
               Ciudad / Municipio
             </label>
             <input
@@ -167,25 +173,25 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
               name="city"
               defaultValue={destination?.city || ''}
               placeholder="Ej: Chichiriviche, Santa Elena"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
               País
             </label>
             <input
               type="text"
               name="country"
               defaultValue={destination?.country || 'Venezuela'}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-300">
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-slate-700 block">
             Descripción y Atractivos
           </label>
           <RichTextEditor
@@ -197,10 +203,10 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4">
+      <div className="flex items-center justify-between pt-2">
         <Link
           href={destinationRoutes.list()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 text-sm font-medium transition"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition shadow-xs"
         >
           <ArrowLeft className="h-4 w-4" />
           Cancelar
@@ -209,7 +215,7 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white font-semibold text-sm transition shadow-xs cursor-pointer disabled:opacity-50"
         >
           {isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />

@@ -26,25 +26,31 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
   const [newId] = useState(() => (!isEditing ? uuidv7() : ''));
 
   return (
-    <form action={formAction} className="space-y-8 max-w-3xl">
+    <form action={formAction} className="space-y-6 max-w-3xl">
       {!isEditing && <input type="hidden" name="id" value={newId} />}
 
       {state.message && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+        <div
+          className={`p-4 rounded-xl text-sm border ${
+            state.status === 'error'
+              ? 'bg-rose-50 border-rose-200 text-rose-700'
+              : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+          }`}
+        >
           {state.message}
         </div>
       )}
 
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
-        <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-          <Bus className="h-4 w-4 text-emerald-400" />
+      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-6">
+        <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 pb-3 border-b border-slate-100">
+          <Bus className="h-5 w-5 text-teal-600" />
           Ficha Técnica de la Unidad
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
-              Nombre / Identificador Interno <span className="text-rose-400">*</span>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
+              Nombre / Identificador Interno <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -52,16 +58,16 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
               defaultValue={unit?.name || ''}
               placeholder="Ej: Autobús Marcopolo 01, Van Ejecutiva"
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />
             {state.fieldErrors?.name && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.name[0]}</p>
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.name[0]}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
-              Tipo de Vehículo <span className="text-rose-400">*</span>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
+              Tipo de Vehículo <span className="text-rose-500">*</span>
             </label>
             <Select2
               name="type"
@@ -77,15 +83,15 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
               size="md"
             />
             {state.fieldErrors?.type && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.type[0]}</p>
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.type[0]}</p>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
-              Capacidad de Pasajeros <span className="text-rose-400">*</span>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
+              Capacidad de Pasajeros <span className="text-rose-500">*</span>
             </label>
             <NumberInput
               name="capacity"
@@ -93,15 +99,15 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
               max={300}
               defaultValue={unit?.capacity || 32}
               required
-              className="h-10 rounded-xl bg-slate-950 border-slate-800 text-slate-100"
+              className="h-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:bg-white focus:border-teal-500"
             />
             {state.fieldErrors?.capacity && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.capacity[0]}</p>
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.capacity[0]}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
               Placa / Matrícula
             </label>
             <input
@@ -109,14 +115,17 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
               name="plateNumber"
               defaultValue={unit?.plateNumber || ''}
               placeholder="Ej: AA123BB"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm uppercase font-mono transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm uppercase font-mono transition"
             />
+            {state.fieldErrors?.plateNumber && (
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.plateNumber[0]}</p>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
               Conductor Habitual
             </label>
             <input
@@ -124,12 +133,15 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
               name="driverName"
               defaultValue={unit?.driverName || ''}
               placeholder="Nombre del chofer responsable"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />
+            {state.fieldErrors?.driverName && (
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.driverName[0]}</p>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-slate-700 block">
               Teléfono del Conductor
             </label>
             <input
@@ -137,13 +149,16 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
               name="driverPhone"
               defaultValue={unit?.driverPhone || ''}
               placeholder="+58 412 1234567"
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />
+            {state.fieldErrors?.driverPhone && (
+              <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.driverPhone[0]}</p>
+            )}
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-300">
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-slate-700 block">
             Notas de Mantenimiento / Observaciones
           </label>
           <RichTextEditor
@@ -152,13 +167,16 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
             placeholder="Equipamiento, aire acondicionado, revisión técnica al día..."
             minHeight="min-h-[140px]"
           />
+          {state.fieldErrors?.notes && (
+            <p className="text-xs text-rose-500 mt-1">{state.fieldErrors.notes[0]}</p>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4">
+      <div className="flex items-center justify-between pt-2">
         <Link
           href={transportUnitRoutes.list()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 text-sm font-medium transition"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition shadow-xs"
         >
           <ArrowLeft className="h-4 w-4" />
           Cancelar
@@ -167,7 +185,7 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white font-semibold text-sm transition shadow-xs cursor-pointer disabled:opacity-50"
         >
           {isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />

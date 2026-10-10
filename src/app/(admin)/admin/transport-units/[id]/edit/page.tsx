@@ -28,10 +28,10 @@ export default async function EditTransportUnitPage({ params }: PageProps) {
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2">
-          <Bus className="h-6 w-6 text-emerald-400" />
-          <h1 className="text-2xl font-bold tracking-tight text-white">Editar Unidad: {unit.name}</h1>
+          <Bus className="h-6 w-6 text-teal-600" />
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Editar Unidad: {unit.name}</h1>
         </div>
-        <p className="text-sm text-slate-400 mt-1">
+        <p className="text-sm text-slate-500 mt-1">
           Actualiza la capacidad, placa o chofer asignado a esta unidad ({unit.code}).
         </p>
       </div>
