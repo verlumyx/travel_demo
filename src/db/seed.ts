@@ -2,6 +2,7 @@ import { db } from '@/db/client';
 import { app_roles } from '@/modules/role/models/role.model';
 import { app_users } from '@/modules/user/models/user.model';
 import { app_categories } from '@/modules/category/models/category.model';
+import { app_payment_methods } from '@/modules/payment-method/models/payment-method.model';
 import { uuidv7 } from '@/modules/shared/uuid';
 import { auth } from '@/lib/auth';
 import { eq } from 'drizzle-orm';
@@ -146,6 +147,51 @@ async function seed() {
       console.log(`✓ Categoría creada: ${cat.name} (${cat.code})`);
     } else {
       console.log(`ℹ Categoría ya existente: ${cat.name}`);
+    }
+  }
+
+  // 4. Seed Payment Methods
+  const paymentMethodsToSeed = [
+    {
+      code: 'PMT000001',
+      name: 'Pago Móvil Banesco',
+      currency: 'VES',
+      instructions: 'Banco: Banesco (0134)\nTeléfono: 0414-1234567\nRIF: J-50000000-0\nTitular: Travel Agency C.A.',
+    },
+    {
+      code: 'PMT000002',
+      name: 'Zelle Oficial',
+      currency: 'USD',
+      instructions: 'Email Zelle: pagos@traveldemo.com\nTitular: Travel Agency LLC\nConcepto/Memo: Indicar nombre del pasajero y tour',
+    },
+    {
+      code: 'PMT000003',
+      name: 'Binance Pay (USDT)',
+      currency: 'USDT',
+      instructions: 'Binance Pay ID: 84920194\nMoneda: USDT\nRed: TRC-20 o Pay Direct',
+    },
+    {
+      code: 'PMT000004',
+      name: 'Efectivo en Taquilla',
+      currency: 'USD',
+      instructions: 'Pago directo en taquilla o recepción de la agencia antes de la salida del viaje.',
+    },
+  ];
+
+  for (const pm of paymentMethodsToSeed) {
+    const [existingPm] = await db.select().from(app_payment_methods).where(eq(app_payment_methods.code, pm.code));
+    if (!existingPm) {
+      await db.insert(app_payment_methods).values({
+        id: uuidv7(),
+        code: pm.code,
+        name: pm.name,
+        currency: pm.currency,
+        instructions: pm.instructions,
+        status: 'active',
+      });
+      console.log(`✓ Método de pago creado: ${pm.name} (${pm.code})`);
+    } else {
+      console.log(`ℹ Método de pago ya existente: ${pm.name}`);
     }
   }
 

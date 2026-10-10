@@ -39,15 +39,7 @@ const clientCheckoutSchema = z.object({
   // Accompanying passengers (if slotsCount > 1)
   passengersJson: z.string().optional(),
   // Payment reporting
-  paymentMethod: z.enum([
-    'pago_movil',
-    'zelle',
-    'binance',
-    'zinli',
-    'bank_transfer',
-    'cash_usd',
-    'cash_ves',
-  ]),
+  paymentMethod: z.string().min(1, 'El método de pago es obligatorio.').max(50),
   paymentReference: z.string().optional().nullable(),
   paymentDate: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),

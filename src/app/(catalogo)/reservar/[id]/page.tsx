@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createDepartureContainer } from '@/modules/departure/container';
 import { toDepartureDto } from '@/modules/departure/serializers/departure.serializer';
+import { createPaymentMethodContainer } from '@/modules/payment-method/container';
+import { toPaymentMethodDto } from '@/modules/payment-method/serializers/payment-method.serializer';
 import { ClientCheckoutForm } from '@/modules/booking/ui/ClientCheckoutForm';
 import {
   Compass,
@@ -43,6 +45,10 @@ export default async function ClientCheckoutPage({ params }: PageProps) {
   const effectivePrice = departure.priceOverride
     ? Number(departure.priceOverride)
     : Number(tour.basePrice);
+
+  const paymentMethodContainer = createPaymentMethodContainer();
+  const rawPaymentMethods = await paymentMethodContainer.repository.getActive();
+  const paymentMethods = rawPaymentMethods.map(toPaymentMethodDto);
 
   const depDate = new Date(departure.departureDate);
 
@@ -153,6 +159,7 @@ export default async function ClientCheckoutPage({ params }: PageProps) {
             currency: tour.currency,
             imageUrl: tour.imageUrl,
           }}
+          paymentMethods={paymentMethods}
         />
       )}
     </div>

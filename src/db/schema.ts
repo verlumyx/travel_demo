@@ -15,3 +15,4 @@ export * from '@/modules/customer/models/customer.model';
 export * from '@/modules/booking/models/booking.model';
 export * from '@/modules/passenger/models/passenger.model';
 export * from '@/modules/payment/models/payment.model';
+export * from '@/modules/payment-method/models/payment-method.model';

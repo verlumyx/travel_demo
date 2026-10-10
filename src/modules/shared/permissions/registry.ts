@@ -11,6 +11,7 @@ import { CUSTOMER_MODULE } from '@/modules/customer/permissions';
 import { BOOKING_MODULE } from '@/modules/booking/permissions';
 import { PASSENGER_MODULE } from '@/modules/passenger/permissions';
 import { PAYMENT_MODULE } from '@/modules/payment/permissions';
+import { PAYMENT_METHOD_MODULE } from '@/modules/payment-method/permissions';
 
 export const PERMISSION_REGISTRY = [
   ROLE_MODULE,
@@ -26,4 +27,5 @@ export const PERMISSION_REGISTRY = [
   BOOKING_MODULE,
   PASSENGER_MODULE,
   PAYMENT_MODULE,
+  PAYMENT_METHOD_MODULE,
 ] as const;

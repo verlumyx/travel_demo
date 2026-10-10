@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Select2 } from '@/components/ui/select2';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import type { PaymentMethodDto } from '@/modules/payment-method/serializers/payment-method.serializer';
 
 interface ClientCheckoutFormProps {
   departure: {
@@ -44,16 +45,24 @@ interface ClientCheckoutFormProps {
     currency: string;
     imageUrl?: string | null;
   };
+  paymentMethods?: PaymentMethodDto[];
 }
 
-export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps) {
+export function ClientCheckoutForm({ departure, tour, paymentMethods }: ClientCheckoutFormProps) {
   const [state, formAction, isPending] = useActionState(clientCheckoutAction, {
     status: 'idle',
   });
 
+  const hasDynamicMethods = Boolean(paymentMethods && paymentMethods.length > 0);
+  const [selectedMethodId, setSelectedMethodId] = useState<string>(
+    hasDynamicMethods ? paymentMethods![0].id : 'pago_movil',
+  );
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [slotsCount, setSlotsCount] = useState<number>(1);
-  const [paymentMethod, setPaymentMethod] = useState<string>('pago_movil');
+  const [paymentMethod, setPaymentMethod] = useState<string>(
+    hasDynamicMethods ? paymentMethods![0].name : 'pago_movil',
+  );
 
   // Accompanying passengers (if slotsCount > 1)
   const [companions, setCompanions] = useState<
@@ -88,7 +97,15 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
 
   const totalPrice = (slotsCount * departure.effectivePrice).toFixed(2);
   const depDate = new Date(departure.departureDate);
-  const isCash = paymentMethod === 'cash_usd' || paymentMethod === 'cash_ves';
+
+  const currentDynamicMethod = hasDynamicMethods
+    ? paymentMethods!.find((m) => m.id === selectedMethodId)
+    : null;
+
+  const isCash = currentDynamicMethod
+    ? currentDynamicMethod.name.toLowerCase().includes('efectivo') ||
+      currentDynamicMethod.name.toLowerCase().includes('cash')
+    : paymentMethod === 'cash_usd' || paymentMethod === 'cash_ves';
 
   return (
     <form action={formAction} className="space-y-8" encType="multipart/form-data">
@@ -472,80 +489,116 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
             <label htmlFor="paymentMethod" className="text-xs font-medium text-foreground">
               Selecciona tu Método de Pago *
             </label>
-            <Select2
-              id="paymentMethod"
-              name="paymentMethod"
-              value={paymentMethod}
-              onValueChange={(val) => setPaymentMethod(val)}
-              options={[
-                { value: 'pago_movil', label: 'Pago Móvil (Bolívares - VES)' },
-                { value: 'zelle', label: 'Zelle (USD)' },
-                { value: 'binance', label: 'Binance Pay (USDT)' },
-                { value: 'zinli', label: 'Zinli (USD)' },
-                { value: 'bank_transfer', label: 'Transferencia Bancaria Nacional (VES)' },
-                { value: 'cash_usd', label: 'Efectivo USD (Entrega directa previa)' },
-              ]}
-              size="sm"
-            />
+            {hasDynamicMethods ? (
+              <>
+                <input
+                  type="hidden"
+                  name="paymentMethod"
+                  value={currentDynamicMethod?.name || paymentMethod}
+                />
+                <Select2
+                  id="paymentMethodSelect"
+                  value={selectedMethodId}
+                  onValueChange={(val) => {
+                    setSelectedMethodId(val);
+                    const found = paymentMethods!.find((m) => m.id === val);
+                    if (found) setPaymentMethod(found.name);
+                  }}
+                  options={paymentMethods!.map((m) => ({
+                    value: m.id,
+                    label: `${m.name} (${m.currency})`,
+                  }))}
+                  size="sm"
+                />
+              </>
+            ) : (
+              <Select2
+                id="paymentMethod"
+                name="paymentMethod"
+                value={paymentMethod}
+                onValueChange={(val) => setPaymentMethod(val)}
+                options={[
+                  { value: 'pago_movil', label: 'Pago Móvil (Bolívares - VES)' },
+                  { value: 'zelle', label: 'Zelle (USD)' },
+                  { value: 'binance', label: 'Binance Pay (USDT)' },
+                  { value: 'zinli', label: 'Zinli (USD)' },
+                  { value: 'bank_transfer', label: 'Transferencia Bancaria Nacional (VES)' },
+                  { value: 'cash_usd', label: 'Efectivo USD (Entrega directa previa)' },
+                ]}
+                size="sm"
+              />
+            )}
           </div>
 
           {/* Bank Coordinates / Instructions Display Card */}
-          <div className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 text-xs space-y-2.5 shadow-2xs">
-            <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Building className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
-              Coordenadas e Instrucciones para {paymentMethod.replace('_', ' ').toUpperCase()}:
-            </span>
-
-            {paymentMethod === 'pago_movil' && (
-              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
-                <div>Banco: <strong className="text-slate-900 dark:text-white font-bold">Banesco (0134)</strong></div>
-                <div>Teléfono: <strong className="text-slate-900 dark:text-white font-bold">0414-1234567</strong></div>
-                <div>RIF / C.I.: <strong className="text-slate-900 dark:text-white font-bold">J-50000000-0</strong> (TravelDemo C.A.)</div>
+          {hasDynamicMethods && currentDynamicMethod ? (
+            <div className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 text-xs space-y-2.5 shadow-2xs">
+              <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Building className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                Coordenadas e Instrucciones para {currentDynamicMethod.name}:
+              </span>
+              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1 whitespace-pre-wrap leading-relaxed">
+                {currentDynamicMethod.instructions}
               </div>
-            )}
+            </div>
+          ) : (
+            <div className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 text-xs space-y-2.5 shadow-2xs">
+              <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Building className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                Coordenadas e Instrucciones para {paymentMethod.replace('_', ' ').toUpperCase()}:
+              </span>
 
-            {paymentMethod === 'zelle' && (
-              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
-                <div>Email Zelle: <strong className="text-slate-900 dark:text-white font-bold">pagos@traveldemo.com</strong></div>
-                <div>Titular: <strong className="text-slate-900 dark:text-white font-bold">Travel Agency LLC</strong></div>
-                <div>Memo: <span className="text-slate-700 dark:text-slate-300 font-sans">Tu nombre y código de tour</span></div>
-              </div>
-            )}
-
-            {paymentMethod === 'binance' && (
-              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
-                <div>Binance Pay ID: <strong className="text-slate-900 dark:text-white font-bold">84920194</strong></div>
-                <div>Moneda: <strong className="text-slate-900 dark:text-white font-bold">USDT</strong></div>
-                <div>Red sugerida: <span className="text-slate-700 dark:text-slate-300 font-sans">Binance Pay Direct o TRC-20</span></div>
-              </div>
-            )}
-
-            {paymentMethod === 'zinli' && (
-              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
-                <div>Correo Zinli: <strong className="text-slate-900 dark:text-white font-bold">info@traveldemo.com</strong></div>
-                <div>Nombre: <strong className="text-slate-900 dark:text-white font-bold">TravelDemo Oficial</strong></div>
-              </div>
-            )}
-
-            {paymentMethod === 'bank_transfer' && (
-              <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
-                <div>Banco: <strong className="text-slate-900 dark:text-white font-bold">Banesco Banco Universal</strong></div>
-                <div>Cuenta Corriente: <strong className="text-slate-900 dark:text-white font-bold">0134-0000-00-0000000000</strong></div>
-                <div>Titular: <strong className="text-slate-900 dark:text-white font-bold">TravelDemo C.A.</strong> / RIF: <strong className="text-slate-900 dark:text-white font-bold">J-50000000-0</strong></div>
-              </div>
-            )}
-
-            {paymentMethod === 'cash_usd' && (
-              <div className="space-y-1.5 text-slate-800 dark:text-slate-200 text-xs pt-1 leading-relaxed">
-                <div>
-                  <strong className="text-slate-900 dark:text-white">Pago en taquilla u oficina de la agencia antes de la salida.</strong>
+              {paymentMethod === 'pago_movil' && (
+                <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                  <div>Banco: <strong className="text-slate-900 dark:text-white font-bold">Banesco (0134)</strong></div>
+                  <div>Teléfono: <strong className="text-slate-900 dark:text-white font-bold">0414-1234567</strong></div>
+                  <div>RIF / C.I.: <strong className="text-slate-900 dark:text-white font-bold">J-50000000-0</strong> (TravelDemo C.A.)</div>
                 </div>
-                <div className="text-slate-600 dark:text-slate-300">
-                  El pago se coordinará y entregará directamente en taquilla o con el asesor del tour. No se requiere número de transferencia ni captura bancaria para reservar.
+              )}
+
+              {paymentMethod === 'zelle' && (
+                <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                  <div>Email Zelle: <strong className="text-slate-900 dark:text-white font-bold">pagos@traveldemo.com</strong></div>
+                  <div>Titular: <strong className="text-slate-900 dark:text-white font-bold">Travel Agency LLC</strong></div>
+                  <div>Memo: <span className="text-slate-700 dark:text-slate-300 font-sans">Tu nombre y código de tour</span></div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+
+              {paymentMethod === 'binance' && (
+                <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                  <div>Binance Pay ID: <strong className="text-slate-900 dark:text-white font-bold">84920194</strong></div>
+                  <div>Moneda: <strong className="text-slate-900 dark:text-white font-bold">USDT</strong></div>
+                  <div>Red sugerida: <span className="text-slate-700 dark:text-slate-300 font-sans">Binance Pay Direct o TRC-20</span></div>
+                </div>
+              )}
+
+              {paymentMethod === 'zinli' && (
+                <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                  <div>Correo Zinli: <strong className="text-slate-900 dark:text-white font-bold">info@traveldemo.com</strong></div>
+                  <div>Nombre: <strong className="text-slate-900 dark:text-white font-bold">TravelDemo Oficial</strong></div>
+                </div>
+              )}
+
+              {paymentMethod === 'bank_transfer' && (
+                <div className="space-y-1 text-slate-800 dark:text-slate-200 font-mono text-[11px] pt-1">
+                  <div>Banco: <strong className="text-slate-900 dark:text-white font-bold">Banesco Banco Universal</strong></div>
+                  <div>Cuenta Corriente: <strong className="text-slate-900 dark:text-white font-bold">0134-0000-00-0000000000</strong></div>
+                  <div>Titular: <strong className="text-slate-900 dark:text-white font-bold">TravelDemo C.A.</strong> / RIF: <strong className="text-slate-900 dark:text-white font-bold">J-50000000-0</strong></div>
+                </div>
+              )}
+
+              {paymentMethod === 'cash_usd' && (
+                <div className="space-y-1.5 text-slate-800 dark:text-slate-200 text-xs pt-1 leading-relaxed">
+                  <div>
+                    <strong className="text-slate-900 dark:text-white">Pago en taquilla u oficina de la agencia antes de la salida.</strong>
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-300">
+                    El pago se coordinará y entregará directamente en taquilla o con el asesor del tour. No se requiere número de transferencia ni captura bancaria para reservar.
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Reference, Date & Proof Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">

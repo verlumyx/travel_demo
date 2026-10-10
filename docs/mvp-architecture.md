@@ -166,6 +166,7 @@ src/
 | 11 | **Booking**        | `bookings`        | Reservas de pasajeros con control de cupos                     |
 | 12 | **Passenger**      | `passengers`      | Pasajeros individuales registrados en una reserva              |
 | 13 | **Payment**        | `payments`        | Comprobantes de pago y conciliación                            |
+| 14 | **Payment Method** | `payment-methods` | Métodos de pago y coordenadas bancarias (Configuración)        |
 
 ### 5.2 Módulos del Portal del Cliente
 
@@ -914,6 +915,7 @@ Cada módulo expone 5 permisos estándar:
 | **bookings**        | ✅ Todo | ✅ Todo  | ✅ list, show, create |
 | **passengers**      | ✅ Todo | ✅ Todo  | ✅ list, show, create |
 | **payments**        | ✅ Todo | ✅ Todo  | ✅ list, show, create |
+| **payment-methods** | ✅ Todo | ❌       | ❌                    |
 
 ---
 

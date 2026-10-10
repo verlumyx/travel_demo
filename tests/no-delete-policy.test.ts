@@ -13,6 +13,7 @@ describe('No Physical Deletion Policy (Audit & Hardening)', () => {
       'src/modules/customer/repositories/drizzle-customer.repository.ts',
       'src/modules/booking/repositories/drizzle-booking.repository.ts',
       'src/modules/payment/repositories/drizzle-payment.repository.ts',
+      'src/modules/payment-method/repositories/drizzle-payment-method.repository.ts',
     ];
 
     for (const relPath of repoFiles) {

@@ -26,4 +26,5 @@ export const MENU_REGISTRY: MenuEntry[] = [
   // === Config Section ===
   { id: 'users', label: 'Usuarios', url: '/admin/users', permission: 'users.list', icon: 'UserCog', order: 100, section: 'config' },
   { id: 'roles', label: 'Roles', url: '/admin/roles', permission: 'roles.list', icon: 'Shield', order: 110, section: 'config' },
+  { id: 'payment-methods', label: 'Métodos de Pago', url: '/admin/payment-methods', permission: 'payment-methods.list', icon: 'WalletCards', order: 120, section: 'config' },
 ];
