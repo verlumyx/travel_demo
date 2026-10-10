@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { cookies } from 'next/headers';
+import { connection } from 'next/server';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createCustomerContainer } from '@/modules/customer/container';
@@ -16,6 +17,7 @@ export type CustomerSession = {
 };
 
 export const getAuthenticatedCustomer = cache(async (): Promise<CustomerSession | null> => {
+  await connection();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

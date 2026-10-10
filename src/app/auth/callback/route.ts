@@ -1,19 +1,33 @@
 import { NextResponse } from 'next/server';
+import { type EmailOtpType } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createCustomerContainer } from '@/modules/customer/container';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
+  const token_hash = requestUrl.searchParams.get('token_hash');
+  const type = requestUrl.searchParams.get('type') as EmailOtpType | null;
   const next = requestUrl.searchParams.get('next') || '/cuenta/reservas';
 
-  if (code) {
+  if (code || (token_hash && type)) {
     try {
       const supabase = await createSupabaseServerClient();
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.exchangeCodeForSession(code);
+      let session = null;
+      let error = null;
+
+      if (code) {
+        const res = await supabase.auth.exchangeCodeForSession(code);
+        session = res.data.session;
+        error = res.error;
+      } else if (token_hash && type) {
+        const res = await supabase.auth.verifyOtp({
+          type,
+          token_hash,
+        });
+        session = res.data.session;
+        error = res.error;
+      }
 
       if (!error && session?.user) {
         const user = session.user;
@@ -34,7 +48,7 @@ export async function GET(request: Request) {
         }
       }
     } catch (err) {
-      console.error('Error exchanging code for session in /auth/callback:', err);
+      console.error('Error exchanging code or verifying OTP in /auth/callback:', err);
     }
   }
 

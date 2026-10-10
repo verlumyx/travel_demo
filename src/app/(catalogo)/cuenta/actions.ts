@@ -10,8 +10,27 @@ import { createBookingContainer } from '@/modules/booking/container';
 import { createPaymentContainer } from '@/modules/payment/container';
 import { CreatePaymentCommand } from '@/modules/payment/commands/create-payment.command';
 import { createCustomerContainer } from '@/modules/customer/container';
+import { UpdateCustomerCommand } from '@/modules/customer/commands/update-customer.command';
 import { toActionError, type ActionState } from '@/modules/shared/actions/action-state';
 import { setFlash } from '@/modules/shared/flash/flash';
+
+const updateProfileSchema = z.object({
+  firstName: z.string().trim().min(1, 'El nombre es obligatorio.').max(255),
+  lastName: z.string().trim().min(1, 'El apellido es obligatorio.').max(255),
+  phone: z.string().trim().min(1, 'El teléfono / WhatsApp de contacto es obligatorio.').max(50, 'El teléfono no puede superar 50 caracteres.'),
+  documentType: z.enum(['cedula', 'passport', 'other']).optional().or(z.literal('')),
+  documentNumber: z.string().trim().max(50).optional().or(z.literal('')),
+  birthDate: z
+    .string()
+    .optional()
+    .refine((val) => !val || !isNaN(Date.parse(val)), {
+      message: 'Fecha de nacimiento inválida.',
+    })
+    .or(z.literal('')),
+  emergencyContact: z.string().trim().max(255).optional().or(z.literal('')),
+  emergencyPhone: z.string().trim().max(50).optional().or(z.literal('')),
+  notes: z.string().trim().optional().or(z.literal('')),
+});
 
 const reportPaymentSchema = z.object({
   bookingId: z.string().uuid({ message: 'Reserva no válida.' }),
@@ -115,6 +134,54 @@ export async function customerReportPaymentAction(
   }
   await setFlash('success', '¡Comprobante recibido con éxito! Nuestro equipo lo validará para acreditar tu saldo.');
   return { status: 'idle', message: 'Pago reportado exitosamente.' };
+}
+
+export async function customerUpdateProfileAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    const session = await getAuthenticatedCustomer();
+    if (!session) {
+      return { status: 'error', message: 'Debe iniciar sesión para actualizar su perfil.' };
+    }
+
+    const rawData = {
+      firstName: formData.get('firstName'),
+      lastName: formData.get('lastName'),
+      phone: formData.get('phone') || '',
+      documentType: formData.get('documentType') || '',
+      documentNumber: formData.get('documentNumber') || '',
+      birthDate: formData.get('birthDate') || '',
+      emergencyContact: formData.get('emergencyContact') || '',
+      emergencyPhone: formData.get('emergencyPhone') || '',
+      notes: formData.get('notes') || '',
+    };
+
+    const parsed = updateProfileSchema.safeParse(rawData);
+    if (!parsed.success) {
+      return {
+        status: 'error',
+        fieldErrors: parsed.error.flatten().fieldErrors,
+      };
+    }
+
+    const customerContainer = createCustomerContainer();
+    const command = UpdateCustomerCommand.fromInput(session.customer.id, {
+      ...parsed.data,
+      email: session.customer.email,
+      source: session.customer.source,
+    });
+
+    await customerContainer.updateService.execute(command);
+  } catch (error) {
+    return toActionError(error);
+  }
+
+  revalidatePath('/cuenta/perfil');
+  revalidatePath('/cuenta/reservas');
+  await setFlash('success', '¡Tus datos de viajero han sido actualizados con éxito!');
+  return { status: 'idle', message: 'Perfil actualizado exitosamente.' };
 }
 
 /** Demo login helper when Supabase Auth credentials are in dev placeholder mode */

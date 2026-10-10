@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getAuthenticatedCustomer } from '@/modules/customer/auth/customer-session';
 import { createCustomerContainer } from '@/modules/customer/container';
 import { CustomerLoginForm } from '@/modules/customer/ui/CustomerLoginForm';
@@ -8,6 +9,7 @@ import { ArrowLeft, Compass } from 'lucide-react';
 export const instant = false;
 
 export default async function CustomerLoginPage() {
+  await connection();
   const session = await getAuthenticatedCustomer();
   if (session) {
     redirect('/cuenta/reservas');

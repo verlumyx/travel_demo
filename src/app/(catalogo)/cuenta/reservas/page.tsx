@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { requireCustomerSession } from '@/modules/customer/auth/customer-session';
 import { createBookingContainer } from '@/modules/booking/container';
 import { SearchBookingCommand } from '@/modules/booking/commands/search-booking.command';
@@ -19,6 +20,7 @@ import {
 export const instant = false;
 
 export default async function CustomerBookingsPage() {
+  await connection();
   const session = await requireCustomerSession();
   const customer = session.customer;
 
@@ -58,6 +60,12 @@ export default async function CustomerBookingsPage() {
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
             Código de viajero: <span className="font-mono font-semibold text-foreground">{customer.code}</span> • {customer.email}
+            <Link
+              href="/cuenta/perfil"
+              className="text-primary hover:underline font-semibold ml-2 inline-flex items-center gap-0.5"
+            >
+              • Editar mi perfil &rarr;
+            </Link>
           </p>
         </div>
 

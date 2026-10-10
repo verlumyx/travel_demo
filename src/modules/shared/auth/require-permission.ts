@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { headers } from 'next/headers';
+import { connection } from 'next/server';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/db/client';
@@ -17,6 +18,7 @@ export interface UserRoleInfo {
 }
 
 export const getSessionUser = cache(async () => {
+  await connection();
   const session = await auth.api.getSession({ headers: await headers() });
   return session?.user ?? null;
 });

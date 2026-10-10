@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { requireCustomerSession } from '@/modules/customer/auth/customer-session';
 import { createBookingContainer } from '@/modules/booking/container';
 import { toBookingDto } from '@/modules/booking/serializers/booking.serializer';
@@ -30,6 +31,7 @@ interface PageProps {
 }
 
 export default async function CustomerBookingDetailPage({ params }: PageProps) {
+  await connection();
   const session = await requireCustomerSession();
   const { id } = await params;
 

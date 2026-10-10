@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { getAuthenticatedCustomer } from '@/modules/customer/auth/customer-session';
 import { CustomerNav } from '@/modules/customer/ui/CustomerNav';
 import { readFlash } from '@/modules/shared/flash/flash';
@@ -10,6 +11,7 @@ export default async function CustomerAccountLayout({
 }: {
   children: React.ReactNode;
 }) {
+  await connection();
   const session = await getAuthenticatedCustomer();
   const flash = await readFlash();
 
