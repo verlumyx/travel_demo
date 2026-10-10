@@ -7,6 +7,7 @@ import { bookingRoutes } from '@/modules/booking/routes';
 import { toCustomerDto } from '@/modules/customer/serializers/customer.serializer';
 import { CustomerStatusBadge } from '@/modules/customer/ui/CustomerStatusBadge';
 import { CustomerStatusToggle } from '@/modules/customer/ui/CustomerStatusToggle';
+import { RichTextView, isEmptyHtml } from '@/components/ui/rich-text-view';
 import { createBookingContainer } from '@/modules/booking/container';
 import { SearchBookingCommand } from '@/modules/booking/commands/search-booking.command';
 import {
@@ -182,10 +183,13 @@ export default async function CustomerDetailPage({ params }: PageProps) {
               </span>
             </div>
 
-            {customer.notes && (
+            {!isEmptyHtml(customer.notes) && (
               <div className="pt-2 border-t border-border">
-                <span className="text-muted-foreground block">Observaciones / Alergias:</span>
-                <p className="text-foreground italic mt-0.5">{customer.notes}</p>
+                <span className="text-muted-foreground block text-xs font-semibold">Observaciones / Alergias:</span>
+                <RichTextView
+                  content={customer.notes}
+                  className="text-foreground mt-0.5"
+                />
               </div>
             )}
           </div>

@@ -12,6 +12,7 @@ import type { TransportUnitRow } from '@/modules/transport-unit/models/transport
 import { DepartureStatusBadge } from '@/modules/departure/ui/DepartureStatusBadge';
 import { DepartureStatusSelect } from '@/modules/departure/ui/DepartureStatusSelect';
 import { DepartureFleetManager } from '@/modules/departure/ui/DepartureFleetManager';
+import { RichTextView, isEmptyHtml } from '@/components/ui/rich-text-view';
 import {
   CalendarDays,
   Compass,
@@ -211,10 +212,13 @@ export default async function DepartureDetailPage({ params }: PageProps) {
               )}
             </div>
 
-            {departure.notes && (
+            {!isEmptyHtml(departure.notes) && (
               <div className="pt-2 border-t border-border">
-                <span className="text-muted-foreground block">Notas Operativas:</span>
-                <p className="text-foreground italic mt-0.5">{departure.notes}</p>
+                <span className="text-muted-foreground block text-xs font-semibold">Notas Operativas:</span>
+                <RichTextView
+                  content={departure.notes}
+                  className="text-xs text-foreground mt-0.5"
+                />
               </div>
             )}
           </div>

@@ -35,5 +35,5 @@ export interface TourRepository {
   updateStatus(id: string, status: 'draft' | 'active' | 'inactive'): Promise<TourRow>;
   search(command: SearchTourCommand): Promise<{ data: TourRow[]; total: number }>;
   getActive(): Promise<TourRow[]>;
-  getCatalogTours(filters?: { q?: string; maxPrice?: number; duration?: number }): Promise<CatalogTourItem[]>;
+  getCatalogTours(filters?: { q?: string; maxPrice?: number; duration?: number; destinationId?: string }): Promise<CatalogTourItem[]>;
 }

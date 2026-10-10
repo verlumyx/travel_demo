@@ -8,6 +8,7 @@ import { createCategoryAction, updateCategoryAction } from '@/app/(admin)/admin/
 import type { CategoryDto } from '../serializers/category.serializer';
 import { categoryRoutes } from '../routes';
 import { Loader2, ArrowLeft, Save, Sparkles } from 'lucide-react';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface CategoryFormProps {
   category?: CategoryDto;
@@ -140,12 +141,12 @@ export function CategoryForm({ category }: CategoryFormProps) {
           <label className="text-sm font-medium text-slate-300">
             Descripción
           </label>
-          <textarea
+          <RichTextEditor
             name="description"
-            rows={3}
             defaultValue={category?.description || ''}
             placeholder="Breve reseña sobre este tipo de destinos..."
-            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition resize-none"
+            minHeight="min-h-[140px]"
+            error={Boolean(state.fieldErrors?.description)}
           />
           {state.fieldErrors?.description && (
             <p className="text-xs text-rose-400">{state.fieldErrors.description[0]}</p>

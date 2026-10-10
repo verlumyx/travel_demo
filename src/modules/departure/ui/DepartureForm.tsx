@@ -7,6 +7,10 @@ import { createDepartureAction, updateDepartureAction } from '@/app/(admin)/admi
 import { departureRoutes } from '../routes';
 import type { DepartureRow } from '../models/departure.model';
 import { uuidv7 } from '@/modules/shared/uuid';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { NumberInput } from '@/components/ui/number-input';
+import { Select2 } from '@/components/ui/select2';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface TourOption {
   id: string;
@@ -73,22 +77,18 @@ export function DepartureForm({ initialData, tours }: DepartureFormProps) {
           <label htmlFor="tourId" className="block text-sm font-medium text-foreground mb-1.5">
             Tour / Experiencia *
           </label>
-          <select
+          <Select2
             id="tourId"
             name="tourId"
             required
             defaultValue={initialData?.tourId ?? ''}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="" disabled>
-              Seleccione un tour...
-            </option>
-            {tours.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} ({t.code}) — {t.durationDays} día(s) — ${t.basePrice} {t.currency}
-              </option>
-            ))}
-          </select>
+            placeholder="Seleccione un tour..."
+            options={tours.map((t) => ({
+              value: t.id,
+              label: `${t.name} (${t.code}) - ${t.durationDays} día(s) - $${t.basePrice} ${t.currency}`,
+            }))}
+            size="sm"
+          />
           {state.fieldErrors?.tourId && (
             <p className="text-xs text-destructive mt-1">{state.fieldErrors.tourId[0]}</p>
           )}
@@ -176,17 +176,13 @@ export function DepartureForm({ initialData, tours }: DepartureFormProps) {
             <label htmlFor="priceOverride" className="block text-sm font-medium text-foreground mb-1.5">
               Precio Especial para esta Salida (Opcional)
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-sm text-muted-foreground">$</span>
-              <input
-                type="text"
-                id="priceOverride"
-                name="priceOverride"
-                placeholder="Sobrescribe el precio base del tour si aplica"
-                defaultValue={initialData?.priceOverride ?? ''}
-                className="w-full rounded-lg border border-input bg-background pl-7 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
+            <CurrencyInput
+              id="priceOverride"
+              name="priceOverride"
+              defaultValue={initialData?.priceOverride ? parseFloat(initialData.priceOverride) : null}
+              placeholder="Sobrescribe el precio base del tour si aplica"
+              min={0}
+            />
             <p className="text-xs text-muted-foreground mt-1">
               Si se deja en blanco, se cobrará el precio base configurado en el tour.
             </p>
@@ -200,13 +196,11 @@ export function DepartureForm({ initialData, tours }: DepartureFormProps) {
               <label htmlFor="totalCapacity" className="block text-sm font-medium text-foreground mb-1.5">
                 Capacidad Inicial (Cupos)
               </label>
-              <input
-                type="number"
+              <NumberInput
                 id="totalCapacity"
                 name="totalCapacity"
-                min="0"
+                min={0}
                 defaultValue={0}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 La capacidad se recalcula automáticamente conforme asigne unidades de transporte a esta salida.
@@ -223,13 +217,13 @@ export function DepartureForm({ initialData, tours }: DepartureFormProps) {
           <label htmlFor="notes" className="block text-sm font-medium text-foreground mb-1.5">
             Notas Operativas
           </label>
-          <textarea
+          <RichTextEditor
             id="notes"
             name="notes"
-            rows={3}
-            placeholder="Instrucciones para el chofer, clima previsto, equipaje permitido, etc."
             defaultValue={initialData?.notes ?? ''}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="Instrucciones para el chofer, clima previsto, equipaje permitido, etc."
+            minHeight="min-h-[140px]"
+            error={Boolean(state.fieldErrors?.notes)}
           />
           {state.fieldErrors?.notes && (
             <p className="text-xs text-destructive mt-1">{state.fieldErrors.notes[0]}</p>

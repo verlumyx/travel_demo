@@ -5,6 +5,7 @@ import { TourUpdateService } from './services/tour-update.service';
 import { TourUpdateStatusService } from './services/tour-update-status.service';
 import { TourFindService } from './services/tour-find.service';
 import { TourSearchService } from './services/tour-search.service';
+import { TourCatalogService } from './services/tour-catalog.service';
 
 import { db as defaultDb } from '@/db/client';
 
@@ -17,5 +18,6 @@ export function createTourContainer(db: DbExecutor = defaultDb) {
     updateStatusService: new TourUpdateStatusService(repository),
     findService: new TourFindService(repository),
     searchService: new TourSearchService(repository),
+    catalogService: new TourCatalogService(repository),
   };
 }

@@ -36,17 +36,17 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Tag className="h-6 w-6 text-amber-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-white">Categorías Turísticas</h1>
+            <Tag className="h-6 w-6 text-teal-600" />
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Categorías Turísticas</h1>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Gestiona las etiquetas geográficas y temáticas para clasificar destinos ({total} registradas).
           </p>
         </div>
 
         <Link
           href={categoryRoutes.create()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-medium text-sm transition shadow-xs cursor-pointer self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
           Nueva Categoría
@@ -54,15 +54,15 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
       </div>
 
       {/* Filters Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 items-center justify-between">
         <form method="GET" className="relative w-full sm:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             name="q"
             defaultValue={q}
             placeholder="Buscar por nombre, código o slug..."
-            className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500"
           />
         </form>
 
@@ -70,7 +70,7 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
           <Link
             href="/admin/categories"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              !status ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'
+              !status ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Todas
@@ -78,7 +78,7 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
           <Link
             href="/admin/categories?status=active"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              status === 'active' ? 'bg-slate-800 text-emerald-400' : 'text-slate-400 hover:text-white'
+              status === 'active' ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Activas
@@ -86,7 +86,7 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
           <Link
             href="/admin/categories?status=inactive"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              status === 'inactive' ? 'bg-slate-800 text-rose-400' : 'text-slate-400 hover:text-white'
+              status === 'inactive' ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Inactivas
@@ -95,11 +95,11 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-sm">
+      <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-xs uppercase font-semibold text-slate-400 bg-slate-950/50">
+              <tr className="border-b border-slate-200 text-xs uppercase font-semibold text-slate-500 bg-slate-50/70">
                 <th className="py-3.5 px-4">Código</th>
                 <th className="py-3.5 px-4">Nombre</th>
                 <th className="py-3.5 px-4">Slug</th>
@@ -108,29 +108,29 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
                 <th className="py-3.5 px-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {categories.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-500">
+                  <td colSpan={6} className="text-center py-12 text-slate-400">
                     No se encontraron categorías registradas.
                   </td>
                 </tr>
               ) : (
                 categories.map((cat) => (
-                  <tr key={cat.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-3.5 px-4 font-mono font-medium text-amber-400 text-xs">
+                  <tr key={cat.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4 font-mono font-medium text-teal-700 text-xs">
                       {cat.code}
                     </td>
-                    <td className="py-3.5 px-4 font-medium text-white">
-                      <Link href={categoryRoutes.show(cat.id)} className="hover:text-indigo-400 transition">
+                    <td className="py-3.5 px-4 font-medium text-slate-900">
+                      <Link href={categoryRoutes.show(cat.id)} className="hover:text-teal-600 transition">
                         {cat.name}
                       </Link>
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-xs text-slate-400">
+                    <td className="py-3.5 px-4 font-mono text-xs text-slate-500">
                       /{cat.slug}
                     </td>
-                    <td className="py-3.5 px-4 text-xs text-slate-400">
-                      {cat.icon || '—'}
+                    <td className="py-3.5 px-4 text-xs text-slate-500">
+                      {cat.icon || '-'}
                     </td>
                     <td className="py-3.5 px-4">
                       <CategoryStatusBadge status={cat.status} />
@@ -141,14 +141,14 @@ export default async function CategoriesListPage({ searchParams }: PageProps) {
                         <Link
                           href={categoryRoutes.show(cat.id)}
                           title="Ver detalle"
-                          className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
                         <Link
                           href={categoryRoutes.edit(cat.id)}
                           title="Editar"
-                          className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
                         >
                           <Edit3 className="h-4 w-4" />
                         </Link>

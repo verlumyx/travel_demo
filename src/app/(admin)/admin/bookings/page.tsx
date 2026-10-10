@@ -228,7 +228,7 @@ export default async function BookingsListPage({ searchParams }: PageProps) {
                                   day: 'numeric',
                                   year: 'numeric',
                                 })
-                              : '—'}
+                              : '-'}
                           </span>
                           <span className="font-mono text-[11px] ml-1">[{b.departureCode}]</span>
                         </div>

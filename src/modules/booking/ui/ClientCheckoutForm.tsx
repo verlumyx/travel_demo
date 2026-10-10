@@ -21,6 +21,8 @@ import {
   ShieldCheck,
   FileCheck,
 } from 'lucide-react';
+import { Select2 } from '@/components/ui/select2';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface ClientCheckoutFormProps {
   departure: {
@@ -159,21 +161,21 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
           </div>
 
           <div className="flex items-center gap-4">
-            <label htmlFor="slotsSelect" className="text-xs font-medium text-foreground">
+            <label htmlFor="slotsSelect" className="text-xs font-medium text-foreground whitespace-nowrap">
               Número de Viajeros:
             </label>
-            <select
-              id="slotsSelect"
-              value={slotsCount}
-              onChange={(e) => handleSlotsChange(parseInt(e.target.value, 10))}
-              className="px-4 py-2 text-sm font-bold rounded-xl border border-input bg-background text-foreground font-mono focus:ring-2 focus:ring-ring"
-            >
-              {Array.from({ length: Math.min(departure.availableSlots, 10) }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>
-                  {n} {n === 1 ? 'viajero' : 'viajeros'}
-                </option>
-              ))}
-            </select>
+            <div className="w-44">
+              <Select2
+                id="slotsSelect"
+                value={String(slotsCount)}
+                onValueChange={(val) => handleSlotsChange(parseInt(val, 10))}
+                options={Array.from({ length: Math.min(departure.availableSlots, 10) }, (_, i) => i + 1).map((n) => ({
+                  value: String(n),
+                  label: `${n} ${n === 1 ? 'viajero' : 'viajeros'}`,
+                }))}
+                size="sm"
+              />
+            </div>
           </div>
 
           {/* Pricing Breakdown Box */}
@@ -297,16 +299,17 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
               <label htmlFor="holderDocumentType" className="font-medium text-foreground">
                 Tipo de Documento *
               </label>
-              <select
+              <Select2
                 id="holderDocumentType"
                 name="holderDocumentType"
                 defaultValue="cedula"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
-              >
-                <option value="cedula">Cédula de Identidad (V / E)</option>
-                <option value="passport">Pasaporte</option>
-                <option value="other">Otro</option>
-              </select>
+                options={[
+                  { value: 'cedula', label: 'Cédula de Identidad (V / E)' },
+                  { value: 'passport', label: 'Pasaporte' },
+                  { value: 'other', label: 'Otro' },
+                ]}
+                size="sm"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -468,20 +471,21 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
             <label htmlFor="paymentMethod" className="text-xs font-medium text-foreground">
               Selecciona tu Método de Pago *
             </label>
-            <select
+            <Select2
               id="paymentMethod"
               name="paymentMethod"
               value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground text-xs focus:ring-2 focus:ring-ring font-medium"
-            >
-              <option value="pago_movil">Pago Móvil (Bolívares - VES)</option>
-              <option value="zelle">Zelle (USD)</option>
-              <option value="binance">Binance Pay (USDT)</option>
-              <option value="zinli">Zinli (USD)</option>
-              <option value="bank_transfer">Transferencia Bancaria Nacional (VES)</option>
-              <option value="cash_usd">Efectivo USD (Entrega directa previa)</option>
-            </select>
+              onValueChange={(val) => setPaymentMethod(val)}
+              options={[
+                { value: 'pago_movil', label: 'Pago Móvil (Bolívares - VES)' },
+                { value: 'zelle', label: 'Zelle (USD)' },
+                { value: 'binance', label: 'Binance Pay (USDT)' },
+                { value: 'zinli', label: 'Zinli (USD)' },
+                { value: 'bank_transfer', label: 'Transferencia Bancaria Nacional (VES)' },
+                { value: 'cash_usd', label: 'Efectivo USD (Entrega directa previa)' },
+              ]}
+              size="sm"
+            />
           </div>
 
           {/* Bank Coordinates Display Card */}
@@ -574,12 +578,11 @@ export function ClientCheckoutForm({ departure, tour }: ClientCheckoutFormProps)
               <label htmlFor="notes" className="font-medium text-foreground">
                 Notas y Requerimientos Especiales (Opcional)
               </label>
-              <textarea
+              <RichTextEditor
                 id="notes"
                 name="notes"
-                rows={2}
                 placeholder="Ej: Asiento en pasillo, requerimiento dietético, etc."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background text-foreground focus:ring-2 focus:ring-ring"
+                minHeight="min-h-[110px]"
               />
             </div>
           </div>

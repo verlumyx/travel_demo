@@ -5,19 +5,28 @@ import type { FlashMessage } from './flash';
 import { CheckCircle2, AlertTriangle, AlertCircle, Info, X } from 'lucide-react';
 
 export function FlashToaster({ flash }: { flash: FlashMessage | null }) {
-  const [currentFlash, setCurrentFlash] = useState<FlashMessage | null>(flash);
+  const [dismissed, setDismissed] = useState(false);
+  const [prevFlash, setPrevFlash] = useState(flash);
+
+  if (prevFlash !== flash) {
+    setPrevFlash(flash);
+    setDismissed(false);
+  }
 
   useEffect(() => {
-    if (flash) {
-      setCurrentFlash(flash);
+    if (flash && !dismissed) {
+      // Clear cookie on client side immediately so page refresh or navigation doesn't replay it
+      document.cookie = '__flash=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       const timer = setTimeout(() => {
-        setCurrentFlash(null);
+        setDismissed(true);
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [flash]);
+  }, [flash, dismissed]);
 
-  if (!currentFlash) return null;
+  if (!flash || dismissed) return null;
+
+  const currentFlash = flash;
 
   const bgStyles = {
     success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
@@ -40,7 +49,7 @@ export function FlashToaster({ flash }: { flash: FlashMessage | null }) {
         <div className="flex-1 text-sm font-medium">{currentFlash.message}</div>
         <button
           type="button"
-          onClick={() => setCurrentFlash(null)}
+          onClick={() => setDismissed(true)}
           className="shrink-0 rounded p-1 hover:bg-black/5 transition"
         >
           <X className="h-4 w-4" />

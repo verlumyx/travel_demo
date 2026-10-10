@@ -8,6 +8,10 @@ import { createTourAction, updateTourAction } from '@/app/(admin)/admin/tours/ac
 import type { TourDto } from '../serializers/tour.serializer';
 import { tourRoutes } from '../routes';
 import { Loader2, ArrowLeft, Save, Compass, DollarSign, Clock, CheckCircle2 } from 'lucide-react';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { NumberInput } from '@/components/ui/number-input';
+import { Select2 } from '@/components/ui/select2';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface TourFormProps {
   tour?: TourDto;
@@ -58,16 +62,16 @@ export function TourForm({ tour }: TourFormProps) {
       )}
 
       {/* Basic Data */}
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
-        <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-          <Compass className="h-4 w-4 text-emerald-400" />
+      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-6">
+        <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+          <Compass className="h-4 w-4 text-teal-600" />
           Datos Principales del Tour
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
-              Nombre de la Experiencia / Paquete <span className="text-rose-400">*</span>
+            <label className="text-sm font-medium text-slate-700">
+              Nombre de la Experiencia / Paquete <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -76,16 +80,16 @@ export function TourForm({ tour }: TourFormProps) {
               onChange={handleNameChange}
               placeholder="Ej: Aventura Gran Sabana y Roraima 5D/4N"
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition shadow-2xs"
             />
             {state.fieldErrors?.name && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.name[0]}</p>
+              <p className="text-xs text-rose-500">{state.fieldErrors.name[0]}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
-              Slug URL <span className="text-rose-400">*</span>
+            <label className="text-sm font-medium text-slate-700">
+              Slug URL <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -94,83 +98,83 @@ export function TourForm({ tour }: TourFormProps) {
               onChange={handleSlugChange}
               placeholder="gran-sabana-aventura"
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm font-mono transition"
+              className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm font-mono transition shadow-2xs"
             />
             {state.fieldErrors?.slug && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.slug[0]}</p>
+              <p className="text-xs text-rose-500">{state.fieldErrors.slug[0]}</p>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300 flex items-center gap-1.5">
+            <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
               <Clock className="h-4 w-4 text-slate-400" />
-              Duración (Días) <span className="text-rose-400">*</span>
+              Duración (Días) <span className="text-rose-500">*</span>
             </label>
-            <input
-              type="number"
+            <NumberInput
               name="durationDays"
               min={1}
               max={60}
               defaultValue={tour?.durationDays || 1}
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="h-10 rounded-xl bg-white border-slate-200 text-slate-900"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300 flex items-center gap-1.5">
-              <DollarSign className="h-4 w-4 text-emerald-400" />
-              Precio Base por Persona <span className="text-rose-400">*</span>
+            <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+              <DollarSign className="h-4 w-4 text-teal-600" />
+              Precio Base por Persona <span className="text-rose-500">*</span>
             </label>
-            <input
-              type="text"
+            <CurrencyInput
               name="basePrice"
-              defaultValue={tour?.basePrice || '150.00'}
-              placeholder="150.00"
+              defaultValue={tour?.basePrice ? parseFloat(tour.basePrice) : 150}
+              min={0}
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm font-mono transition"
+              className="h-10 rounded-xl bg-white border-slate-200 text-slate-900"
             />
             {state.fieldErrors?.basePrice && (
-              <p className="text-xs text-rose-400">{state.fieldErrors.basePrice[0]}</p>
+              <p className="text-xs text-rose-500">{state.fieldErrors.basePrice[0]}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+            <label className="text-sm font-medium text-slate-700">
               Moneda
             </label>
-            <select
+            <Select2
               name="currency"
               defaultValue={tour?.currency || 'USD'}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm transition"
-            >
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="VES">VES (Bs.)</option>
-            </select>
+              options={[
+                { value: 'USD', label: 'USD ($)' },
+                { value: 'EUR', label: 'EUR (€)' },
+                { value: 'VES', label: 'VES (Bs.)' },
+              ]}
+              size="md"
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+            <label className="text-sm font-medium text-slate-700">
               Estado de Publicación
             </label>
-            <select
+            <Select2
               name="status"
               defaultValue={tour?.status || 'draft'}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm transition"
-            >
-              <option value="draft">Borrador (Oculto al público)</option>
-              <option value="active">Activo (Visible en catálogo)</option>
-              <option value="inactive">Inactivo (Deshabilitado)</option>
-            </select>
+              options={[
+                { value: 'draft', label: 'Borrador (Oculto al público)' },
+                { value: 'active', label: 'Activo (Visible en catálogo)' },
+                { value: 'inactive', label: 'Inactivo (Deshabilitado)' },
+              ]}
+              size="md"
+            />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+            <label className="text-sm font-medium text-slate-700">
               URL de Imagen Promocional
             </label>
             <input
@@ -178,13 +182,13 @@ export function TourForm({ tour }: TourFormProps) {
               name="imageUrl"
               defaultValue={tour?.imageUrl || ''}
               placeholder="https://images.unsplash.com/..."
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition shadow-2xs"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-300">
+          <label className="text-sm font-medium text-slate-700">
             Resumen Corto (Para tarjetas de catálogo)
           </label>
           <input
@@ -193,77 +197,55 @@ export function TourForm({ tour }: TourFormProps) {
             maxLength={500}
             defaultValue={tour?.shortDescription || ''}
             placeholder="Breve llamada de atención de 1 o 2 líneas..."
-            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+            className="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition shadow-2xs"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-300">
+          <label className="text-sm font-medium text-slate-700">
             Descripción Detallada
           </label>
-          <textarea
+          <RichTextEditor
             name="description"
-            rows={4}
             defaultValue={tour?.description || ''}
             placeholder="Explicación completa de la experiencia, recomendaciones y condiciones..."
-            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition resize-none"
+            minHeight="min-h-[160px]"
           />
         </div>
       </div>
 
       {/* Services and Inclusions */}
-      <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6">
-        <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-cyan-400" />
+      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-6">
+        <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-teal-600" />
           Servicios Incluidos y Exclusiones
         </h3>
 
-        <div className="flex flex-wrap items-center gap-6 p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-          <label className="inline-flex items-center gap-2.5 text-sm text-slate-200 cursor-pointer">
-            <input
-              type="checkbox"
-              name="includesFood"
-              defaultChecked={tour?.includesFood || false}
-              className="h-4 w-4 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-            />
-            Incluye Comidas / Desayunos
-          </label>
+        <input type="hidden" name="includesFood" value={String(tour?.includesFood ?? false)} />
+        <input type="hidden" name="includesLodging" value={String(tour?.includesLodging ?? false)} />
 
-          <label className="inline-flex items-center gap-2.5 text-sm text-slate-200 cursor-pointer">
-            <input
-              type="checkbox"
-              name="includesLodging"
-              defaultChecked={tour?.includesLodging || false}
-              className="h-4 w-4 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-            />
-            Incluye Alojamiento / Posada / Carpa
-          </label>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+            <label className="text-sm font-medium text-slate-700">
               Inclusiones del Paquete
             </label>
-            <textarea
+            <RichTextEditor
               name="inclusions"
-              rows={3}
               defaultValue={tour?.inclusions || ''}
               placeholder="Transporte ida y vuelta, hidratación, guías certificados, botiquín..."
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition resize-none"
+              minHeight="min-h-[140px]"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
+            <label className="text-sm font-medium text-slate-700">
               Exclusiones del Paquete
             </label>
-            <textarea
+            <RichTextEditor
               name="exclusions"
-              rows={3}
               defaultValue={tour?.exclusions || ''}
               placeholder="Bebidas alcohólicas, souvenirs, propinas opcionales..."
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition resize-none"
+              minHeight="min-h-[140px]"
             />
           </div>
         </div>
@@ -272,7 +254,7 @@ export function TourForm({ tour }: TourFormProps) {
       <div className="flex items-center justify-between pt-4">
         <Link
           href={tourRoutes.list()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 text-sm font-medium transition"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 text-sm font-medium transition"
         >
           <ArrowLeft className="h-4 w-4" />
           Cancelar
@@ -281,7 +263,7 @@ export function TourForm({ tour }: TourFormProps) {
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm transition shadow-sm cursor-pointer disabled:opacity-50"
         >
           {isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />

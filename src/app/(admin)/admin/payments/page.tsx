@@ -240,11 +240,11 @@ export default async function PaymentsListPage({ searchParams }: PageProps) {
                     </td>
 
                     <td className="py-3 px-4 font-mono text-muted-foreground">
-                      {p.reference || '—'}
+                      {p.reference || '-'}
                     </td>
 
                     <td className="py-3 px-4 text-muted-foreground">
-                      {p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('es-VE') : '—'}
+                      {p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('es-VE') : '-'}
                     </td>
 
                     <td className="py-3 px-4 font-bold text-foreground font-mono">

@@ -11,6 +11,9 @@ import {
   AlertCircle,
   FileCheck,
 } from 'lucide-react';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { Select2 } from '@/components/ui/select2';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface CustomerReportPaymentFormProps {
   bookingId: string;
@@ -80,20 +83,21 @@ export function CustomerReportPaymentForm({
               <label htmlFor="method" className="font-medium text-foreground">
                 Método de Pago *
               </label>
-              <select
+              <Select2
                 id="method"
                 name="method"
                 defaultValue="pago_movil"
-                className="w-full px-3 py-2 rounded-xl border border-input bg-background text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring"
+                options={[
+                  { value: 'pago_movil', label: 'Pago Móvil (VES)' },
+                  { value: 'zelle', label: 'Zelle (USD)' },
+                  { value: 'binance', label: 'Binance Pay (USDT)' },
+                  { value: 'zinli', label: 'Zinli (USD)' },
+                  { value: 'bank_transfer', label: 'Transferencia Bancaria' },
+                  { value: 'cash_usd', label: 'Efectivo USD (Entregado a Asesor)' },
+                ]}
+                size="sm"
                 required
-              >
-                <option value="pago_movil">Pago Móvil (VES)</option>
-                <option value="zelle">Zelle (USD)</option>
-                <option value="binance">Binance Pay (USDT)</option>
-                <option value="zinli">Zinli (USD)</option>
-                <option value="bank_transfer">Transferencia Bancaria</option>
-                <option value="cash_usd">Efectivo USD (Entregado a Asesor)</option>
-              </select>
+              />
               {state.fieldErrors?.method && (
                 <p className="text-destructive text-[11px]">{state.fieldErrors.method[0]}</p>
               )}
@@ -103,18 +107,14 @@ export function CustomerReportPaymentForm({
               <label htmlFor="amount" className="font-medium text-foreground">
                 Monto Abonado (USD) *
               </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                <input
-                  id="amount"
-                  name="amount"
-                  type="text"
-                  defaultValue={pendingBalance}
-                  placeholder="0.00"
-                  className="w-full pl-7 pr-3 py-2 rounded-xl border border-input bg-background text-foreground font-mono font-bold focus:outline-hidden focus:ring-2 focus:ring-ring"
-                  required
-                />
-              </div>
+              <CurrencyInput
+                id="amount"
+                name="amount"
+                defaultValue={parseFloat(pendingBalance) || 0}
+                placeholder="0.00"
+                min={0.01}
+                required
+              />
               {state.fieldErrors?.amount && (
                 <p className="text-destructive text-[11px]">{state.fieldErrors.amount[0]}</p>
               )}
@@ -154,12 +154,11 @@ export function CustomerReportPaymentForm({
               <label htmlFor="notes" className="font-medium text-foreground">
                 Comentarios Adicionales
               </label>
-              <textarea
+              <RichTextEditor
                 id="notes"
                 name="notes"
-                rows={2}
                 placeholder="Indica cualquier detalle sobre tu pago (ej. banco emisor, titular de la cuenta)..."
-                className="w-full px-3 py-2 rounded-xl border border-input bg-background text-foreground focus:outline-hidden focus:ring-2 focus:ring-ring"
+                minHeight="min-h-[110px]"
               />
             </div>
           </div>

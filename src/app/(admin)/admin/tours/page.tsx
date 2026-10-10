@@ -40,10 +40,10 @@ export default async function ToursListPage({ searchParams }: PageProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Compass className="h-6 w-6 text-emerald-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-white">Tours y Paquetes Turísticos</h1>
+            <Compass className="h-6 w-6 text-teal-600" />
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Tours y Paquetes Turísticos</h1>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Diseño de experiencias turísticas, itinerarios multidía y fijación de tarifas ({total} registrados).
           </p>
         </div>
@@ -51,7 +51,7 @@ export default async function ToursListPage({ searchParams }: PageProps) {
         {canCreate && (
           <Link
             href={tourRoutes.create()}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-medium text-sm transition shadow-xs cursor-pointer self-start sm:self-auto"
           >
             <Plus className="h-4 w-4" />
             Nuevo Tour
@@ -60,15 +60,15 @@ export default async function ToursListPage({ searchParams }: PageProps) {
       </div>
 
       {/* Filters Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 items-center justify-between">
         <form method="GET" className="relative w-full sm:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             name="q"
             defaultValue={q}
             placeholder="Buscar por nombre, código o slug..."
-            className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500"
           />
         </form>
 
@@ -76,7 +76,7 @@ export default async function ToursListPage({ searchParams }: PageProps) {
           <Link
             href="/admin/tours"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              !status ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'
+              !status ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Todos
@@ -84,7 +84,7 @@ export default async function ToursListPage({ searchParams }: PageProps) {
           <Link
             href="/admin/tours?status=active"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              status === 'active' ? 'bg-slate-800 text-emerald-400' : 'text-slate-400 hover:text-white'
+              status === 'active' ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Activos
@@ -92,7 +92,7 @@ export default async function ToursListPage({ searchParams }: PageProps) {
           <Link
             href="/admin/tours?status=draft"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              status === 'draft' ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:text-white'
+              status === 'draft' ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Borradores
@@ -100,7 +100,7 @@ export default async function ToursListPage({ searchParams }: PageProps) {
           <Link
             href="/admin/tours?status=inactive"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              status === 'inactive' ? 'bg-slate-800 text-rose-400' : 'text-slate-400 hover:text-white'
+              status === 'inactive' ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Inactivos
@@ -109,11 +109,11 @@ export default async function ToursListPage({ searchParams }: PageProps) {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-sm">
+      <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-xs uppercase font-semibold text-slate-400 bg-slate-950/50">
+              <tr className="border-b border-slate-200 text-xs uppercase font-semibold text-slate-500 bg-slate-50/70">
                 <th className="py-3.5 px-4">Código</th>
                 <th className="py-3.5 px-4">Nombre del Tour</th>
                 <th className="py-3.5 px-4">Duración</th>
@@ -122,36 +122,36 @@ export default async function ToursListPage({ searchParams }: PageProps) {
                 <th className="py-3.5 px-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {tours.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-slate-500">
+                  <td colSpan={6} className="text-center py-12 text-slate-400">
                     No se encontraron tours registrados.
                   </td>
                 </tr>
               ) : (
                 tours.map((tour) => (
-                  <tr key={tour.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-3.5 px-4 font-mono font-medium text-emerald-400 text-xs">
+                  <tr key={tour.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4 font-mono font-medium text-teal-700 text-xs">
                       {tour.code}
                     </td>
-                    <td className="py-3.5 px-4 font-medium text-white">
-                      <Link href={tourRoutes.show(tour.id)} className="hover:text-emerald-400 transition">
+                    <td className="py-3.5 px-4 font-medium text-slate-900">
+                      <Link href={tourRoutes.show(tour.id)} className="hover:text-teal-600 transition">
                         {tour.name}
                       </Link>
                       {tour.shortDescription && (
-                        <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{tour.shortDescription}</p>
+                        <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{tour.shortDescription}</p>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-xs text-slate-300">
+                    <td className="py-3.5 px-4 text-xs text-slate-600">
                       <span className="inline-flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5 text-slate-400" />
                         {tour.durationDays} {tour.durationDays === 1 ? 'día' : 'días'}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-mono font-medium text-white">
+                    <td className="py-3.5 px-4 font-mono font-medium text-slate-900">
                       <span className="inline-flex items-center gap-1">
-                        <DollarSign className="h-3.5 w-3.5 text-emerald-400" />
+                        <DollarSign className="h-3.5 w-3.5 text-teal-600" />
                         {Number(tour.basePrice).toFixed(2)} {tour.currency}
                       </span>
                     </td>
@@ -164,7 +164,7 @@ export default async function ToursListPage({ searchParams }: PageProps) {
                         <Link
                           href={tourRoutes.show(tour.id)}
                           title="Ver detalle e itinerario"
-                          className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
@@ -172,7 +172,7 @@ export default async function ToursListPage({ searchParams }: PageProps) {
                           <Link
                             href={tourRoutes.edit(tour.id)}
                             title="Editar"
-                            className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                            className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
                           >
                             <Edit3 className="h-4 w-4" />
                           </Link>

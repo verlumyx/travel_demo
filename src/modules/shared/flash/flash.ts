@@ -14,8 +14,8 @@ export async function setFlash(type: FlashType, message: string): Promise<void> 
   const cookieStore = await cookies();
   cookieStore.set(FLASH_COOKIE, JSON.stringify({ type, message }), {
     path: '/',
-    maxAge: 10, // short-lived — read once then gone
-    httpOnly: true,
+    maxAge: 15, // short-lived - read once then gone
+    httpOnly: false, // Accessible to client so FlashToaster can clear it without server mutations
     sameSite: 'lax',
   });
 }
@@ -25,7 +25,13 @@ export async function readFlash(): Promise<FlashMessage | null> {
   const raw = cookieStore.get(FLASH_COOKIE)?.value;
   if (!raw) return null;
 
-  cookieStore.delete(FLASH_COOKIE);
+  try {
+    cookieStore.delete(FLASH_COOKIE);
+  } catch {
+    // Next.js Server Components cannot modify cookies during render.
+    // FlashToaster clears the cookie on the client side.
+  }
+
   try {
     return JSON.parse(raw) as FlashMessage;
   } catch {

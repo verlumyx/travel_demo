@@ -10,6 +10,7 @@ import { PaymentStatusBadge } from '@/modules/payment/ui/PaymentStatusBadge';
 import { PaymentMethodBadge } from '@/modules/payment/ui/PaymentMethodBadge';
 import { PaymentVerifyActions } from '@/modules/payment/ui/PaymentVerifyActions';
 import { BookingStatusBadge } from '@/modules/booking/ui/BookingStatusBadge';
+import { RichTextView, isEmptyHtml } from '@/components/ui/rich-text-view';
 import {
   CreditCard,
   ArrowLeft,
@@ -147,12 +148,12 @@ export default async function PaymentDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            {payment.notes && (
+            {!isEmptyHtml(payment.notes) && (
               <div className="pt-3 border-t border-border">
-                <span className="text-muted-foreground text-xs block mb-1">Notas y Observaciones:</span>
-                <p className="text-xs text-foreground bg-muted/30 p-3 rounded-lg border border-border">
-                  {payment.notes}
-                </p>
+                <span className="text-muted-foreground text-xs block mb-1 font-semibold">Notas y Observaciones:</span>
+                <div className="text-xs text-foreground bg-muted/30 p-3 rounded-lg border border-border">
+                  <RichTextView content={payment.notes} />
+                </div>
               </div>
             )}
           </div>

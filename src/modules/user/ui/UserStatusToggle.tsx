@@ -28,8 +28,8 @@ export function UserStatusToggle({ id, currentStatus }: Props) {
       title={isActive ? 'Desactivar usuario' : 'Activar usuario'}
       className={`p-1.5 rounded-lg border transition-all ${
         isActive
-          ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10'
-          : 'border-slate-800 text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+          ? 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+          : 'border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-100'
       } ${isPending ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
     >
       <Power className="h-4 w-4" />

@@ -8,6 +8,7 @@ import { PaymentStatusBadge } from '@/modules/payment/ui/PaymentStatusBadge';
 import { PaymentMethodBadge } from '@/modules/payment/ui/PaymentMethodBadge';
 import { CustomerReportPaymentForm } from '@/modules/customer/ui/CustomerReportPaymentForm';
 import { CustomerVoucherPrintButton } from '@/modules/customer/ui/CustomerVoucherPrintButton';
+import { RichTextView, isEmptyHtml } from '@/components/ui/rich-text-view';
 import {
   ArrowLeft,
   Calendar,
@@ -210,10 +211,10 @@ export default async function CustomerBookingDetailPage({ params }: PageProps) {
                           {p.documentNumber}
                         </>
                       ) : (
-                        '—'
+                        '-'
                       )}
                     </td>
-                    <td className="py-2.5 px-4">{p.phone || '—'}</td>
+                    <td className="py-2.5 px-4">{p.phone || '-'}</td>
                     <td className="py-2.5 px-4">
                       {p.isMainContact ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 print:text-black">
@@ -230,6 +231,19 @@ export default async function CustomerBookingDetailPage({ params }: PageProps) {
             </table>
           </div>
         </div>
+
+        {/* Booking Notes / Special Requirements */}
+        {!isEmptyHtml(booking.notes) && (
+          <div className="bg-muted/30 print:bg-slate-50 border border-border print:border-slate-300 rounded-2xl p-4 text-xs space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground print:text-black block">
+              Notas y Requerimientos Especiales
+            </span>
+            <RichTextView
+              content={booking.notes}
+              className="text-foreground print:text-black leading-relaxed"
+            />
+          </div>
+        )}
 
         {/* Financial Status Summary */}
         <div className="border-t border-border pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs">
@@ -305,7 +319,7 @@ export default async function CustomerBookingDetailPage({ params }: PageProps) {
                     <td className="py-2.5 px-3">
                       <PaymentMethodBadge method={p.method} />
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-muted-foreground">{p.reference || '—'}</td>
+                    <td className="py-2.5 px-3 font-mono text-muted-foreground">{p.reference || '-'}</td>
                     <td className="py-2.5 px-3 text-muted-foreground">
                       {new Date(p.paymentDate).toLocaleDateString('es-VE')}
                     </td>

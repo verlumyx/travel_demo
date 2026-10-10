@@ -1,4 +1,4 @@
-import { and, desc, eq, like, count, lte, ilike, or } from 'drizzle-orm';
+import { and, desc, eq, like, count, lte, ilike, or, inArray } from 'drizzle-orm';
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
 import { applyFilters } from '@/modules/shared/infrastructure/drizzle-query-filters';
 import {
@@ -162,8 +162,21 @@ export class DrizzleTourRepository implements TourRepository {
       .orderBy(app_tours.name);
   }
 
-  async getCatalogTours(filters?: { q?: string; maxPrice?: number; duration?: number }): Promise<CatalogTourItem[]> {
+  async getCatalogTours(filters?: { q?: string; maxPrice?: number; duration?: number; destinationId?: string }): Promise<CatalogTourItem[]> {
     const conditions = [eq(app_tours.status, 'active')];
+
+    if (filters?.destinationId) {
+      const stops = await this.db
+        .select({ tourId: itineraryStops.tourId })
+        .from(itineraryStops)
+        .where(eq(itineraryStops.destinationId, filters.destinationId));
+
+      const tourIds = Array.from(new Set(stops.map((s) => s.tourId)));
+      if (tourIds.length === 0) {
+        return [];
+      }
+      conditions.push(inArray(app_tours.id, tourIds));
+    }
 
     if (filters?.q && filters.q.trim()) {
       conditions.push(
@@ -212,7 +225,11 @@ export class DrizzleTourRepository implements TourRepository {
           .from(itineraryStops)
           .innerJoin(app_destinations, eq(itineraryStops.destinationId, app_destinations.id))
           .leftJoin(app_categories, eq(app_destinations.categoryId, app_categories.id))
-          .where(eq(itineraryStops.tourId, t.id))
+          .where(
+            filters?.destinationId
+              ? and(eq(itineraryStops.tourId, t.id), eq(itineraryStops.destinationId, filters.destinationId))
+              : eq(itineraryStops.tourId, t.id),
+          )
           .limit(1);
 
         return {

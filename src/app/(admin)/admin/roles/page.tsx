@@ -18,10 +18,10 @@ export default async function RolesListPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-indigo-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-white">Roles y Permisos</h1>
+            <Shield className="h-6 w-6 text-teal-600" />
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Roles y Permisos</h1>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Matriz de control de acceso basada en roles (RBAC) del sistema ({roles.length} roles configurados).
           </p>
         </div>
@@ -36,18 +36,18 @@ export default async function RolesListPage() {
           return (
             <div
               key={r.id}
-              className="rounded-2xl bg-slate-900 border border-slate-800 p-6 flex flex-col justify-between shadow-sm relative overflow-hidden"
+              className="rounded-2xl bg-white border border-slate-200 p-6 flex flex-col justify-between shadow-sm relative overflow-hidden"
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
-                  <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                  <div className="h-10 w-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600">
                     <Key className="h-5 w-5" />
                   </div>
                   <span
                     className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                       isAll
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                        : 'bg-teal-50 text-teal-700 border border-teal-200'
                     }`}
                   >
                     {isAll ? 'Acceso Total' : 'Permisos Granulares'}
@@ -55,16 +55,16 @@ export default async function RolesListPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">{r.name}</h3>
-                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">{r.name}</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                     {r.description || 'Sin descripción'}
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-300">
-                    <span className="text-slate-400">Capacidades asignadas:</span>
-                    <span className="font-mono font-bold text-white">
+                <div className="pt-3 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span className="text-slate-500">Capacidades asignadas:</span>
+                    <span className="font-mono font-bold text-slate-900">
                       {isAll ? 'Todas las acciones (Superadmin)' : `${perms.length} permisos`}
                     </span>
                   </div>
@@ -74,7 +74,7 @@ export default async function RolesListPage() {
                       {perms.map((p) => (
                         <div
                           key={p}
-                          className="text-[11px] font-mono text-slate-400 bg-slate-950/60 px-2 py-1 rounded border border-slate-800/80 truncate"
+                          className="text-[11px] font-mono text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200 truncate"
                         >
                           {p}
                         </div>
@@ -84,11 +84,11 @@ export default async function RolesListPage() {
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
-                <span className="flex items-center gap-1 text-emerald-400">
+              <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span className="flex items-center gap-1 text-emerald-600 font-medium">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Estado Activo
                 </span>
-                <span className="flex items-center gap-1 font-mono text-[11px]">
+                <span className="flex items-center gap-1 font-mono text-[11px] text-slate-400">
                   <Lock className="h-3 w-3" /> Sistema
                 </span>
               </div>

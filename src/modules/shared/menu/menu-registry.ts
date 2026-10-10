@@ -9,7 +9,7 @@ export type MenuEntry = {
 };
 
 /**
- * Sidebar entries — single source of truth for the menu.
+ * Sidebar entries - single source of truth for the menu.
  * A module without a menu entry is unreachable.
  */
 export const MENU_REGISTRY: MenuEntry[] = [

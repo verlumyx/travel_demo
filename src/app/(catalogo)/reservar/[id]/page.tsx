@@ -61,7 +61,7 @@ export default async function ClientCheckoutPage({ params }: PageProps) {
             Checkout Autoservicio
           </span>
           <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-            Reservar Cupos — {tour.name}
+            Reservar Cupos: {tour.name}
           </h1>
         </div>
       </div>
@@ -70,8 +70,8 @@ export default async function ClientCheckoutPage({ params }: PageProps) {
       <div className="bg-card border border-border rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
           <div>
-            <span className="font-mono text-xs font-bold text-primary block">
-              Salida: {departure.code} • Tour: {tour.code}
+            <span className="text-[11px] font-bold text-primary uppercase tracking-wider block">
+              Reserva de Experiencia
             </span>
             <h2 className="text-lg font-bold text-foreground mt-0.5">{tour.name}</h2>
           </div>

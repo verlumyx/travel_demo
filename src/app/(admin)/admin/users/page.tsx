@@ -21,21 +21,21 @@ export default async function UsersListPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Users className="h-6 w-6 text-indigo-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-white">Gestión de Usuarios</h1>
+            <Users className="h-6 w-6 text-teal-600" />
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Gestión de Usuarios</h1>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Control de cuentas del personal administrativo y asignación de roles ({usersWithRoles.length} registrados).
           </p>
         </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-sm">
+      <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-xs uppercase font-semibold text-slate-400 bg-slate-950/50">
+              <tr className="border-b border-slate-200 text-xs uppercase font-semibold text-slate-500 bg-slate-50">
                 <th className="py-3.5 px-4">Usuario</th>
                 <th className="py-3.5 px-4">Correo Electrónico</th>
                 <th className="py-3.5 px-4">Rol Asignado</th>
@@ -44,7 +44,7 @@ export default async function UsersListPage() {
                 <th className="py-3.5 px-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {usersWithRoles.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12 text-slate-500">
@@ -57,22 +57,22 @@ export default async function UsersListPage() {
                   const isOperator = u.roleName === 'Operador';
 
                   return (
-                    <tr key={u.id} className="hover:bg-slate-800/40 transition">
-                      <td className="py-3.5 px-4 font-medium text-white">
+                    <tr key={u.id} className="hover:bg-slate-50/70 transition">
+                      <td className="py-3.5 px-4 font-medium text-slate-900">
                         <div className="flex items-center gap-2.5">
-                          <div className="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-indigo-300">
+                          <div className="h-8 w-8 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center font-bold text-xs text-teal-700">
                             {u.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div>
                             <div>{u.name}</div>
-                            {u.phone && <div className="text-xs text-slate-500">{u.phone}</div>}
+                            {u.phone && <div className="text-xs text-slate-400">{u.phone}</div>}
                           </div>
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-xs text-slate-300 font-mono">
+                      <td className="py-3.5 px-4 text-xs text-slate-600 font-mono">
                         <div className="flex items-center gap-1.5">
-                          <Mail className="h-3.5 w-3.5 text-slate-500" />
+                          <Mail className="h-3.5 w-3.5 text-slate-400" />
                           {u.email}
                         </div>
                       </td>
@@ -81,10 +81,10 @@ export default async function UsersListPage() {
                         <span
                           className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${
                             isAdmin
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
                               : isOperator
-                              ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           }`}
                         >
                           <Shield className="h-3 w-3" />
@@ -94,19 +94,19 @@ export default async function UsersListPage() {
 
                       <td className="py-3.5 px-4">
                         {u.status === 'active' ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
                             <CheckCircle2 className="h-3.5 w-3.5" /> Activo
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-xs text-slate-500 font-medium">
+                          <span className="inline-flex items-center gap-1 text-xs text-slate-400 font-medium">
                             <XCircle className="h-3.5 w-3.5" /> Inactivo
                           </span>
                         )}
                       </td>
 
-                      <td className="py-3.5 px-4 text-xs text-slate-400">
+                      <td className="py-3.5 px-4 text-xs text-slate-500">
                         <div className="flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5 text-slate-600" />
+                          <Calendar className="h-3.5 w-3.5 text-slate-400" />
                           {new Date(u.createdAt).toLocaleDateString('es-VE')}
                         </div>
                       </td>

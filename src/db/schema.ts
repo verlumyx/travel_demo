@@ -1,4 +1,4 @@
-// Schema barrel — re-export every module model here.
+// Schema barrel - re-export every module model here.
 // drizzle-kit and db.query.* only see what is exported from this file.
 
 export * from '@/modules/role/models/role.model';

@@ -128,7 +128,7 @@ export function CustomerLoginForm({ demoCustomers = [] }: CustomerLoginFormProps
             type="button"
             onClick={handleGoogleLogin}
             disabled={isPending}
-            className="w-full py-2.5 px-4 rounded-xl border border-border bg-background hover:bg-muted text-foreground font-medium text-xs flex items-center justify-center gap-3 transition shadow-xs disabled:opacity-50 cursor-pointer"
+            className="w-full py-2.5 px-4 rounded-xl border border-border bg-background hover:bg-muted active:scale-[0.98] text-foreground font-medium text-xs flex items-center justify-center gap-3 transition shadow-xs disabled:opacity-50 cursor-pointer"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -185,7 +185,7 @@ export function CustomerLoginForm({ demoCustomers = [] }: CustomerLoginFormProps
             <button
               type="submit"
               disabled={isPending || !email}
-              className="w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground font-semibold text-xs flex items-center justify-center gap-2 hover:bg-primary/90 transition shadow-xs disabled:opacity-50 cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl bg-primary text-primary-foreground font-semibold text-xs flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {isPending ? (
                 <>

@@ -7,6 +7,8 @@ import { createCustomerAction, updateCustomerAction } from '@/app/(admin)/admin/
 import { customerRoutes } from '../routes';
 import type { CustomerRow } from '../models/customer.model';
 import { uuidv7 } from '@/modules/shared/uuid';
+import { Select2 } from '@/components/ui/select2';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface CustomerFormProps {
   initialData?: CustomerRow | null;
@@ -96,16 +98,17 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
             <label htmlFor="documentType" className="block text-sm font-medium text-foreground mb-1.5">
               Tipo de Documento
             </label>
-            <select
+            <Select2
               id="documentType"
               name="documentType"
               defaultValue={initialData?.documentType ?? 'cedula'}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="cedula">Cédula de Identidad</option>
-              <option value="passport">Pasaporte</option>
-              <option value="other">Otro</option>
-            </select>
+              options={[
+                { value: 'cedula', label: 'Cédula de Identidad' },
+                { value: 'passport', label: 'Pasaporte' },
+                { value: 'other', label: 'Otro' },
+              ]}
+              size="sm"
+            />
           </div>
 
           <div>
@@ -220,30 +223,30 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
             <label htmlFor="source" className="block text-sm font-medium text-foreground mb-1.5">
               Canal de Captación
             </label>
-            <select
+            <Select2
               id="source"
               name="source"
               defaultValue={initialData?.source ?? 'admin'}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="admin">Administración / Presencial</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="instagram">Instagram</option>
-              <option value="portal">Portal Web</option>
-            </select>
+              options={[
+                { value: 'admin', label: 'Administración / Presencial' },
+                { value: 'whatsapp', label: 'WhatsApp' },
+                { value: 'instagram', label: 'Instagram' },
+                { value: 'portal', label: 'Portal Web' },
+              ]}
+              size="sm"
+            />
           </div>
 
           <div>
             <label htmlFor="notes" className="block text-sm font-medium text-foreground mb-1.5">
               Notas del Cliente
             </label>
-            <textarea
+            <RichTextEditor
               id="notes"
               name="notes"
-              rows={2}
               defaultValue={initialData?.notes ?? ''}
               placeholder="Alergias, restricciones alimenticias, preferencias de asiento, etc."
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              minHeight="min-h-[130px]"
             />
           </div>
         </div>

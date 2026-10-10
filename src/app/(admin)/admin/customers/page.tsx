@@ -191,7 +191,7 @@ export default async function CustomersListPage({ searchParams }: PageProps) {
                           {c.documentNumber}
                         </span>
                       ) : (
-                        '—'
+                        '-'
                       )}
                     </td>
 
@@ -208,7 +208,7 @@ export default async function CustomersListPage({ searchParams }: PageProps) {
                           <span className="truncate max-w-[160px]">{c.email}</span>
                         </div>
                       )}
-                      {!c.phone && !c.email && <span className="text-muted-foreground">—</span>}
+                      {!c.phone && !c.email && <span className="text-muted-foreground">-</span>}
                     </td>
 
                     <td className="py-3.5 px-4">

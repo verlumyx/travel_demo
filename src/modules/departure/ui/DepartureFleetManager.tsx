@@ -11,6 +11,9 @@ import { initialActionState } from '@/modules/shared/actions/action-state';
 import type { DepartureUnitDto } from '@/modules/departure-unit/serializers/departure-unit.serializer';
 import type { TransportUnitRow } from '@/modules/transport-unit/models/transport-unit.model';
 import { Bus, Plus, User, Phone, AlertTriangle, Edit3, Trash2, X, Check } from 'lucide-react';
+import { NumberInput } from '@/components/ui/number-input';
+import { Select2 } from '@/components/ui/select2';
+import { stripHtml } from '@/components/ui/rich-text-view';
 
 interface DepartureFleetManagerProps {
   departureId: string;
@@ -190,23 +193,19 @@ export function DepartureFleetManager({
                 >
                   Unidad de Transporte *
                 </label>
-                <select
+                <Select2
                   id="transportUnitId"
                   name="transportUnitId"
                   required
                   value={selectedUnitId}
-                  onChange={(e) => setSelectedUnitId(e.target.value)}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="" disabled>
-                    Seleccione un vehículo activo...
-                  </option>
-                  {availableTransportUnits.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} ({u.code}) — {u.type} — {u.capacity} puestos {u.plateNumber ? `[${u.plateNumber}]` : ''}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(val) => setSelectedUnitId(val)}
+                  placeholder="Seleccione un vehículo activo..."
+                  options={availableTransportUnits.map((u) => ({
+                    value: u.id,
+                    label: `${u.name} (${u.code}) - ${u.type} - ${u.capacity} puestos ${u.plateNumber ? `[${u.plateNumber}]` : ''}`,
+                  }))}
+                  size="sm"
+                />
                 {assignState.fieldErrors?.transportUnitId && (
                   <p className="text-xs text-destructive mt-1">
                     {assignState.fieldErrors.transportUnitId[0]}
@@ -221,19 +220,17 @@ export function DepartureFleetManager({
                 >
                   Capacidad Asignada a esta Salida *
                 </label>
-                <input
-                  type="number"
+                <NumberInput
                   id="assignedCapacity"
                   name="assignedCapacity"
                   required
-                  min="1"
+                  min={1}
                   max={selectedUnit?.capacity ?? 100}
                   defaultValue={selectedUnit?.capacity ?? 20}
                   key={selectedUnitId}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Por defecto la capacidad del vehículo ({selectedUnit?.capacity ?? '—'}). Puede asignar menos asientos si se reserva espacio para equipaje u operador.
+                  Por defecto la capacidad del vehículo ({selectedUnit?.capacity ?? '-'}). Puede asignar menos asientos si se reserva espacio para equipaje u operador.
                 </p>
                 {assignState.fieldErrors?.assignedCapacity && (
                   <p className="text-xs text-destructive mt-1">
@@ -362,7 +359,7 @@ export function DepartureFleetManager({
                           {unit.unitPlateNumber}
                         </span>
                       ) : (
-                        '—'
+                        '-'
                       )}
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -389,7 +386,7 @@ export function DepartureFleetManager({
                       </div>
                     </td>
                     <td className="py-3 px-4 text-muted-foreground max-w-[150px] truncate">
-                      {unit.notes || '—'}
+                      {stripHtml(unit.notes) || '-'}
                     </td>
                     {!isLocked && (
                       <td className="py-3 px-4 text-right">
@@ -520,14 +517,12 @@ function EditUnitModal({
             <label className="block font-medium text-foreground mb-1">
               Capacidad Asignada * (Máx vehículo: {unit.unitTotalCapacity})
             </label>
-            <input
-              type="number"
-              min="1"
+            <NumberInput
+              min={1}
               max={unit.unitTotalCapacity}
               value={capacity}
-              onChange={(e) => setCapacity(Number(e.target.value))}
+              onValueChange={(val) => setCapacity(val)}
               required
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {isInvalidCapacity && (
               <p className="text-xs text-destructive mt-1 font-medium">

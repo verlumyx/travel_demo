@@ -11,6 +11,7 @@ import { toCustomerDto } from '@/modules/customer/serializers/customer.serialize
 import { toDepartureDto } from '@/modules/departure/serializers/departure.serializer';
 import { BookingStatusBadge } from '@/modules/booking/ui/BookingStatusBadge';
 import { BookingStatusSelect } from '@/modules/booking/ui/BookingStatusSelect';
+import { RichTextView, isEmptyHtml, stripHtml } from '@/components/ui/rich-text-view';
 import {
   Ticket,
   ArrowLeft,
@@ -229,6 +230,27 @@ export default async function BookingDetailPage({ params }: PageProps) {
         </div>
       </div>
 
+      {/* Booking Notes / Special Requirements */}
+      {!isEmptyHtml(booking.notes) && (
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-primary font-semibold text-xs uppercase tracking-wider flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Notas y Observaciones de la Reserva
+            </span>
+            <Link
+              href={bookingRoutes.edit(booking.id)}
+              className="text-xs text-primary hover:underline font-medium"
+            >
+              Editar
+            </Link>
+          </div>
+          <RichTextView
+            content={booking.notes}
+            className="text-xs text-foreground leading-relaxed"
+          />
+        </div>
+      )}
+
       {/* Passengers List */}
       <div className="bg-card border border-border rounded-xl shadow-xs overflow-hidden">
         <div className="px-6 py-4 border-b border-border flex items-center justify-between">
@@ -270,12 +292,12 @@ export default async function BookingDetailPage({ params }: PageProps) {
                         {p.documentNumber}
                       </span>
                     ) : (
-                      '—'
+                      '-'
                     )}
                   </td>
 
                   <td className="py-3 px-4 text-muted-foreground">
-                    {p.phone || '—'}
+                    {p.phone || '-'}
                   </td>
 
                   <td className="py-3 px-4">
@@ -290,7 +312,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
                   </td>
 
                   <td className="py-3 px-4 text-muted-foreground">
-                    {p.notes || '—'}
+                    {stripHtml(p.notes) || '-'}
                   </td>
                 </tr>
               ))}
@@ -349,7 +371,7 @@ export default async function BookingDetailPage({ params }: PageProps) {
                     </td>
 
                     <td className="py-3 px-4 font-mono text-muted-foreground">
-                      {p.reference || '—'}
+                      {p.reference || '-'}
                     </td>
 
                     <td className="py-3 px-4 text-muted-foreground">

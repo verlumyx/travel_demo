@@ -8,6 +8,7 @@ import { departureRoutes } from '@/modules/departure/routes';
 import { toDepartureDto } from '@/modules/departure/serializers/departure.serializer';
 import { toDepartureUnitDto } from '@/modules/departure-unit/serializers/departure-unit.serializer';
 import { PrintManifestButton } from '@/modules/departure/ui/PrintManifestButton';
+import { stripHtml } from '@/components/ui/rich-text-view';
 import {
   ArrowLeft,
   Calendar,
@@ -216,12 +217,12 @@ export default async function DepartureManifestPage({ params }: PageProps) {
                           {p.documentNumber}
                         </>
                       ) : (
-                        '—'
+                        '-'
                       )}
                     </td>
 
                     <td className="py-2 px-3 border-r border-border print:border-black">
-                      {p.phone || '—'}
+                      {p.phone || '-'}
                     </td>
 
                     <td className="py-2 px-3 font-mono border-r border-border print:border-black">
@@ -239,12 +240,12 @@ export default async function DepartureManifestPage({ params }: PageProps) {
                           )}
                         </div>
                       ) : (
-                        '—'
+                        '-'
                       )}
                     </td>
 
                     <td className="py-2 px-3 text-muted-foreground print:text-black">
-                      {p.notes || '—'}
+                      {stripHtml(p.notes) || '-'}
                     </td>
                   </tr>
                 ))}

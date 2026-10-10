@@ -35,17 +35,17 @@ export default async function TransportUnitsListPage({ searchParams }: PageProps
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Bus className="h-6 w-6 text-emerald-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-white">Flota de Transporte</h1>
+            <Bus className="h-6 w-6 text-teal-600" />
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Flota de Transporte</h1>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Gestión de vehículos y recursos de movilidad para asignación en salidas grupales ({total} unidades registradas).
           </p>
         </div>
 
         <Link
           href={transportUnitRoutes.create()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-medium text-sm transition shadow-xs cursor-pointer self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
           Nueva Unidad
@@ -53,15 +53,15 @@ export default async function TransportUnitsListPage({ searchParams }: PageProps
       </div>
 
       {/* Filters Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row gap-4 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 items-center justify-between">
         <form method="GET" className="relative w-full sm:w-96">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             name="q"
             defaultValue={q}
             placeholder="Buscar por nombre, placa o chofer..."
-            className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500"
           />
         </form>
 
@@ -69,7 +69,7 @@ export default async function TransportUnitsListPage({ searchParams }: PageProps
           <Link
             href="/admin/transport-units"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              !status ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'
+              !status ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Todas
@@ -77,7 +77,7 @@ export default async function TransportUnitsListPage({ searchParams }: PageProps
           <Link
             href="/admin/transport-units?status=active"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              status === 'active' ? 'bg-slate-800 text-emerald-400' : 'text-slate-400 hover:text-white'
+              status === 'active' ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Operativas
@@ -85,7 +85,7 @@ export default async function TransportUnitsListPage({ searchParams }: PageProps
           <Link
             href="/admin/transport-units?status=maintenance"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              status === 'maintenance' ? 'bg-slate-800 text-amber-400' : 'text-slate-400 hover:text-white'
+              status === 'maintenance' ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Mantenimiento
@@ -93,7 +93,7 @@ export default async function TransportUnitsListPage({ searchParams }: PageProps
           <Link
             href="/admin/transport-units?status=inactive"
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-              status === 'inactive' ? 'bg-slate-800 text-rose-400' : 'text-slate-400 hover:text-white'
+              status === 'inactive' ? 'bg-teal-600 text-white font-semibold shadow-2xs' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             Inactivas
@@ -102,11 +102,11 @@ export default async function TransportUnitsListPage({ searchParams }: PageProps
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden shadow-sm">
+      <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-xs uppercase font-semibold text-slate-400 bg-slate-950/50">
+              <tr className="border-b border-slate-200 text-xs uppercase font-semibold text-slate-500 bg-slate-50/70">
                 <th className="py-3.5 px-4">Código</th>
                 <th className="py-3.5 px-4">Unidad</th>
                 <th className="py-3.5 px-4">Tipo</th>
@@ -116,42 +116,42 @@ export default async function TransportUnitsListPage({ searchParams }: PageProps
                 <th className="py-3.5 px-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {units.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                  <td colSpan={7} className="text-center py-12 text-slate-400">
                     No se encontraron unidades de transporte registradas.
                   </td>
                 </tr>
               ) : (
                 units.map((unit) => (
-                  <tr key={unit.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-3.5 px-4 font-mono font-medium text-emerald-400 text-xs">
+                  <tr key={unit.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4 font-mono font-medium text-teal-700 text-xs">
                       {unit.code}
                     </td>
-                    <td className="py-3.5 px-4 font-medium text-white">
-                      <Link href={transportUnitRoutes.show(unit.id)} className="hover:text-emerald-400 transition">
+                    <td className="py-3.5 px-4 font-medium text-slate-900">
+                      <Link href={transportUnitRoutes.show(unit.id)} className="hover:text-teal-600 transition">
                         {unit.name}
                       </Link>
                       {unit.plateNumber && (
-                        <span className="block text-[11px] font-mono text-slate-500">
+                        <span className="block text-[11px] font-mono text-slate-400">
                           Placa: {unit.plateNumber}
                         </span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 capitalize text-slate-300 text-xs">
+                    <td className="py-3.5 px-4 capitalize text-slate-600 text-xs">
                       {unit.type}
                     </td>
-                    <td className="py-3.5 px-4 font-medium text-white">
+                    <td className="py-3.5 px-4 font-medium text-slate-900">
                       <span className="inline-flex items-center gap-1">
                         <Users className="h-3.5 w-3.5 text-slate-400" />
                         {unit.capacity} pax
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-xs text-slate-400">
-                      {unit.driverName || '—'}
+                    <td className="py-3.5 px-4 text-xs text-slate-500">
+                      {unit.driverName || '-'}
                       {unit.driverPhone && (
-                        <span className="block text-[11px] text-slate-500">{unit.driverPhone}</span>
+                        <span className="block text-[11px] text-slate-400">{unit.driverPhone}</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4">
@@ -163,14 +163,14 @@ export default async function TransportUnitsListPage({ searchParams }: PageProps
                         <Link
                           href={transportUnitRoutes.show(unit.id)}
                           title="Ver detalle"
-                          className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
                         <Link
                           href={transportUnitRoutes.edit(unit.id)}
                           title="Editar"
-                          className="p-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
                         >
                           <Edit3 className="h-4 w-4" />
                         </Link>

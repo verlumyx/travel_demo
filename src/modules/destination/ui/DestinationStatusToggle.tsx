@@ -25,10 +25,10 @@ export function DestinationStatusToggle({
       onClick={handleToggle}
       disabled={isPending}
       title={currentStatus === 'active' ? 'Desactivar destino' : 'Activar destino'}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer disabled:opacity-50 ${
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer disabled:opacity-50 shadow-sm ${
         currentStatus === 'active'
-          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
-          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+          ? 'bg-white text-rose-700 border-rose-200 hover:bg-rose-50'
+          : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'
       }`}
     >
       {isPending ? (

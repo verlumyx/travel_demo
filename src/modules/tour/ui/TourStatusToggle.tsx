@@ -26,7 +26,7 @@ export function TourStatusToggle({
         value={currentStatus}
         onChange={(e) => handleStatusChange(e.target.value as any)}
         disabled={isPending}
-        className="px-2 py-1 rounded-lg text-xs font-medium bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer disabled:opacity-50"
+        className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-teal-500 cursor-pointer disabled:opacity-50 transition shadow-sm"
       >
         <option value="draft">Borrador</option>
         <option value="active">Activo</option>

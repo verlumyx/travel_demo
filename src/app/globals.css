@@ -1,47 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+  --background: #fbfbfb;
+  --foreground: #090d16;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #090d16;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #4f46e5;
+  --popover-foreground: #090d16;
+  --primary: #0d9488;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f8fafc;
-  --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
-  --destructive: #ef4444;
+  --secondary-foreground: #090d16;
+  --muted: #f4f6f8;
+  --muted-foreground: #526071;
+  --accent: #f0fdfa;
+  --accent-foreground: #0f766e;
+  --destructive: #e11d48;
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #6366f1;
+  --ring: #0d9488;
 }
 
 .dark {
-  --background: #020617;
+  --background: #070b12;
   --foreground: #f8fafc;
-  --card: #0f172a;
+  --card: #0d131f;
   --card-foreground: #f8fafc;
-  --popover: #0f172a;
+  --popover: #0d131f;
   --popover-foreground: #f8fafc;
-  --primary: #6366f1;
-  --primary-foreground: #ffffff;
-  --secondary: #1e293b;
+  --primary: #14b8a6;
+  --primary-foreground: #042f2e;
+  --secondary: #131c2d;
   --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
-  --destructive: #ef4444;
+  --muted: #131c2d;
+  --muted-foreground: #8a9bb0;
+  --accent: #112929;
+  --accent-foreground: #2dd4bf;
+  --destructive: #f43f5e;
   --destructive-foreground: #ffffff;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #6366f1;
+  --border: #1a2538;
+  --input: #1a2538;
+  --ring: #14b8a6;
 }
 
 @theme inline {
@@ -69,5 +69,159 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+/* Tactile feedback utilities conforming to design-taste-frontend */
+button, [role="button"], a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .interactive-tap {
+    transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 140ms ease;
+  }
+  .interactive-tap:active {
+    transform: scale(0.98);
+  }
+}
+
+/* TipTap Rich Text Editor & Rendered Content */
+.tiptap-content .tiptap,
+.rich-text-content {
+  outline: none;
+  min-height: inherit;
+}
+
+.tiptap-content .tiptap p,
+.rich-text-content p {
+  margin-bottom: 0.5rem;
+  line-height: 1.625;
+}
+
+.tiptap-content .tiptap p:last-child,
+.rich-text-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-content p:empty {
+  display: none;
+}
+
+.tiptap-content .tiptap h1,
+.rich-text-content h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--foreground);
+}
+
+.tiptap-content .tiptap h2,
+.rich-text-content h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 0.875rem;
+  margin-bottom: 0.375rem;
+  color: var(--foreground);
+}
+
+.tiptap-content .tiptap h3,
+.rich-text-content h3 {
+  font-size: 1.025rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  color: var(--foreground);
+}
+
+.tiptap-content .tiptap ul,
+.rich-text-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-content .tiptap ol,
+.rich-text-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-content .tiptap li,
+.rich-text-content li {
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+
+.tiptap-content .tiptap li > p,
+.rich-text-content li > p {
+  margin: 0;
+  display: inline;
+}
+
+.tiptap-content .tiptap blockquote,
+.rich-text-content blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 0.875rem;
+  font-style: italic;
+  color: var(--muted-foreground);
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.tiptap-content .tiptap code,
+.rich-text-content code {
+  background-color: var(--muted);
+  color: var(--foreground);
+  font-family: monospace;
+  font-size: 0.875em;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.tiptap-content .tiptap pre,
+.rich-text-content pre {
+  background-color: var(--muted);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-family: monospace;
+  font-size: 0.85em;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+
+.tiptap-content .tiptap pre code,
+.rich-text-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.tiptap-content .tiptap hr,
+.rich-text-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
+
+.tiptap-content .tiptap a,
+.rich-text-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tiptap-content .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--muted-foreground);
+  opacity: 0.6;
+  pointer-events: none;
+  height: 0;
+}
+

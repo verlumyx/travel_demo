@@ -15,6 +15,9 @@ import {
   CheckCircle2,
   Image as ImageIcon,
 } from 'lucide-react';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { Select2 } from '@/components/ui/select2';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface AvailableBooking {
   id: string;
@@ -77,21 +80,19 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
           <label htmlFor="bookingId" className="text-xs font-medium text-foreground">
             Seleccione la Reserva a Conciliar *
           </label>
-          <select
+          <Select2
             id="bookingId"
             name="bookingId"
             value={selectedBookingId}
-            onChange={(e) => handleBookingChange(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-lg border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
+            onValueChange={(val) => handleBookingChange(val)}
+            placeholder="Seleccione una reserva..."
+            options={bookings.map((b) => ({
+              value: b.id,
+              label: `${b.code} - ${b.customerName} (Pendiente: $${b.pendingBalance} USD / Total: $${b.totalAmount})`,
+            }))}
+            size="sm"
             required
-          >
-            <option value="">Seleccione una reserva...</option>
-            {bookings.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.code} — {b.customerName} (Pendiente: ${b.pendingBalance} USD / Total: ${b.totalAmount})
-              </option>
-            ))}
-          </select>
+          />
           {state.fieldErrors?.bookingId && (
             <p className="text-xs text-destructive">{state.fieldErrors.bookingId[0]}</p>
           )}
@@ -133,21 +134,22 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
             <label htmlFor="method" className="text-xs font-medium text-foreground">
               Método de Pago *
             </label>
-            <select
+            <Select2
               id="method"
               name="method"
               defaultValue="pago_movil"
-              className="w-full px-3 py-2 text-xs rounded-lg border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
+              options={[
+                { value: 'pago_movil', label: 'Pago Móvil (VES)' },
+                { value: 'zelle', label: 'Zelle (USD)' },
+                { value: 'binance', label: 'Binance Pay (USDT)' },
+                { value: 'zinli', label: 'Zinli (USD)' },
+                { value: 'bank_transfer', label: 'Transferencia Bancaria' },
+                { value: 'cash_usd', label: 'Efectivo USD (Caja/Oficina)' },
+                { value: 'cash_ves', label: 'Efectivo VES (Caja/Oficina)' },
+              ]}
+              size="sm"
               required
-            >
-              <option value="pago_movil">Pago Móvil (VES)</option>
-              <option value="zelle">Zelle (USD)</option>
-              <option value="binance">Binance Pay (USDT)</option>
-              <option value="zinli">Zinli (USD)</option>
-              <option value="bank_transfer">Transferencia Bancaria</option>
-              <option value="cash_usd">Efectivo USD (Caja/Oficina)</option>
-              <option value="cash_ves">Efectivo VES (Caja/Oficina)</option>
-            </select>
+            />
             {state.fieldErrors?.method && (
               <p className="text-xs text-destructive">{state.fieldErrors.method[0]}</p>
             )}
@@ -157,19 +159,15 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
             <label htmlFor="amount" className="text-xs font-medium text-foreground">
               Monto Pagado / Abonado *
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-muted-foreground text-xs">$</span>
-              <input
-                id="amount"
-                name="amount"
-                type="text"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full pl-7 pr-3 py-2 text-xs rounded-lg border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring font-mono font-bold"
-                required
-              />
-            </div>
+            <CurrencyInput
+              id="amount"
+              name="amount"
+              value={parseFloat(amount) || 0}
+              onValueChange={(val) => setAmount(val.toFixed(2))}
+              placeholder="0.00"
+              min={0.01}
+              required
+            />
             {selectedBooking && Number(selectedBooking.pendingBalance) > 0 && (
               <button
                 type="button"
@@ -188,16 +186,17 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
             <label htmlFor="currency" className="text-xs font-medium text-foreground">
               Moneda
             </label>
-            <select
+            <Select2
               id="currency"
               name="currency"
               defaultValue="USD"
-              className="w-full px-3 py-2 text-xs rounded-lg border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
-            >
-              <option value="USD">USD (Dólares)</option>
-              <option value="VES">VES (Bolívares)</option>
-              <option value="USDT">USDT (Tether)</option>
-            </select>
+              options={[
+                { value: 'USD', label: 'USD (Dólares)' },
+                { value: 'VES', label: 'VES (Bolívares)' },
+                { value: 'USDT', label: 'USDT (Tether)' },
+              ]}
+              size="sm"
+            />
           </div>
 
           <div className="space-y-2">
@@ -266,12 +265,11 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
             <label htmlFor="notes" className="text-xs font-medium text-foreground">
               Notas y Observaciones
             </label>
-            <textarea
+            <RichTextEditor
               id="notes"
               name="notes"
-              rows={3}
               placeholder="Ej: El cliente abonó el 50% de inicial, el resto se liquidará en el abordaje..."
-              className="w-full px-3 py-2 text-xs rounded-lg border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
+              minHeight="min-h-[130px]"
             />
           </div>
         </div>

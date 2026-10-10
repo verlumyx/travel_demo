@@ -8,6 +8,8 @@ import { createDestinationAction, updateDestinationAction } from '@/app/(admin)/
 import type { DestinationDto } from '../serializers/destination.serializer';
 import { destinationRoutes } from '../routes';
 import { Loader2, ArrowLeft, Save, MapPin } from 'lucide-react';
+import { Select2 } from '@/components/ui/select2';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface DestinationFormProps {
   destination?: DestinationDto;
@@ -87,18 +89,19 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
             <label className="text-sm font-medium text-slate-300">
               Categoría Turística
             </label>
-            <select
+            <Select2
               name="categoryId"
               defaultValue={destination?.categoryId || ''}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm transition"
-            >
-              <option value="">-- Sin categoría asignada --</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.code})
-                </option>
-              ))}
-            </select>
+              placeholder="-- Sin categoría asignada --"
+              options={[
+                { value: '', label: '-- Sin categoría asignada --' },
+                ...categories.map((c) => ({
+                  value: c.id,
+                  label: `${c.name} (${c.code})`,
+                })),
+              ]}
+              size="md"
+            />
             {state.fieldErrors?.categoryId && (
               <p className="text-xs text-rose-400">{state.fieldErrors.categoryId[0]}</p>
             )}
@@ -185,12 +188,11 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
           <label className="text-sm font-medium text-slate-300">
             Descripción y Atractivos
           </label>
-          <textarea
+          <RichTextEditor
             name="description"
-            rows={4}
             defaultValue={destination?.description || ''}
             placeholder="Detalles sobre el clima, actividades recomendadas, atractivos naturales..."
-            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition resize-none"
+            minHeight="min-h-[160px]"
           />
         </div>
       </div>

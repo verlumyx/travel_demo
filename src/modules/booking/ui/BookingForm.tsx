@@ -7,6 +7,10 @@ import { createBookingAction } from '@/app/(admin)/admin/bookings/actions';
 import { bookingRoutes } from '../routes';
 import { uuidv7 } from '@/modules/shared/uuid';
 import { Users, CalendarDays, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { NumberInput } from '@/components/ui/number-input';
+import { Select2 } from '@/components/ui/select2';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface DepartureOption {
   id: string;
@@ -197,23 +201,19 @@ export function BookingForm({
                 + Crear nuevo cliente
               </Link>
             </div>
-            <select
+            <Select2
               id="customerId"
               name="customerId"
               required
               value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="" disabled>
-                Seleccione un cliente...
-              </option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.fullName} ({c.code}) {c.phone ? `— ${c.phone}` : ''}
-                </option>
-              ))}
-            </select>
+              onValueChange={(val) => setSelectedCustomerId(val)}
+              placeholder="Seleccione un cliente..."
+              options={customers.map((c) => ({
+                value: c.id,
+                label: `${c.fullName} (${c.code}) ${c.phone ? `- ${c.phone}` : ''}`,
+              }))}
+              size="sm"
+            />
             {state.fieldErrors?.customerId && (
               <p className="text-xs text-destructive mt-1">
                 {state.fieldErrors.customerId[0]}
@@ -226,29 +226,24 @@ export function BookingForm({
             <label htmlFor="departureId" className="block text-sm font-medium text-foreground mb-1.5">
               Salida Programada *
             </label>
-            <select
+            <Select2
               id="departureId"
               name="departureId"
               required
               value={selectedDepartureId}
-              onChange={(e) => setSelectedDepartureId(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="" disabled>
-                Seleccione una fecha de salida...
-              </option>
-              {departures.map((d) => (
-                <option key={d.id} value={d.id} disabled={d.availableSlots <= 0}>
-                  {d.tourName} [{d.code}] —{' '}
-                  {new Date(d.departureDate).toLocaleDateString('es-VE', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}{' '}
-                  (${d.unitPrice}) — {d.availableSlots} cupos disponibles
-                </option>
-              ))}
-            </select>
+              onValueChange={(val) => setSelectedDepartureId(val)}
+              placeholder="Seleccione una fecha de salida..."
+              options={departures.map((d) => ({
+                value: d.id,
+                label: `${d.tourName} [${d.code}] - ${new Date(d.departureDate).toLocaleDateString('es-VE', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })} ($${d.unitPrice}) - ${d.availableSlots} cupos disponibles`,
+                isDisabled: d.availableSlots <= 0,
+              }))}
+              size="sm"
+            />
             {state.fieldErrors?.departureId && (
               <p className="text-xs text-destructive mt-1">
                 {state.fieldErrors.departureId[0]}
@@ -289,16 +284,14 @@ export function BookingForm({
             <label htmlFor="slotsReserved" className="block text-sm font-medium text-foreground mb-1.5">
               Cantidad de Cupos a Reservar *
             </label>
-            <input
-              type="number"
+            <NumberInput
               id="slotsReserved"
               name="slotsReserved"
-              min="1"
+              min={1}
               max={maxSlots > 0 ? maxSlots : 1}
               value={slotsCount}
-              onChange={(e) => setSlotsCount(Math.max(1, Number(e.target.value)))}
+              onValueChange={(val) => setSlotsCount(Math.max(1, val))}
               required
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <p className="text-xs text-muted-foreground mt-1">
               Máximo {maxSlots} cupos disponibles para esta salida.
@@ -314,18 +307,14 @@ export function BookingForm({
             <label htmlFor="totalAmount" className="block text-sm font-medium text-foreground mb-1.5">
               Monto Total de la Reserva (USD) *
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-sm text-muted-foreground">$</span>
-              <input
-                type="text"
-                id="totalAmount"
-                name="totalAmount"
-                required
-                value={totalAmount}
-                onChange={(e) => setTotalAmount(e.target.value)}
-                className="w-full rounded-lg border border-input bg-background pl-7 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
-              />
-            </div>
+            <CurrencyInput
+              id="totalAmount"
+              name="totalAmount"
+              required
+              value={parseFloat(totalAmount) || 0}
+              onValueChange={(val) => setTotalAmount(val.toFixed(2))}
+              min={0}
+            />
             <p className="text-xs text-muted-foreground mt-1">
               Calculado automáticamente ({slotsCount} × ${selectedDeparture?.unitPrice ?? 0}). Editable si aplica descuento o ajuste.
             </p>
@@ -421,15 +410,16 @@ export function BookingForm({
                   <label className="block font-medium text-foreground mb-1">
                     Tipo de Documento
                   </label>
-                  <select
+                  <Select2
                     value={p.documentType}
-                    onChange={(e) => updatePassenger(index, 'documentType', e.target.value)}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="cedula">Cédula</option>
-                    <option value="passport">Pasaporte</option>
-                    <option value="other">Otro</option>
-                  </select>
+                    onValueChange={(val) => updatePassenger(index, 'documentType', val)}
+                    options={[
+                      { value: 'cedula', label: 'Cédula' },
+                      { value: 'passport', label: 'Pasaporte' },
+                      { value: 'other', label: 'Otro' },
+                    ]}
+                    size="sm"
+                  />
                 </div>
 
                 <div>
@@ -481,12 +471,11 @@ export function BookingForm({
         <label htmlFor="notes" className="block text-sm font-medium text-foreground">
           Notas Operativas de la Reserva
         </label>
-        <textarea
+        <RichTextEditor
           id="notes"
           name="notes"
-          rows={3}
           placeholder="Instrucciones especiales para el viaje, condiciones de pago convenidas con el cliente, etc."
-          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          minHeight="min-h-[140px]"
         />
       </div>
 

@@ -8,6 +8,9 @@ import { createTransportUnitAction, updateTransportUnitAction } from '@/app/(adm
 import type { TransportUnitDto } from '../serializers/transport-unit.serializer';
 import { transportUnitRoutes } from '../routes';
 import { Loader2, ArrowLeft, Save, Bus } from 'lucide-react';
+import { NumberInput } from '@/components/ui/number-input';
+import { Select2 } from '@/components/ui/select2';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface TransportUnitFormProps {
   unit?: TransportUnitDto;
@@ -60,18 +63,19 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
             <label className="text-sm font-medium text-slate-300">
               Tipo de Vehículo <span className="text-rose-400">*</span>
             </label>
-            <select
+            <Select2
               name="type"
               defaultValue={unit?.type || 'bus'}
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm transition"
-            >
-              <option value="bus">Autobús (Bus)</option>
-              <option value="minibus">Minibús</option>
-              <option value="van">Van / Camioneta</option>
-              <option value="boat">Lancha / Embarcación</option>
-              <option value="other">Otro</option>
-            </select>
+              options={[
+                { value: 'bus', label: 'Autobús (Bus)' },
+                { value: 'minibus', label: 'Minibús' },
+                { value: 'van', label: 'Van / Camioneta' },
+                { value: 'boat', label: 'Lancha / Embarcación' },
+                { value: 'other', label: 'Otro' },
+              ]}
+              size="md"
+            />
             {state.fieldErrors?.type && (
               <p className="text-xs text-rose-400">{state.fieldErrors.type[0]}</p>
             )}
@@ -83,14 +87,13 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
             <label className="text-sm font-medium text-slate-300">
               Capacidad de Pasajeros <span className="text-rose-400">*</span>
             </label>
-            <input
-              type="number"
+            <NumberInput
               name="capacity"
               min={1}
               max={300}
               defaultValue={unit?.capacity || 32}
               required
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition"
+              className="h-10 rounded-xl bg-slate-950 border-slate-800 text-slate-100"
             />
             {state.fieldErrors?.capacity && (
               <p className="text-xs text-rose-400">{state.fieldErrors.capacity[0]}</p>
@@ -143,12 +146,11 @@ export function TransportUnitForm({ unit }: TransportUnitFormProps) {
           <label className="text-sm font-medium text-slate-300">
             Notas de Mantenimiento / Observaciones
           </label>
-          <textarea
+          <RichTextEditor
             name="notes"
-            rows={3}
             defaultValue={unit?.notes || ''}
             placeholder="Equipamiento, aire acondicionado, revisión técnica al día..."
-            className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 text-sm transition resize-none"
+            minHeight="min-h-[140px]"
           />
         </div>
       </div>

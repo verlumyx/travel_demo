@@ -6,6 +6,7 @@ import { updateBookingAction } from '@/app/(admin)/admin/bookings/actions';
 import { bookingRoutes } from '../routes';
 import type { BookingDto } from '../serializers/booking.serializer';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface BookingEditFormProps {
   booking: BookingDto;
@@ -45,13 +46,13 @@ export function BookingEditForm({ booking }: BookingEditFormProps) {
           <label htmlFor="notes" className="text-xs font-medium text-foreground">
             Notas y Observaciones
           </label>
-          <textarea
+          <RichTextEditor
             id="notes"
             name="notes"
-            rows={5}
             defaultValue={booking.notes ?? ''}
             placeholder="Ej: El cliente requiere asiento delantero por mareo, confirmaron llegada 30 minutos antes..."
-            className="w-full px-3 py-2 text-xs rounded-lg border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
+            minHeight="min-h-[150px]"
+            error={Boolean(state.fieldErrors?.notes)}
           />
           {state.fieldErrors?.notes && (
             <p className="text-xs text-destructive">{state.fieldErrors.notes[0]}</p>
