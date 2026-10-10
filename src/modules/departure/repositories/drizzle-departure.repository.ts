@@ -1,4 +1,4 @@
-import { and, count, desc, eq, like, ne } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, inArray, like, ne } from 'drizzle-orm';
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
 import { applyFilters } from '@/modules/shared/infrastructure/drizzle-query-filters';
 import {
@@ -12,6 +12,7 @@ import type {
   DepartureRepository,
   DepartureWithTourRow,
   DepartureForBookingOption,
+  ScheduledDeparturePublicItem,
 } from './departure.repository';
 import type { CreateDepartureCommand } from '../commands/create-departure.command';
 import type { UpdateDepartureCommand } from '../commands/update-departure.command';
@@ -207,6 +208,53 @@ export class DrizzleDepartureRepository implements DepartureRepository {
         ),
       )
       .orderBy(desc(departures.departureDate));
+  }
+
+  async getUpcomingDepartures(limit: number = 20): Promise<ScheduledDeparturePublicItem[]> {
+    const rows = await this.db
+      .select({
+        id: departures.id,
+        code: departures.code,
+        tourId: departures.tourId,
+        tourName: tours.name,
+        tourSlug: tours.slug,
+        tourCode: tours.code,
+        tourImageUrl: tours.imageUrl,
+        tourDurationDays: tours.durationDays,
+        tourShortDescription: tours.shortDescription,
+        tourBasePrice: tours.basePrice,
+        currency: tours.currency,
+        departureDate: departures.departureDate,
+        returnDate: departures.returnDate,
+        meetingPoint: departures.meetingPoint,
+        meetingTime: departures.meetingTime,
+        priceOverride: departures.priceOverride,
+        totalCapacity: departures.totalCapacity,
+        bookedSlots: departures.bookedSlots,
+        status: departures.status,
+      })
+      .from(departures)
+      .innerJoin(tours, eq(departures.tourId, tours.id))
+      .where(
+        and(
+          inArray(departures.status, ['scheduled', 'confirmed']),
+          eq(tours.status, 'active'),
+          gte(departures.departureDate, new Date(Date.now() - 24 * 60 * 60 * 1000)),
+        ),
+      )
+      .orderBy(asc(departures.departureDate))
+      .limit(limit);
+
+    return rows.map((r) => {
+      const availableSlots = Math.max(0, r.totalCapacity - r.bookedSlots);
+      const effectivePrice = r.priceOverride ?? r.tourBasePrice;
+      return {
+        ...r,
+        availableSlots,
+        effectivePrice,
+        status: r.status as 'scheduled' | 'confirmed',
+      };
+    });
   }
 
   private async generateNextCode(): Promise<string> {

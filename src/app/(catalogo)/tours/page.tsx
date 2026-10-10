@@ -3,20 +3,15 @@ import { createCategoryContainer } from '@/modules/category/container';
 import { createTourContainer } from '@/modules/tour/container';
 import { createDestinationContainer } from '@/modules/destination/container';
 import { toCategoryDto } from '@/modules/category/serializers/category.serializer';
+import { toDestinationDto } from '@/modules/destination/serializers/destination.serializer';
 import {
   Compass,
-  Calendar,
-  Clock,
-  DollarSign,
-  Search,
-  Filter,
   ArrowRight,
-  CheckCircle2,
-  Tag,
   MapPin,
   Utensils,
   BedDouble,
   X,
+  Search,
 } from 'lucide-react';
 
 export const instant = false;
@@ -33,26 +28,37 @@ interface PageProps {
 }
 
 export default async function ToursCatalogPage({ searchParams }: PageProps) {
-  const { q, category, maxPrice, duration, destino, destinationId } = await searchParams;
-  const targetDestinationId = destinationId || destino;
+  const params = await searchParams;
+  const q = params.q?.trim() || undefined;
+  const category = params.category?.trim() || undefined;
+  const maxPrice = params.maxPrice?.trim() || undefined;
+  const duration = params.duration?.trim() || undefined;
+  const targetDestinationParam = (params.destinationId?.trim() || params.destino?.trim()) || undefined;
 
   const catContainer = createCategoryContainer();
   const tourContainer = createTourContainer();
   const destContainer = createDestinationContainer();
 
-  // 1. Fetch categories, optional filtered destination, and catalog tours via services
-  const [rawCategories, tourCards, selectedDestination] = await Promise.all([
+  // 1. Fetch categories, destinations, and optional filtered destination via services
+  const [rawCategories, rawDestinations, selectedDestination] = await Promise.all([
     catContainer.repository.getActive(),
-    tourContainer.catalogService.execute({
-      q,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      duration: duration ? Number(duration) : undefined,
-      destinationId: targetDestinationId,
-    }),
-    targetDestinationId ? destContainer.findService.findByIdOrSlug(targetDestinationId) : null,
+    destContainer.repository.getActive(),
+    targetDestinationParam ? destContainer.findService.findByIdOrSlug(targetDestinationParam) : null,
   ]);
 
   const categories = rawCategories.map(toCategoryDto);
+  const destinations = rawDestinations.map(toDestinationDto);
+
+  const activeDestinationId = selectedDestination?.id || targetDestinationParam;
+
+  // 2. Fetch catalog tours matching filters
+  const tourCards = await tourContainer.catalogService.execute({
+    q,
+    maxPrice: maxPrice ? Number(maxPrice) : undefined,
+    duration: duration ? Number(duration) : undefined,
+    destinationId: activeDestinationId,
+  });
+
   const selectedCat = categories.find((c) => c.slug === category);
 
   // If a category was chosen, filter tours whose stops match that category
@@ -75,13 +81,13 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      {/* Filter Toolbar & Categories Pills */}
+      {/* Filter Toolbar */}
       <div className="space-y-4">
         {/* Selected Destination Banner */}
         {selectedDestination && (
           <div className="flex items-center gap-2 bg-teal-50 border border-teal-200/80 rounded-2xl p-3 text-xs text-teal-900 justify-between">
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-teal-600" />
+              <MapPin className="h-4 w-4 text-teal-600 shrink-0" />
               <span>
                 Mostrando tours que incluyen: <strong className="font-bold">{selectedDestination.name}</strong>
               </span>
@@ -96,62 +102,67 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
           </div>
         )}
 
-        {/* Category Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href={`/tours${targetDestinationId ? `?destinationId=${targetDestinationId}` : ''}`}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold active:scale-[0.98] transition ${
-              !category
-                ? 'bg-teal-600 text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            Todas las categorías
-          </Link>
-          {categories.map((c) => (
-            <Link
-              key={c.id}
-              href={`/tours?category=${c.slug}${q ? `&q=${q}` : ''}${targetDestinationId ? `&destinationId=${targetDestinationId}` : ''}`}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold active:scale-[0.98] transition ${
-                category === c.slug
-                  ? 'bg-teal-600 text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              {c.name}
-            </Link>
-          ))}
-        </div>
-
-        {/* Search bar & Range inputs */}
-        <form method="get" className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col md:flex-row gap-3">
-          {category && <input type="hidden" name="category" value={category} />}
-          {targetDestinationId && <input type="hidden" name="destinationId" value={targetDestinationId} />}
-
-          <div className="relative flex-1">
+        {/* Filter Form */}
+        <form
+          method="get"
+          action="/tours"
+          className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col md:flex-row flex-wrap lg:flex-nowrap gap-3 items-stretch md:items-center"
+        >
+          {/* Search by keyword */}
+          <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input
               type="text"
               name="q"
               defaultValue={q ?? ''}
-              placeholder="Buscar tour por nombre, destino o palabras clave..."
-              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              placeholder="Buscar tour por nombre o palabras clave..."
+              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Category Select */}
+            <select
+              name="category"
+              defaultValue={category ?? ''}
+              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:bg-white focus:outline-hidden focus:border-teal-500 focus:ring-1 focus:ring-teal-500 cursor-pointer"
+            >
+              <option value="">Todas las categorías</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.slug}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Destination Select */}
+            <select
+              name="destinationId"
+              defaultValue={selectedDestination?.id ?? targetDestinationParam ?? ''}
+              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:bg-white focus:outline-hidden focus:border-teal-500 focus:ring-1 focus:ring-teal-500 cursor-pointer"
+            >
+              <option value="">Todos los destinos</option>
+              {destinations.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Max Price */}
             <input
               type="number"
               name="maxPrice"
               defaultValue={maxPrice ?? ''}
               placeholder="Precio máx ($)"
-              className="w-32 px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 font-mono focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="w-28 px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 font-mono focus:bg-white focus:outline-hidden focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
             />
 
+            {/* Duration */}
             <select
               name="duration"
               defaultValue={duration ?? ''}
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:bg-white focus:outline-hidden focus:border-teal-500 focus:ring-1 focus:ring-teal-500 cursor-pointer"
             >
               <option value="">Cualquier duración</option>
               <option value="1">1 día (Full Day)</option>
@@ -166,6 +177,15 @@ export default async function ToursCatalogPage({ searchParams }: PageProps) {
             >
               Filtrar
             </button>
+
+            {(q || category || targetDestinationParam || maxPrice || duration) && (
+              <Link
+                href="/tours"
+                className="px-3 py-2 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-semibold hover:bg-slate-100 transition whitespace-nowrap"
+              >
+                Limpiar
+              </Link>
+            )}
           </div>
         </form>
       </div>

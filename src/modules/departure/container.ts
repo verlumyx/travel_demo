@@ -6,6 +6,7 @@ import { DepartureUpdateService } from './services/departure-update.service';
 import { DepartureUpdateStatusService } from './services/departure-update-status.service';
 import { DepartureFindService } from './services/departure-find.service';
 import { DepartureSearchService } from './services/departure-search.service';
+import { DepartureUpcomingService } from './services/departure-upcoming.service';
 
 export function createDepartureContainer(db: DbExecutor = defaultDb) {
   const repository = new DrizzleDepartureRepository(db);
@@ -16,5 +17,6 @@ export function createDepartureContainer(db: DbExecutor = defaultDb) {
     updateStatusService: new DepartureUpdateStatusService(repository),
     findService: new DepartureFindService(repository),
     searchService: new DepartureSearchService(repository),
+    upcomingService: new DepartureUpcomingService(repository),
   };
 }

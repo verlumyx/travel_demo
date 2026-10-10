@@ -21,6 +21,30 @@ export interface DepartureForBookingOption {
   tourBasePrice: string;
 }
 
+export interface ScheduledDeparturePublicItem {
+  id: string;
+  code: string;
+  tourId: string;
+  tourName: string;
+  tourSlug: string;
+  tourCode: string;
+  tourImageUrl: string | null;
+  tourDurationDays: number;
+  tourShortDescription: string | null;
+  tourBasePrice: string;
+  currency: string;
+  departureDate: Date;
+  returnDate: Date | null;
+  meetingPoint: string | null;
+  meetingTime: string | null;
+  priceOverride: string | null;
+  effectivePrice: string;
+  totalCapacity: number;
+  bookedSlots: number;
+  availableSlots: number;
+  status: 'scheduled' | 'confirmed';
+}
+
 export interface DepartureRepository {
   create(command: CreateDepartureCommand): Promise<DepartureRow>;
   findById(id: string): Promise<DepartureRow | null>;
@@ -33,4 +57,5 @@ export interface DepartureRepository {
   search(command: SearchDepartureCommand): Promise<{ data: DepartureWithTourRow[]; total: number }>;
   findByTourId(tourId: string): Promise<DepartureRow[]>;
   getActiveScheduled(): Promise<DepartureForBookingOption[]>;
+  getUpcomingDepartures(limit?: number): Promise<ScheduledDeparturePublicItem[]>;
 }
