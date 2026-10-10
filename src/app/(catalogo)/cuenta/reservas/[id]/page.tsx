@@ -74,6 +74,54 @@ export default async function CustomerBookingDetailPage({ params }: PageProps) {
   );
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrValidationPayload}`;
 
+  const voucherPdfData = {
+    booking: {
+      id: booking.id,
+      code: booking.code,
+      status: booking.status,
+      slotsReserved: booking.slotsReserved,
+      totalAmount: booking.totalAmount,
+      paidAmount: booking.paidAmount,
+      pendingBalance: booking.pendingBalance,
+      notes: booking.notes,
+      createdAt: booking.createdAt,
+    },
+    tour: {
+      id: tour.id,
+      name: tour.name,
+      code: tour.code,
+    },
+    departure: {
+      id: departure.id,
+      code: departure.code,
+      departureDate: departure.departureDate,
+      meetingPoint: departure.meetingPoint,
+      meetingTime: departure.meetingTime,
+    },
+    customer: {
+      id: customer.id,
+      code: customer.code,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      email: customer.email,
+      phone: customer.phone,
+      documentType: customer.documentType,
+      documentNumber: customer.documentNumber,
+      emergencyContact: customer.emergencyContact,
+      emergencyPhone: customer.emergencyPhone,
+    },
+    passengers: passengers.map((p) => ({
+      id: p.id,
+      firstName: p.firstName,
+      lastName: p.lastName,
+      documentType: p.documentType,
+      documentNumber: p.documentNumber,
+      phone: p.phone,
+      isMainContact: p.isMainContact,
+      notes: p.notes,
+    })),
+  };
+
   return (
     <div className="space-y-6 print:space-y-4 print:p-0">
       {/* Action Bar (Hidden on Print) */}
@@ -96,7 +144,7 @@ export default async function CustomerBookingDetailPage({ params }: PageProps) {
           </div>
         </div>
 
-        <CustomerVoucherPrintButton />
+        <CustomerVoucherPrintButton data={voucherPdfData} />
       </div>
 
       {/* Official Trip Voucher Sheet */}

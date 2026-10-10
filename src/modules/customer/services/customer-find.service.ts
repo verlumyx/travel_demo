@@ -10,4 +10,8 @@ export class CustomerFindService {
   async findOrFail(id: string) {
     return this.customerRepository.findOrFail(id);
   }
+
+  async findByEmail(email: string) {
+    return this.customerRepository.findByEmail(email);
+  }
 }

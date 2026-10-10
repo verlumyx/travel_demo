@@ -22,7 +22,7 @@ const BUCKET_NAME = 'travel-media';
 
 export async function uploadImageAction(
   formData: FormData,
-  folder: 'destinations' | 'tours' | 'general' = 'general',
+  folder: 'destinations' | 'tours' | 'general' | 'payments' = 'general',
 ): Promise<UploadImageResult> {
   try {
     const user = await getSessionUser();

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { requirePermission, getSessionUser } from '@/modules/shared/auth/require-permission';
+import { requirePermission, getSessionUser, getAppUser } from '@/modules/shared/auth/require-permission';
 import { toActionError, type ActionState } from '@/modules/shared/actions/action-state';
 import { setFlash } from '@/modules/shared/flash/flash';
 import { createPaymentSchema } from '@/modules/payment/validation/create-payment.schema';
@@ -26,7 +26,7 @@ export async function createPaymentAction(
 
   try {
     await requirePermission('payments.create');
-    const user = await getSessionUser();
+    const appUser = await getAppUser();
 
     const rawId = formData.get('id') || crypto.randomUUID();
     const rawStatus = (formData.get('status') as string) || 'pending';
@@ -41,7 +41,7 @@ export async function createPaymentAction(
       reference: formData.get('reference') || null,
       proofImageUrl: formData.get('proofImageUrl') || null,
       receivedByName: formData.get('receivedByName') || null,
-      verifiedById: rawStatus === 'verified' ? user?.id : null,
+      verifiedById: rawStatus === 'verified' ? (appUser?.id ?? null) : null,
       verifiedAt: rawStatus === 'verified' ? new Date() : null,
       notes: formData.get('notes') || null,
       status: rawStatus,
@@ -86,8 +86,8 @@ export async function verifyPaymentAction(paymentId: string): Promise<ActionStat
       return { status: 'error', message: 'ID de pago inválido.' };
     }
 
-    const user = await getSessionUser();
-    const verifiedById = user?.id || crypto.randomUUID();
+    const appUser = await getAppUser();
+    const verifiedById = appUser?.id || null;
 
     await db.transaction(async (tx) => {
       const container = createPaymentContainer(tx);
@@ -117,8 +117,8 @@ export async function rejectPaymentAction(paymentId: string): Promise<ActionStat
       return { status: 'error', message: 'ID de pago inválido.' };
     }
 
-    const user = await getSessionUser();
-    const verifiedById = user?.id || crypto.randomUUID();
+    const appUser = await getAppUser();
+    const verifiedById = appUser?.id || null;
 
     await db.transaction(async (tx) => {
       const container = createPaymentContainer(tx);

@@ -11,9 +11,42 @@ import { createCustomerContainer } from '@/modules/customer/container';
 import { createBookingContainer } from '@/modules/booking/container';
 import { createPaymentContainer } from '@/modules/payment/container';
 import { CreateCustomerCommand } from '@/modules/customer/commands/create-customer.command';
+import { UpdateCustomerCommand } from '@/modules/customer/commands/update-customer.command';
+import { toCustomerDto, type CustomerDto } from '@/modules/customer/serializers/customer.serializer';
 import { CreateBookingCommand } from '@/modules/booking/commands/create-booking.command';
 import { CreatePaymentCommand } from '@/modules/payment/commands/create-payment.command';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { toActionError, type ActionState } from '@/modules/shared/actions/action-state';
+
+export type CheckCustomerResult = {
+  found: boolean;
+  customer?: CustomerDto;
+  error?: string;
+};
+
+export async function checkCustomerByEmailAction(email: string): Promise<CheckCustomerResult> {
+  try {
+    const cleanEmail = (email || '').toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      return { found: false, error: 'Por favor ingresa un correo electrónico válido.' };
+    }
+
+    const customerContainer = createCustomerContainer();
+    const customer = await customerContainer.findService.findByEmail(cleanEmail);
+
+    if (!customer) {
+      return { found: false };
+    }
+
+    return {
+      found: true,
+      customer: toCustomerDto(customer),
+    };
+  } catch (error) {
+    console.error('Error comprobando correo del cliente:', error);
+    return { found: false, error: 'No se pudo consultar el cliente en el sistema.' };
+  }
+}
 
 const passengerInputSchema = z.object({
   firstName: z.string().min(1, 'El nombre es obligatorio.'),
@@ -125,14 +158,43 @@ export async function clientCheckoutAction(
     if (!isCash && proofFile && typeof proofFile === 'object' && proofFile.size > 0 && proofFile.name) {
       const bytes = await proofFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const ext = path.extname(proofFile.name) || '.png';
-      const allowedExts = ['.png', '.jpg', '.jpeg', '.webp', '.pdf'];
-      const cleanExt = allowedExts.includes(ext.toLowerCase()) ? ext.toLowerCase() : '.png';
-      const fileName = `proof_${Date.now()}_${crypto.randomUUID().slice(0, 8)}${cleanExt}`;
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payments');
-      await fs.mkdir(uploadDir, { recursive: true });
-      await fs.writeFile(path.join(uploadDir, fileName), buffer);
-      uploadedProofUrl = `/uploads/payments/${fileName}`;
+      const rawExt = proofFile.name.split('.').pop()?.toLowerCase() || 'png';
+      const allowedExts = ['png', 'jpg', 'jpeg', 'webp', 'pdf'];
+      const ext = allowedExts.includes(rawExt) ? rawExt : 'png';
+      const fileName = `payments/proof_${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
+
+      try {
+        const supabase = createSupabaseAdminClient();
+        const { error: uploadError } = await supabase.storage
+          .from('travel-media')
+          .upload(fileName, buffer, {
+            contentType: proofFile.type || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg'),
+            cacheControl: '31536000',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error('Error al subir comprobante a Supabase Storage:', uploadError);
+          // Fallback a almacenamiento local si Supabase tiene algún inconveniente
+          const localFileName = `proof_${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
+          const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payments');
+          await fs.mkdir(uploadDir, { recursive: true });
+          await fs.writeFile(path.join(uploadDir, localFileName), buffer);
+          uploadedProofUrl = `/uploads/payments/${localFileName}`;
+        } else {
+          const { data: publicData } = supabase.storage
+            .from('travel-media')
+            .getPublicUrl(fileName);
+          uploadedProofUrl = publicData.publicUrl;
+        }
+      } catch (storageErr) {
+        console.error('Excepción al conectar con Supabase Storage:', storageErr);
+        const localFileName = `proof_${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payments');
+        await fs.mkdir(uploadDir, { recursive: true });
+        await fs.writeFile(path.join(uploadDir, localFileName), buffer);
+        uploadedProofUrl = `/uploads/payments/${localFileName}`;
+      }
     }
 
     let effectivePaymentDate = new Date();
@@ -158,9 +220,9 @@ export async function clientCheckoutAction(
       const effectiveUnitPrice = dep.priceOverride ? Number(dep.priceOverride) : Number(tour.basePrice);
       const totalAmount = (effectiveUnitPrice * data.slotsCount).toFixed(2);
 
-      // 2. Find or create customer
+      // 2. Find or create/update customer
       const cleanEmail = data.holderEmail.toLowerCase().trim();
-      let customer = await customerContainer.repository.findByEmail(cleanEmail);
+      let customer = await customerContainer.findService.findByEmail(cleanEmail);
       if (!customer) {
         customer = await customerContainer.createService.execute(
           CreateCustomerCommand.fromInput({
@@ -175,6 +237,22 @@ export async function clientCheckoutAction(
             emergencyPhone: data.emergencyPhone,
             source: 'portal',
             status: 'active',
+          }),
+        );
+      } else {
+        // Actualizar datos del cliente existente si aportó datos actualizados
+        customer = await customerContainer.updateService.execute(
+          UpdateCustomerCommand.fromInput(customer.id, {
+            firstName: data.holderFirstName.trim() || customer.firstName,
+            lastName: data.holderLastName.trim() || customer.lastName,
+            email: cleanEmail,
+            phone: data.holderPhone.trim() || customer.phone,
+            documentType: data.holderDocumentType || customer.documentType,
+            documentNumber: data.holderDocumentNumber.trim() || customer.documentNumber,
+            emergencyContact: data.emergencyContact ?? customer.emergencyContact,
+            emergencyPhone: data.emergencyPhone ?? customer.emergencyPhone,
+            source: customer.source || 'portal',
+            notes: customer.notes || undefined,
           }),
         );
       }

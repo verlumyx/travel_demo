@@ -68,8 +68,8 @@ export interface PaymentRepository {
   findOrFail(id: string): Promise<PaymentRow>;
   findWithDetails(id: string): Promise<PaymentFullDetails | null>;
   findOrFailWithDetails(id: string): Promise<PaymentFullDetails>;
-  verify(id: string, verifiedById: string): Promise<PaymentRow>;
-  reject(id: string, verifiedById: string): Promise<PaymentRow>;
+  verify(id: string, verifiedById?: string | null): Promise<PaymentRow>;
+  reject(id: string, verifiedById?: string | null): Promise<PaymentRow>;
   update(id: string, command: UpdatePaymentCommand): Promise<PaymentRow>;
   updateStatus(id: string, status: 'pending' | 'verified' | 'rejected'): Promise<PaymentRow>;
   search(command: SearchPaymentCommand): Promise<{ data: PaymentWithDetailsRow[]; total: number }>;

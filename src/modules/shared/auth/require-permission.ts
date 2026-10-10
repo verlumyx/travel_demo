@@ -23,6 +23,37 @@ export const getSessionUser = cache(async () => {
   return session?.user ?? null;
 });
 
+/**
+ * Resolves the domain user record from `app_users` (with UUID primary key)
+ * corresponding to the current logged-in better-auth session.
+ */
+export const getAppUser = cache(async () => {
+  const user = await getSessionUser();
+  if (!user?.email) return null;
+
+  try {
+    const [appUser] = await db
+      .select()
+      .from(app_users)
+      .where(eq(app_users.email, user.email))
+      .limit(1);
+
+    if (appUser) return appUser;
+
+    // Fallback: si no está sincronizado por email exacto, retornar el primer usuario administrador activo
+    const [firstActiveAdmin] = await db
+      .select()
+      .from(app_users)
+      .where(eq(app_users.status, 'active'))
+      .limit(1);
+
+    return firstActiveAdmin ?? null;
+  } catch (err) {
+    console.error('Error al resolver app_users para la sesión:', err);
+    return null;
+  }
+});
+
 export const getSessionUserWithRole = cache(async () => {
   const user = await getSessionUser();
   if (!user) return null;

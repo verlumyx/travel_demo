@@ -4,6 +4,8 @@ import { createDepartureContainer } from '@/modules/departure/container';
 import { toDepartureDto } from '@/modules/departure/serializers/departure.serializer';
 import { createPaymentMethodContainer } from '@/modules/payment-method/container';
 import { toPaymentMethodDto } from '@/modules/payment-method/serializers/payment-method.serializer';
+import { getAuthenticatedCustomer } from '@/modules/customer/auth/customer-session';
+import { toCustomerDto } from '@/modules/customer/serializers/customer.serializer';
 import { ClientCheckoutForm } from '@/modules/booking/ui/ClientCheckoutForm';
 import {
   Compass,
@@ -49,6 +51,9 @@ export default async function ClientCheckoutPage({ params }: PageProps) {
   const paymentMethodContainer = createPaymentMethodContainer();
   const rawPaymentMethods = await paymentMethodContainer.repository.getActive();
   const paymentMethods = rawPaymentMethods.map(toPaymentMethodDto);
+
+  const customerSession = await getAuthenticatedCustomer();
+  const initialCustomer = customerSession ? toCustomerDto(customerSession.customer) : undefined;
 
   const depDate = new Date(departure.departureDate);
 
@@ -160,6 +165,7 @@ export default async function ClientCheckoutPage({ params }: PageProps) {
             imageUrl: tour.imageUrl,
           }}
           paymentMethods={paymentMethods}
+          initialCustomer={initialCustomer}
         />
       )}
     </div>

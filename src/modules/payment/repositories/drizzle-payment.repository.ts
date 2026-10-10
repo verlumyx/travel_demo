@@ -156,7 +156,7 @@ export class DrizzlePaymentRepository implements PaymentRepository {
     return result;
   }
 
-  async verify(id: string, verifiedById: string): Promise<PaymentRow> {
+  async verify(id: string, verifiedById?: string | null): Promise<PaymentRow> {
     const [payment] = await this.db
       .select()
       .from(payments)
@@ -169,7 +169,7 @@ export class DrizzlePaymentRepository implements PaymentRepository {
       .update(payments)
       .set({
         status: 'verified',
-        verifiedById,
+        verifiedById: verifiedById || null,
         verifiedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -180,7 +180,7 @@ export class DrizzlePaymentRepository implements PaymentRepository {
     return row;
   }
 
-  async reject(id: string, verifiedById: string): Promise<PaymentRow> {
+  async reject(id: string, verifiedById?: string | null): Promise<PaymentRow> {
     const [payment] = await this.db
       .select()
       .from(payments)
@@ -195,7 +195,7 @@ export class DrizzlePaymentRepository implements PaymentRepository {
       .update(payments)
       .set({
         status: 'rejected',
-        verifiedById,
+        verifiedById: verifiedById || null,
         verifiedAt: new Date(),
         updatedAt: new Date(),
       })
