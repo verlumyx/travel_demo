@@ -80,6 +80,7 @@ export class DrizzleDestinationRepository implements DestinationRepository {
         state: command.state,
         city: command.city,
         country: command.country,
+        updatedAt: new Date(),
       })
       .where(eq(app_destinations.id, id))
       .returning();
@@ -92,7 +93,7 @@ export class DrizzleDestinationRepository implements DestinationRepository {
 
     const [row] = await this.db
       .update(app_destinations)
-      .set({ status })
+      .set({ status, updatedAt: new Date() })
       .where(eq(app_destinations.id, id))
       .returning();
 

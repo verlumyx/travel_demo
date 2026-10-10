@@ -21,6 +21,8 @@ interface ImageUploadProps {
   error?: string;
   hint?: string;
   required?: boolean;
+  onUploadingChange?: (uploading: boolean) => void;
+  onUrlChange?: (url: string) => void;
 }
 
 export function ImageUpload({
@@ -31,6 +33,8 @@ export function ImageUpload({
   error,
   hint = 'Formatos recomendados: JPG, PNG, WebP o AVIF (máx. 2 MB).',
   required = false,
+  onUploadingChange,
+  onUrlChange,
 }: ImageUploadProps) {
   const [url, setUrl] = useState<string>(defaultValue || '');
   const [isUploading, setIsUploading] = useState(false);
@@ -38,6 +42,16 @@ export function ImageUpload({
   const [isDragging, setIsDragging] = useState(false);
   const [mode, setMode] = useState<'upload' | 'url'>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const updateUploading = (uploading: boolean) => {
+    setIsUploading(uploading);
+    onUploadingChange?.(uploading);
+  };
+
+  const updateUrl = (newUrl: string) => {
+    setUrl(newUrl);
+    onUrlChange?.(newUrl);
+  };
 
   const handleFileSelect = async (file: File) => {
     setUploadError(null);
@@ -54,7 +68,7 @@ export function ImageUpload({
       return;
     }
 
-    setIsUploading(true);
+    updateUploading(true);
 
     try {
       const formData = new FormData();
@@ -65,12 +79,12 @@ export function ImageUpload({
       if (!result.success || !result.url) {
         setUploadError(result.error || 'Error al subir la imagen.');
       } else {
-        setUrl(result.url);
+        updateUrl(result.url);
       }
     } catch {
       setUploadError('Ocurrió un error inesperado al conectar con el servidor.');
     } finally {
-      setIsUploading(false);
+      updateUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -98,7 +112,7 @@ export function ImageUpload({
   };
 
   const handleClear = () => {
-    setUrl('');
+    updateUrl('');
     setUploadError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -160,7 +174,7 @@ export function ImageUpload({
             <input
               type="url"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => updateUrl(e.target.value)}
               placeholder="https://images.unsplash.com/..."
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />

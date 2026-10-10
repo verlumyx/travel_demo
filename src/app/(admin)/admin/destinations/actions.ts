@@ -59,6 +59,8 @@ export async function createDestinationAction(
   }
 
   revalidatePath(destinationRoutes.list());
+  revalidatePath('/');
+  revalidatePath('/destinos');
   await setFlash('success', 'Destino turístico creado exitosamente.');
   redirect(destinationRoutes.list());
 }
@@ -68,6 +70,7 @@ export async function updateDestinationAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  let updatedSlug = '';
   try {
     await requirePermission('destinations.update');
 
@@ -95,6 +98,7 @@ export async function updateDestinationAction(
     }
 
     const command = UpdateDestinationCommand.fromInput(parsed.data);
+    updatedSlug = command.slug;
 
     await db.transaction(async (tx) => {
       const container = createDestinationContainer(tx);
@@ -106,6 +110,12 @@ export async function updateDestinationAction(
 
   revalidatePath(destinationRoutes.list());
   revalidatePath(destinationRoutes.show(id));
+  revalidatePath('/');
+  revalidatePath('/destinos');
+  revalidatePath(`/destinos/${id}`);
+  if (updatedSlug) {
+    revalidatePath(`/destinos/${updatedSlug}`);
+  }
   await setFlash('success', 'Destino turístico actualizado exitosamente.');
   redirect(destinationRoutes.list());
 }
@@ -135,6 +145,9 @@ export async function updateDestinationStatusAction(
 
   revalidatePath(destinationRoutes.list());
   revalidatePath(destinationRoutes.show(id));
+  revalidatePath('/');
+  revalidatePath('/destinos');
+  revalidatePath(`/destinos/${id}`);
   await setFlash('success', `Destino ${status === 'active' ? 'activado' : 'desactivado'} correctamente.`);
   return { status: 'idle' };
 }

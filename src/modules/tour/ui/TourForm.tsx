@@ -38,6 +38,7 @@ export function TourForm({ tour }: TourFormProps) {
   const [slug, setSlug] = useState(tour?.slug || '');
   const [slugModified, setSlugModified] = useState(isEditing);
   const [newId] = useState(() => (!isEditing ? uuidv7() : ''));
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -179,6 +180,7 @@ export function TourForm({ tour }: TourFormProps) {
           folder="tours"
           label="Imagen Promocional del Tour"
           error={state.fieldErrors?.imageUrl?.[0]}
+          onUploadingChange={setIsUploadingImage}
         />
 
         <div className="space-y-2">
@@ -256,15 +258,19 @@ export function TourForm({ tour }: TourFormProps) {
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || isUploadingImage}
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm transition shadow-sm cursor-pointer disabled:opacity-50"
         >
-          {isPending ? (
+          {isPending || isUploadingImage ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Save className="h-4 w-4" />
           )}
-          {isEditing ? 'Guardar Cambios' : 'Crear Tour'}
+          {isUploadingImage
+            ? 'Subiendo imagen a Storage...'
+            : isPending
+            ? (isEditing ? 'Guardando...' : 'Creando...')
+            : (isEditing ? 'Guardar Cambios' : 'Crear Tour')}
         </button>
       </div>
     </form>

@@ -37,6 +37,7 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
   const [slug, setSlug] = useState(destination?.slug || '');
   const [slugModified, setSlugModified] = useState(isEditing);
   const [newId] = useState(() => (!isEditing ? uuidv7() : ''));
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -139,6 +140,7 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
           folder="destinations"
           label="Fotografía del Destino"
           error={state.fieldErrors?.imageUrl?.[0]}
+          onUploadingChange={setIsUploadingImage}
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -205,15 +207,19 @@ export function DestinationForm({ destination, categories }: DestinationFormProp
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || isUploadingImage}
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white font-semibold text-sm transition shadow-xs cursor-pointer disabled:opacity-50"
         >
-          {isPending ? (
+          {isPending || isUploadingImage ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Save className="h-4 w-4" />
           )}
-          {isEditing ? 'Guardar Cambios' : 'Crear Destino'}
+          {isUploadingImage
+            ? 'Subiendo imagen a Storage...'
+            : isPending
+            ? (isEditing ? 'Guardando...' : 'Creando...')
+            : (isEditing ? 'Guardar Cambios' : 'Crear Destino')}
         </button>
       </div>
     </form>
