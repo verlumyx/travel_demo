@@ -62,6 +62,13 @@ export interface PaymentMetrics {
   rejectedCount: number;
 }
 
+export interface BookingPaymentSummary {
+  bookingId: string;
+  verifiedAmount: number;
+  pendingAmount: number;
+  totalCommitted: number;
+}
+
 export interface PaymentRepository {
   create(command: CreatePaymentCommand): Promise<PaymentRow>;
   findById(id: string): Promise<PaymentRow | null>;
@@ -74,5 +81,7 @@ export interface PaymentRepository {
   updateStatus(id: string, status: 'pending' | 'verified' | 'rejected'): Promise<PaymentRow>;
   search(command: SearchPaymentCommand): Promise<{ data: PaymentWithDetailsRow[]; total: number }>;
   getMetrics(): Promise<PaymentMetrics>;
+  getPaymentSummaryByBookingIds(bookingIds: string[]): Promise<Map<string, BookingPaymentSummary>>;
+  getPaymentSummaryForBooking(bookingId: string): Promise<BookingPaymentSummary>;
 }
 

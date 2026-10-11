@@ -52,11 +52,32 @@ const METHOD_CONFIG: Record<
 };
 
 export function PaymentMethodBadge({ method }: PaymentMethodBadgeProps) {
-  const conf = METHOD_CONFIG[method] || {
-    label: method,
-    icon: CreditCard,
-    color: 'bg-muted text-muted-foreground border-border',
-  };
+  let conf = METHOD_CONFIG[method];
+
+  if (!conf) {
+    const lower = (method || '').toLowerCase();
+    if (lower.includes('pago móvil') || lower.includes('pago movil') || lower.includes('mobile')) {
+      conf = { label: method, icon: METHOD_CONFIG.pago_movil.icon, color: METHOD_CONFIG.pago_movil.color };
+    } else if (lower.includes('zelle')) {
+      conf = { label: method, icon: METHOD_CONFIG.zelle.icon, color: METHOD_CONFIG.zelle.color };
+    } else if (lower.includes('binance') || lower.includes('usdt') || lower.includes('crypto')) {
+      conf = { label: method, icon: METHOD_CONFIG.binance.icon, color: METHOD_CONFIG.binance.color };
+    } else if (lower.includes('zinli')) {
+      conf = { label: method, icon: METHOD_CONFIG.zinli.icon, color: METHOD_CONFIG.zinli.color };
+    } else if (lower.includes('transferencia') || lower.includes('banco') || lower.includes('bank')) {
+      conf = { label: method, icon: METHOD_CONFIG.bank_transfer.icon, color: METHOD_CONFIG.bank_transfer.color };
+    } else if (lower.includes('efectivo') || lower.includes('cash')) {
+      const isVes = lower.includes('ves') || lower.includes('bs');
+      const base = isVes ? METHOD_CONFIG.cash_ves : METHOD_CONFIG.cash_usd;
+      conf = { label: method, icon: base.icon, color: base.color };
+    } else {
+      conf = {
+        label: method,
+        icon: CreditCard,
+        color: 'bg-muted text-muted-foreground border-border',
+      };
+    }
+  }
 
   const Icon = conf.icon;
 

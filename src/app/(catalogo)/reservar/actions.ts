@@ -72,7 +72,7 @@ const clientCheckoutSchema = z.object({
   // Accompanying passengers (if slotsCount > 1)
   passengersJson: z.string().optional(),
   // Payment reporting
-  paymentMethod: z.string().min(1, 'El método de pago es obligatorio.').max(50),
+  paymentMethod: z.string().min(1, 'El método de pago es obligatorio.').max(150),
   paymentReference: z.string().optional().nullable(),
   paymentDate: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
@@ -87,8 +87,16 @@ export async function clientCheckoutAction(
   let departureId: string | null = null;
 
   try {
-    const rawPaymentMethod = formData.get('paymentMethod');
-    const isCash = rawPaymentMethod === 'cash_usd' || rawPaymentMethod === 'cash_ves';
+    const rawPaymentMethod = (formData.get('paymentMethod') || '').toString().trim();
+    const isCashExplicit = formData.get('isCash') === 'true';
+    const methodLower = rawPaymentMethod.toLowerCase();
+    const isCash =
+      isCashExplicit ||
+      rawPaymentMethod === 'cash_usd' ||
+      rawPaymentMethod === 'cash_ves' ||
+      methodLower.includes('efectivo') ||
+      methodLower.includes('cash') ||
+      methodLower.includes('taquilla');
 
     const rawData = {
       departureId: formData.get('departureId'),
@@ -113,6 +121,7 @@ export async function clientCheckoutAction(
       if (refStr.length < 2) {
         return {
           status: 'error',
+          message: 'El número de referencia bancaria es obligatorio para pagos por transferencia o móvil.',
           fieldErrors: {
             paymentReference: ['Número de referencia bancaria obligatorio.'],
           },
@@ -123,6 +132,7 @@ export async function clientCheckoutAction(
       if (!dateStr) {
         return {
           status: 'error',
+          message: 'La fecha de realización del pago es obligatoria.',
           fieldErrors: {
             paymentDate: ['Fecha de realización del pago obligatoria.'],
           },
@@ -134,6 +144,7 @@ export async function clientCheckoutAction(
     if (!parsed.success) {
       return {
         status: 'error',
+        message: 'Por favor verifica los campos obligatorios del formulario.',
         fieldErrors: parsed.error.flatten().fieldErrors,
       };
     }

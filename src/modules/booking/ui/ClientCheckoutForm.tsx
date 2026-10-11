@@ -349,7 +349,8 @@ export function ClientCheckoutForm({
 
   const isCash = currentDynamicMethod
     ? currentDynamicMethod.name.toLowerCase().includes('efectivo') ||
-      currentDynamicMethod.name.toLowerCase().includes('cash')
+      currentDynamicMethod.name.toLowerCase().includes('cash') ||
+      currentDynamicMethod.name.toLowerCase().includes('taquilla')
     : paymentMethod === 'cash_usd' || paymentMethod === 'cash_ves';
 
   // Navegación en el Wizard Bar con validación de avance
@@ -387,6 +388,7 @@ export function ClientCheckoutForm({
       <input type="hidden" name="departureId" value={departure.id} />
       <input type="hidden" name="slotsCount" value={slotsCount} />
       <input type="hidden" name="passengersJson" value={JSON.stringify(companions)} />
+      <input type="hidden" name="isCash" value={isCash ? 'true' : 'false'} />
 
       {/* Alerta de estado global de la Server Action */}
       {state.message && (
@@ -1050,6 +1052,13 @@ export function ClientCheckoutForm({
             Monto a transferir: <strong className="text-emerald-600 dark:text-emerald-400 font-mono text-sm">${totalPrice} USD</strong> (o su equivalente según tasa oficial del día).
           </p>
         </div>
+
+        {state.message && state.status === 'error' && (
+          <div className="p-3.5 rounded-xl text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{state.message}</span>
+          </div>
+        )}
 
         {/* Selector de Método de Pago */}
         <div className="space-y-2">

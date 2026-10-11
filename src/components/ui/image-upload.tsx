@@ -16,7 +16,7 @@ import { uploadImageAction } from '@/modules/shared/actions/upload-image.action'
 interface ImageUploadProps {
   name?: string;
   defaultValue?: string | null;
-  folder?: 'destinations' | 'tours' | 'general';
+  folder?: 'destinations' | 'tours' | 'general' | 'payments';
   label?: string;
   error?: string;
   hint?: string;

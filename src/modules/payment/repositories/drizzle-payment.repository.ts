@@ -1,10 +1,11 @@
-import { and, count, desc, eq, like } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, like } from 'drizzle-orm';
 import type { DbExecutor } from '@/modules/shared/infrastructure/db-executor';
 import type {
   PaymentRepository,
   PaymentWithDetailsRow,
   PaymentFullDetails,
   PaymentMetrics,
+  BookingPaymentSummary,
 } from './payment.repository';
 import type { CreatePaymentCommand } from '../commands/create-payment.command';
 import type { UpdatePaymentCommand } from '../commands/update-payment.command';
@@ -30,9 +31,15 @@ export class DrizzlePaymentRepository implements PaymentRepository {
 
   async create(command: CreatePaymentCommand): Promise<PaymentRow> {
     const [booking] = await this.db
-      .select({ id: bookings.id, status: bookings.status })
+      .select({
+        id: bookings.id,
+        code: bookings.code,
+        status: bookings.status,
+        totalAmount: bookings.totalAmount,
+      })
       .from(bookings)
-      .where(eq(bookings.id, command.bookingId));
+      .where(eq(bookings.id, command.bookingId))
+      .for('update');
 
     if (!booking) {
       throw new DomainError('La reserva asociada no existe.');
@@ -40,6 +47,27 @@ export class DrizzlePaymentRepository implements PaymentRepository {
 
     if (booking.status === 'cancelled') {
       throw new DomainError('No se pueden registrar pagos a una reserva cancelada.');
+    }
+
+    const summary = await this.getPaymentSummaryForBooking(command.bookingId);
+    const totalRequired = Number(booking.totalAmount);
+    const remainingBalance = Math.max(0, Number((totalRequired - summary.totalCommitted).toFixed(2)));
+
+    if (remainingBalance <= 0) {
+      throw new DomainError(
+        `La reserva ${booking.code} ya tiene el monto total cubierto ($${totalRequired.toFixed(2)} USD) entre pagos aprobados y pendientes por validar. No se pueden registrar más pagos.`
+      );
+    }
+
+    const paymentAmount = Number(command.amount);
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      throw new DomainError('El monto del pago debe ser mayor a 0.');
+    }
+
+    if (paymentAmount > remainingBalance + 0.001) {
+      throw new DomainError(
+        `El monto a pagar ($${paymentAmount.toFixed(2)} USD) supera el saldo disponible de la reserva ($${remainingBalance.toFixed(2)} USD). La suma de pagos aprobados y pendientes no puede exceder el total de la reserva.`
+      );
     }
 
     const code = await this.generateNextCode();
@@ -164,6 +192,15 @@ export class DrizzlePaymentRepository implements PaymentRepository {
       .for('update');
 
     if (!payment) throw new PaymentNotFoundException(id);
+
+    const [booking] = await this.db
+      .select({ id: bookings.id, status: bookings.status })
+      .from(bookings)
+      .where(eq(bookings.id, payment.bookingId));
+
+    if (booking?.status === 'cancelled') {
+      throw new DomainError('No se puede aprobar un pago de una reserva cancelada.');
+    }
 
     const [row] = await this.db
       .update(payments)
@@ -408,5 +445,62 @@ export class DrizzlePaymentRepository implements PaymentRepository {
       PAYMENT_CODE_WIDTH,
       '0',
     )}`;
+  }
+
+  async getPaymentSummaryByBookingIds(
+    bookingIds: string[],
+  ): Promise<Map<string, BookingPaymentSummary>> {
+    const map = new Map<string, BookingPaymentSummary>();
+    if (bookingIds.length === 0) return map;
+
+    for (const id of bookingIds) {
+      map.set(id, {
+        bookingId: id,
+        verifiedAmount: 0,
+        pendingAmount: 0,
+        totalCommitted: 0,
+      });
+    }
+
+    const rows = await this.db
+      .select({
+        bookingId: payments.bookingId,
+        amount: payments.amount,
+        status: payments.status,
+      })
+      .from(payments)
+      .where(
+        and(
+          inArray(payments.bookingId, bookingIds),
+          inArray(payments.status, ['pending', 'verified']),
+        ),
+      );
+
+    for (const r of rows) {
+      const entry = map.get(r.bookingId);
+      if (entry) {
+        const amt = Number(r.amount);
+        if (r.status === 'verified') {
+          entry.verifiedAmount += amt;
+        } else if (r.status === 'pending') {
+          entry.pendingAmount += amt;
+        }
+        entry.totalCommitted += amt;
+      }
+    }
+
+    return map;
+  }
+
+  async getPaymentSummaryForBooking(bookingId: string): Promise<BookingPaymentSummary> {
+    const map = await this.getPaymentSummaryByBookingIds([bookingId]);
+    return (
+      map.get(bookingId) ?? {
+        bookingId,
+        verifiedAmount: 0,
+        pendingAmount: 0,
+        totalCommitted: 0,
+      }
+    );
   }
 }

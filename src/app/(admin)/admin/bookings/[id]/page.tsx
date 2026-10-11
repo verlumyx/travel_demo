@@ -11,6 +11,7 @@ import { toCustomerDto } from '@/modules/customer/serializers/customer.serialize
 import { toDepartureDto } from '@/modules/departure/serializers/departure.serializer';
 import { BookingStatusBadge } from '@/modules/booking/ui/BookingStatusBadge';
 import { BookingStatusSelect } from '@/modules/booking/ui/BookingStatusSelect';
+import { PaymentMethodBadge } from '@/modules/payment/ui/PaymentMethodBadge';
 import { RichTextView, isEmptyHtml, stripHtml } from '@/components/ui/rich-text-view';
 import {
   Ticket,
@@ -59,6 +60,12 @@ export default async function BookingDetailPage({ params }: PageProps) {
 
   const customer = toCustomerDto(rawCustomer);
   const departure = toDepartureDto({ ...rawDeparture, tourName: tour.name, tourCode: tour.code });
+
+  const totalCoveredAmount = payments
+    .filter((p) => p.status === 'verified' || p.status === 'pending')
+    .reduce((acc, p) => acc + Number(p.amount || 0), 0);
+  const remainingRealBalance = Math.max(0, Number(booking.totalAmount) - totalCoveredAmount);
+  const canAddPayment = remainingRealBalance > 0 && booking.status !== 'cancelled';
 
   return (
     <div className="space-y-6">
@@ -187,13 +194,19 @@ export default async function BookingDetailPage({ params }: PageProps) {
               <DollarSign className="h-4 w-4" />
               Conciliación Financiera
             </div>
-            <Link
-              href={`/admin/payments/create?bookingId=${booking.id}`}
-              className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline"
-            >
-              <Plus className="h-3 w-3" />
-              Abonar Pago
-            </Link>
+            {canAddPayment ? (
+              <Link
+                href={`/admin/payments/create?bookingId=${booking.id}`}
+                className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+              >
+                <Plus className="h-3 w-3" />
+                Abonar Pago
+              </Link>
+            ) : booking.status === 'cancelled' ? (
+              <span className="text-[11px] font-medium text-rose-500">Cancelada</span>
+            ) : (
+              <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Totalmente Cubierto</span>
+            )}
           </div>
 
           <div className="space-y-2 text-xs">
@@ -211,8 +224,8 @@ export default async function BookingDetailPage({ params }: PageProps) {
 
             <div className="flex items-center justify-between pt-1 border-t border-border">
               <span className="text-muted-foreground font-medium">Saldo Restante:</span>
-              <span className={`font-bold text-sm ${Number(booking.pendingBalance) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
-                ${booking.pendingBalance} USD
+              <span className={`font-bold text-sm ${remainingRealBalance > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                ${remainingRealBalance.toFixed(2)} USD
               </span>
             </div>
 
@@ -330,13 +343,15 @@ export default async function BookingDetailPage({ params }: PageProps) {
               Historial de Pagos y Abonos ({payments.length})
             </h3>
           </div>
-          <Link
-            href={`/admin/payments/create?bookingId=${booking.id}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-xs"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Registrar Abono
-          </Link>
+          {canAddPayment && (
+            <Link
+              href={`/admin/payments/create?bookingId=${booking.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-xs"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Registrar Abono
+            </Link>
+          )}
         </div>
 
         {payments.length === 0 ? (
@@ -366,8 +381,8 @@ export default async function BookingDetailPage({ params }: PageProps) {
                       </Link>
                     </td>
 
-                    <td className="py-3 px-4 font-medium text-foreground capitalize">
-                      {p.method.replace('_', ' ')}
+                    <td className="py-3 px-4 font-medium text-foreground">
+                      <PaymentMethodBadge method={p.method} />
                     </td>
 
                     <td className="py-3 px-4 font-mono text-muted-foreground">

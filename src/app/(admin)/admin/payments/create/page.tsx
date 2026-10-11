@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { guardPage } from '@/modules/shared/auth/require-permission';
 import { createBookingContainer } from '@/modules/booking/container';
+import { createPaymentContainer } from '@/modules/payment/container';
+import { createPaymentMethodContainer } from '@/modules/payment-method/container';
+import { toPaymentMethodDto } from '@/modules/payment-method/serializers/payment-method.serializer';
 import { SearchBookingCommand } from '@/modules/booking/commands/search-booking.command';
 import { paymentRoutes } from '@/modules/payment/routes';
 import { PaymentForm } from '@/modules/payment/ui/PaymentForm';
@@ -17,27 +20,47 @@ export default async function CreatePaymentPage({ searchParams }: PageProps) {
   const { bookingId } = await searchParams;
 
   const bookingContainer = createBookingContainer();
+  const paymentContainer = createPaymentContainer();
+  const paymentMethodContainer = createPaymentMethodContainer();
+
+  // Load configured active payment methods
+  const rawPaymentMethods = await paymentMethodContainer.repository.getActive();
+  const paymentMethods = rawPaymentMethods.map(toPaymentMethodDto);
 
   // Load recent / non-cancelled bookings for selection
   const bookingsResult = await bookingContainer.repository.search(
     SearchBookingCommand.fromInput({ limit: 100 }),
   );
 
-  const availableBookings = bookingsResult.data
-    .filter((b) => b.status !== 'cancelled')
-    .map((b) => {
-      const total = Number(b.totalAmount);
-      const paid = Number(b.paidAmount);
-      const pending = Math.max(0, total - paid).toFixed(2);
-      return {
-        id: b.id,
-        code: b.code,
-        customerName: b.customerName,
-        totalAmount: String(b.totalAmount),
-        paidAmount: String(b.paidAmount),
-        pendingBalance: pending,
-      };
-    });
+  const nonCancelledBookings = bookingsResult.data.filter((b) => b.status !== 'cancelled');
+  const bookingIds = nonCancelledBookings.map((b) => b.id);
+
+  // Compute committed balance map (verified + pending)
+  const summariesMap = await paymentContainer.repository.getPaymentSummaryByBookingIds(bookingIds);
+
+  const availableBookings = nonCancelledBookings.map((b) => {
+    const summary = summariesMap.get(b.id) ?? {
+      verifiedAmount: 0,
+      pendingAmount: 0,
+      totalCommitted: 0,
+    };
+    const total = Number(b.totalAmount);
+    const verified = summary.verifiedAmount;
+    const pendingVerif = summary.pendingAmount;
+    const remainingToPay = Math.max(0, Number((total - summary.totalCommitted).toFixed(2)));
+    const isFullyCovered = remainingToPay <= 0;
+
+    return {
+      id: b.id,
+      code: b.code,
+      customerName: b.customerName,
+      totalAmount: total.toFixed(2),
+      paidAmount: verified.toFixed(2),
+      pendingVerificationAmount: pendingVerif.toFixed(2),
+      pendingBalance: remainingToPay.toFixed(2),
+      isFullyCovered,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -63,6 +86,7 @@ export default async function CreatePaymentPage({ searchParams }: PageProps) {
         key={bookingId ?? 'new-payment'}
         bookings={availableBookings}
         initialBookingId={bookingId}
+        paymentMethods={paymentMethods}
       />
     </div>
   );

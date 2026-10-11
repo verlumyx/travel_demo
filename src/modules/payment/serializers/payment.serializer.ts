@@ -5,7 +5,7 @@ export interface PaymentDto {
   id: string;
   code: string;
   bookingId: string;
-  method: 'pago_movil' | 'zelle' | 'binance' | 'zinli' | 'bank_transfer' | 'cash_usd' | 'cash_ves';
+  method: string;
   amount: string;
   currency: string;
   reference: string | null;

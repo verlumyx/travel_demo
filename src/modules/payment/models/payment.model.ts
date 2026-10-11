@@ -7,7 +7,7 @@ export const payments = pgTable('app_payments', {
   id: uuid('id').primaryKey(),
   code: varchar('code', { length: 20 }).notNull().unique(),
   bookingId: uuid('booking_id').notNull().references(() => bookings.id),
-  method: varchar('method', { length: 50 }).notNull().$type<'pago_movil' | 'zelle' | 'binance' | 'zinli' | 'bank_transfer' | 'cash_usd' | 'cash_ves'>(),
+  method: varchar('method', { length: 150 }).notNull(),
   amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
   currency: varchar('currency', { length: 10 }).notNull().default('USD'),
   reference: varchar('reference', { length: 255 }),

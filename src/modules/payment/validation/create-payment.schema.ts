@@ -3,10 +3,7 @@ import { z } from 'zod';
 export const createPaymentSchema = z.object({
   id: z.string().uuid({ message: 'El ID debe ser un UUID válido.' }),
   bookingId: z.string().uuid({ message: 'Debe seleccionar una reserva válida.' }),
-  method: z.enum(
-    ['pago_movil', 'zelle', 'binance', 'zinli', 'bank_transfer', 'cash_usd', 'cash_ves'],
-    { message: 'Método de pago inválido.' },
-  ),
+  method: z.string().min(1, { message: 'El método de pago es requerido.' }).max(150),
   amount: z
     .string()
     .min(1, 'El monto es requerido.')

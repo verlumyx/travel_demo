@@ -2,7 +2,7 @@ export class CreatePaymentCommand {
   private constructor(
     public readonly id: string,
     public readonly bookingId: string,
-    public readonly method: 'pago_movil' | 'zelle' | 'binance' | 'zinli' | 'bank_transfer' | 'cash_usd' | 'cash_ves',
+    public readonly method: string,
     public readonly amount: string,
     public readonly currency: string,
     public readonly paymentDate: Date,

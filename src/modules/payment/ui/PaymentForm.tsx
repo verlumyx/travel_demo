@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { createPaymentAction } from '@/app/(admin)/admin/payments/actions';
 import { paymentRoutes } from '../routes';
+import type { PaymentMethodDto } from '@/modules/payment-method/serializers/payment-method.serializer';
 import {
   CreditCard,
   DollarSign,
@@ -13,27 +14,47 @@ import {
   ArrowLeft,
   Loader2,
   CheckCircle2,
-  Image as ImageIcon,
+  AlertCircle,
+  Banknote,
+  Info,
 } from 'lucide-react';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Select2 } from '@/components/ui/select2';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { ImageUpload } from '@/components/ui/image-upload';
 
-interface AvailableBooking {
+export interface AvailableBooking {
   id: string;
   code: string;
   customerName: string;
   totalAmount: string;
   paidAmount: string;
+  pendingVerificationAmount?: string;
   pendingBalance: string;
+  isFullyCovered?: boolean;
 }
 
 interface PaymentFormProps {
   bookings: AvailableBooking[];
   initialBookingId?: string;
+  paymentMethods?: PaymentMethodDto[];
 }
 
-export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
+const FALLBACK_METHODS = [
+  { value: 'Pago Móvil (VES)', label: 'Pago Móvil (VES)', currency: 'VES' },
+  { value: 'Zelle (USD)', label: 'Zelle (USD)', currency: 'USD' },
+  { value: 'Binance Pay (USDT)', label: 'Binance Pay (USDT)', currency: 'USDT' },
+  { value: 'Zinli (USD)', label: 'Zinli (USD)', currency: 'USD' },
+  { value: 'Transferencia Bancaria', label: 'Transferencia Bancaria', currency: 'VES' },
+  { value: 'Efectivo USD (Caja/Oficina)', label: 'Efectivo USD (Caja/Oficina)', currency: 'USD' },
+  { value: 'Efectivo VES (Caja/Oficina)', label: 'Efectivo VES (Caja/Oficina)', currency: 'VES' },
+];
+
+export function PaymentForm({
+  bookings,
+  initialBookingId,
+  paymentMethods,
+}: PaymentFormProps) {
   const [state, formAction, isPending] = useActionState(createPaymentAction, {
     status: 'idle',
   });
@@ -43,19 +64,76 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
   );
 
   const selectedBooking = bookings.find((b) => b.id === selectedBookingId);
-  const [amount, setAmount] = useState<string>(
-    selectedBooking ? selectedBooking.pendingBalance : '',
+  const isFullyCovered = Boolean(
+    selectedBooking?.isFullyCovered ||
+      (selectedBooking && Number(selectedBooking.pendingBalance) <= 0),
   );
+
+  const [amount, setAmount] = useState<string>(
+    selectedBooking && !isFullyCovered ? selectedBooking.pendingBalance : '',
+  );
+
+  const hasConfiguredMethods = Boolean(paymentMethods && paymentMethods.length > 0);
+  const initialMethodName = hasConfiguredMethods
+    ? paymentMethods![0].name
+    : FALLBACK_METHODS[0].value;
+
+  const [selectedMethodName, setSelectedMethodName] = useState<string>(initialMethodName);
+  const currentMethod = paymentMethods?.find((m) => m.name === selectedMethodName);
+
+  const [currency, setCurrency] = useState<string>(
+    currentMethod?.currency || (hasConfiguredMethods ? paymentMethods![0].currency : 'USD'),
+  );
+
+  const [isUploadingProof, setIsUploadingProof] = useState<boolean>(false);
 
   const handleBookingChange = (id: string) => {
     setSelectedBookingId(id);
     const b = bookings.find((item) => item.id === id);
     if (b) {
-      setAmount(b.pendingBalance);
+      if (b.isFullyCovered || Number(b.pendingBalance) <= 0) {
+        setAmount('0.00');
+      } else {
+        setAmount(b.pendingBalance);
+      }
     } else {
       setAmount('');
     }
   };
+
+  const handleMethodChange = (val: string) => {
+    setSelectedMethodName(val);
+    const found = paymentMethods?.find((m) => m.name === val);
+    if (found) {
+      setCurrency(found.currency);
+    } else {
+      const fallback = FALLBACK_METHODS.find((f) => f.value === val);
+      if (fallback) setCurrency(fallback.currency);
+    }
+  };
+
+  const numAmount = parseFloat(amount) || 0;
+  const maxAllowed = selectedBooking ? parseFloat(selectedBooking.pendingBalance) || 0 : Infinity;
+  const isOverpaid = selectedBooking && !isFullyCovered && numAmount > maxAllowed + 0.001;
+
+  const isSubmitDisabled =
+    isPending ||
+    isUploadingProof ||
+    !selectedBooking ||
+    isFullyCovered ||
+    numAmount <= 0 ||
+    isOverpaid;
+
+  // Options for payment methods
+  const methodOptions = hasConfiguredMethods
+    ? paymentMethods!.map((m) => ({
+        value: m.name,
+        label: `${m.name} (${m.currency})`,
+      }))
+    : FALLBACK_METHODS.map((f) => ({
+        value: f.value,
+        label: f.label,
+      }));
 
   return (
     <form action={formAction} autoComplete="off" className="space-y-8 max-w-3xl">
@@ -90,7 +168,9 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
             placeholder="Seleccione una reserva..."
             options={bookings.map((b) => ({
               value: b.id,
-              label: `${b.code} - ${b.customerName} (Pendiente: $${b.pendingBalance} USD / Total: $${b.totalAmount})`,
+              label: b.isFullyCovered
+                ? `${b.code} - ${b.customerName} [PAGADA TOTALMENTE / $0.00 PENDIENTE]`
+                : `${b.code} - ${b.customerName} (Por cobrar: $${b.pendingBalance} USD / Total: $${b.totalAmount})`,
             }))}
             size="sm"
             required
@@ -101,25 +181,53 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
         </div>
 
         {selectedBooking && (
-          <div className="mt-4 p-4 rounded-xl bg-muted/40 border border-border grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div>
-              <span className="text-muted-foreground block text-[11px]">Total de la Reserva:</span>
-              <span className="font-semibold text-foreground text-sm font-mono">
-                ${selectedBooking.totalAmount} USD
-              </span>
+          <div className="space-y-3 pt-2">
+            <div className="p-4 rounded-xl bg-muted/40 border border-border grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+              <div>
+                <span className="text-muted-foreground block text-[11px]">Total de Reserva:</span>
+                <span className="font-semibold text-foreground text-sm font-mono">
+                  ${selectedBooking.totalAmount} USD
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-[11px]">Abonado / Aprobado:</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-sm font-mono">
+                  ${selectedBooking.paidAmount} USD
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-[11px]">En Verificación:</span>
+                <span className="font-semibold text-sky-600 dark:text-sky-400 text-sm font-mono">
+                  ${selectedBooking.pendingVerificationAmount || '0.00'} USD
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-[11px]">Saldo por Pagar:</span>
+                <span
+                  className={`font-bold text-sm font-mono ${
+                    isFullyCovered
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-amber-600 dark:text-amber-400'
+                  }`}
+                >
+                  ${selectedBooking.pendingBalance} USD
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="text-muted-foreground block text-[11px]">Ya Abonado / Verificado:</span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-sm font-mono">
-                ${selectedBooking.paidAmount} USD
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground block text-[11px]">Saldo Pendiente:</span>
-              <span className="font-bold text-amber-600 dark:text-amber-400 text-sm font-mono">
-                ${selectedBooking.pendingBalance} USD
-              </span>
-            </div>
+
+            {isFullyCovered ? (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-sm">Reserva sin saldo pendiente</p>
+                  <p className="text-[11px] leading-relaxed">
+                    Esta reserva ya tiene el 100% de su monto cubierto (${selectedBooking.totalAmount} USD)
+                    entre pagos aprobados y pagos pendientes por validar. No es posible registrar pagos
+                    adicionales.
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </div>
@@ -139,16 +247,9 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
             <Select2
               id="method"
               name="method"
-              defaultValue="pago_movil"
-              options={[
-                { value: 'pago_movil', label: 'Pago Móvil (VES)' },
-                { value: 'zelle', label: 'Zelle (USD)' },
-                { value: 'binance', label: 'Binance Pay (USDT)' },
-                { value: 'zinli', label: 'Zinli (USD)' },
-                { value: 'bank_transfer', label: 'Transferencia Bancaria' },
-                { value: 'cash_usd', label: 'Efectivo USD (Caja/Oficina)' },
-                { value: 'cash_ves', label: 'Efectivo VES (Caja/Oficina)' },
-              ]}
+              value={selectedMethodName}
+              onValueChange={handleMethodChange}
+              options={methodOptions}
               size="sm"
               required
             />
@@ -168,34 +269,56 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
               onValueChange={(val) => setAmount(val.toFixed(2))}
               placeholder="0.00"
               min={0.01}
+              disabled={isFullyCovered}
               required
             />
-            {selectedBooking && Number(selectedBooking.pendingBalance) > 0 && (
+            {selectedBooking && !isFullyCovered && Number(selectedBooking.pendingBalance) > 0 && (
               <button
                 type="button"
                 onClick={() => setAmount(selectedBooking.pendingBalance)}
                 className="text-[11px] text-primary hover:underline font-medium"
               >
-                Pagar saldo total (${selectedBooking.pendingBalance})
+                Pagar saldo pendiente exacto (${selectedBooking.pendingBalance} USD)
               </button>
+            )}
+            {isOverpaid && (
+              <p className="text-xs text-destructive font-medium flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                El monto no puede superar el saldo disponible (${selectedBooking?.pendingBalance} USD).
+              </p>
             )}
             {state.fieldErrors?.amount && (
               <p className="text-xs text-destructive">{state.fieldErrors.amount[0]}</p>
             )}
           </div>
 
+          {/* Coordinates and Bank Details of Configured Method */}
+          {currentMethod?.instructions ? (
+            <div className="sm:col-span-2 p-4 rounded-xl bg-muted/40 border border-border text-xs space-y-2">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <Banknote className="h-4 w-4 text-primary" />
+                Coordenadas e Instrucciones ({currentMethod.name}):
+              </span>
+              <div className="whitespace-pre-line text-muted-foreground font-mono text-[11px] bg-background p-3 rounded-lg border border-border leading-relaxed">
+                {currentMethod.instructions}
+              </div>
+            </div>
+          ) : null}
+
           <div className="space-y-2">
             <label htmlFor="currency" className="text-xs font-medium text-foreground">
               Moneda
             </label>
+            <input type="hidden" name="currency" value={currency} />
             <Select2
-              id="currency"
-              name="currency"
-              defaultValue="USD"
+              id="currencySelect"
+              value={currency}
+              onValueChange={(val) => setCurrency(val)}
               options={[
                 { value: 'USD', label: 'USD (Dólares)' },
                 { value: 'VES', label: 'VES (Bolívares)' },
                 { value: 'USDT', label: 'USDT (Tether)' },
+                { value: 'EUR', label: 'EUR (Euros)' },
               ]}
               size="sm"
             />
@@ -249,18 +372,18 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
             />
           </div>
 
+          {/* Proof of Payment Upload */}
           <div className="space-y-2 sm:col-span-2">
-            <label htmlFor="proofImageUrl" className="text-xs font-medium text-foreground flex items-center gap-1.5">
-              <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-              URL del Comprobante / Captura
-            </label>
-            <input
-              id="proofImageUrl"
+            <ImageUpload
               name="proofImageUrl"
-              type="url"
-              placeholder="https://... o enlace de captura de pantalla"
-              className="w-full px-3 py-2 text-xs rounded-lg border border-input bg-background focus:outline-hidden focus:ring-2 focus:ring-ring"
+              folder="payments"
+              label="Comprobante de Pago / Voucher (Captura o Foto)"
+              hint="Formatos: JPG, PNG, WebP o AVIF (máx. 2 MB). Se almacena directamente en Supabase Storage."
+              onUploadingChange={setIsUploadingProof}
             />
+            {state.fieldErrors?.proofImageUrl && (
+              <p className="text-xs text-destructive">{state.fieldErrors.proofImageUrl[0]}</p>
+            )}
           </div>
 
           <div className="space-y-2 sm:col-span-2">
@@ -298,6 +421,7 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
             name="status"
             value="verified"
             defaultChecked
+            disabled={isFullyCovered}
             className="sr-only peer"
           />
           <div className="w-11 h-6 bg-muted peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
@@ -316,10 +440,15 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
 
         <button
           type="submit"
-          disabled={isPending}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition shadow-xs disabled:opacity-50"
+          disabled={isSubmitDisabled}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition shadow-xs disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         >
-          {isPending ? (
+          {isUploadingProof ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Subiendo Comprobante...
+            </>
+          ) : isPending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Registrando Pago...
@@ -327,7 +456,7 @@ export function PaymentForm({ bookings, initialBookingId }: PaymentFormProps) {
           ) : (
             <>
               <CreditCard className="h-4 w-4" />
-              Registrar Abono
+              {isFullyCovered ? 'Reserva Sin Saldo Pendiente' : 'Registrar Abono'}
             </>
           )}
         </button>
