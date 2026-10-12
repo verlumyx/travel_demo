@@ -69,7 +69,7 @@ export function AdminSidebar({
 
   const handleSignOut = async () => {
     await signOut();
-    router.push('/admin/login');
+    window.location.href = '/admin/login';
   };
 
   const mainItems = MENU_REGISTRY.filter(

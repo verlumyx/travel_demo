@@ -27,8 +27,7 @@ export function AdminLoginForm() {
       if (result.error) {
         setError(result.error.message || 'Credenciales inválidas. Verifica tu correo y contraseña.');
       } else {
-        router.push('/admin');
-        router.refresh();
+        window.location.href = '/admin';
       }
     } catch {
       setError('Ocurrió un error inesperado al intentar iniciar sesión.');
