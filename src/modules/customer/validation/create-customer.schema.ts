@@ -5,19 +5,24 @@ export const createCustomerSchema = z.object({
   firstName: z.string().min(1, { message: 'El nombre es obligatorio.' }).max(255),
   lastName: z.string().min(1, { message: 'El apellido es obligatorio.' }).max(255),
   email: z
-    .string()
+    .string({ message: 'El correo electrónico es obligatorio.' })
+    .trim()
+    .min(1, { message: 'El correo electrónico es obligatorio.' })
     .email({ message: 'Correo electrónico no válido.' })
-    .max(255)
-    .optional()
-    .nullable()
-    .or(z.literal('')),
-  phone: z.string().max(50).optional().nullable().or(z.literal('')),
-  documentType: z
-    .enum(['cedula', 'passport', 'other'])
-    .optional()
-    .nullable()
-    .or(z.literal('')),
-  documentNumber: z.string().max(50).optional().nullable().or(z.literal('')),
+    .max(255),
+  phone: z
+    .string({ message: 'El teléfono / WhatsApp es obligatorio.' })
+    .trim()
+    .min(1, { message: 'El teléfono / WhatsApp es obligatorio.' })
+    .max(50, { message: 'El teléfono no puede superar 50 caracteres.' }),
+  documentType: z.enum(['cedula', 'passport', 'other'], {
+    message: 'El tipo de documento es obligatorio.',
+  }),
+  documentNumber: z
+    .string({ message: 'El número de documento es obligatorio.' })
+    .trim()
+    .min(1, { message: 'El número de documento es obligatorio.' })
+    .max(50, { message: 'El número de documento no puede superar 50 caracteres.' }),
   birthDate: z
     .string()
     .optional()

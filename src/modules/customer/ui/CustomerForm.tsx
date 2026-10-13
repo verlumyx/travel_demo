@@ -96,11 +96,13 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label htmlFor="documentType" className="block text-sm font-medium text-foreground mb-1.5">
-              Tipo de Documento
+              Tipo de Documento *
             </label>
             <Select2
               id="documentType"
               name="documentType"
+              required
+              error={Boolean(state.fieldErrors?.documentType)}
               defaultValue={initialData?.documentType ?? 'cedula'}
               options={[
                 { value: 'cedula', label: 'Cédula de Identidad' },
@@ -109,16 +111,20 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
               ]}
               size="sm"
             />
+            {state.fieldErrors?.documentType && (
+              <p className="text-xs text-destructive mt-1">{state.fieldErrors.documentType[0]}</p>
+            )}
           </div>
 
           <div>
             <label htmlFor="documentNumber" className="block text-sm font-medium text-foreground mb-1.5">
-              Número de Documento
+              Número de Documento *
             </label>
             <input
               type="text"
               id="documentNumber"
               name="documentNumber"
+              required
               defaultValue={initialData?.documentNumber ?? ''}
               placeholder="Ej: V-19456789"
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -148,12 +154,13 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1.5">
-              Correo Electrónico
+              Correo Electrónico *
             </label>
             <input
               type="email"
               id="email"
               name="email"
+              required
               defaultValue={initialData?.email ?? ''}
               placeholder="carlos@ejemplo.com"
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -165,12 +172,13 @@ export function CustomerForm({ initialData }: CustomerFormProps) {
 
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-1.5">
-              Teléfono / WhatsApp
+              Teléfono / WhatsApp *
             </label>
             <input
               type="tel"
               id="phone"
               name="phone"
+              required
               defaultValue={initialData?.phone ?? ''}
               placeholder="+58 412 1234567"
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
