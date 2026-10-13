@@ -113,7 +113,7 @@ export class DrizzleDestinationRepository implements DestinationRepository {
       .select()
       .from(app_destinations)
       .where(where)
-      .orderBy(desc(app_destinations.createdAt))
+      .orderBy(desc(app_destinations.code))
       .limit(command.limit)
       .offset(command.offset);
 

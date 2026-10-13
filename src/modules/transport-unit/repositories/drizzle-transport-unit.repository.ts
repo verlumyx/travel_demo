@@ -96,7 +96,7 @@ export class DrizzleTransportUnitRepository implements TransportUnitRepository {
       .select()
       .from(transportUnits)
       .where(where)
-      .orderBy(desc(transportUnits.createdAt))
+      .orderBy(desc(transportUnits.code))
       .limit(limit)
       .offset(offset);
 

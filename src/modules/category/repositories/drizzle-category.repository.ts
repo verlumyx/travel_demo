@@ -105,7 +105,7 @@ export class DrizzleCategoryRepository implements CategoryRepository {
       .select()
       .from(app_categories)
       .where(where)
-      .orderBy(desc(app_categories.createdAt))
+      .orderBy(desc(app_categories.code))
       .limit(command.limit)
       .offset(command.offset);
 

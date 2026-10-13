@@ -262,7 +262,7 @@ export class DrizzleBookingRepository implements BookingRepository {
       .innerJoin(departures, eq(bookings.departureId, departures.id))
       .innerJoin(tours, eq(departures.tourId, tours.id))
       .where(where)
-      .orderBy(desc(bookings.createdAt))
+      .orderBy(desc(bookings.code))
       .limit(command.limit)
       .offset(command.offset);
 

@@ -110,7 +110,7 @@ export class DrizzleCustomerRepository implements CustomerRepository {
       .select()
       .from(customers)
       .where(where)
-      .orderBy(desc(customers.createdAt))
+      .orderBy(desc(customers.code))
       .limit(command.limit)
       .offset(command.offset);
 

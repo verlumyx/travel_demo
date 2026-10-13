@@ -324,7 +324,7 @@ export class DrizzlePaymentRepository implements PaymentRepository {
       .innerJoin(tours, eq(departures.tourId, tours.id))
       .leftJoin(users, eq(payments.verifiedById, users.id))
       .where(where)
-      .orderBy(desc(payments.paymentDate))
+      .orderBy(desc(payments.code))
       .limit(command.limit)
       .offset(command.offset);
 

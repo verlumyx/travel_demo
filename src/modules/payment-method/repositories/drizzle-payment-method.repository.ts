@@ -93,7 +93,7 @@ export class DrizzlePaymentMethodRepository implements PaymentMethodRepository {
       .select()
       .from(app_payment_methods)
       .where(where)
-      .orderBy(desc(app_payment_methods.createdAt))
+      .orderBy(desc(app_payment_methods.code))
       .limit(command.limit)
       .offset(command.offset);
 

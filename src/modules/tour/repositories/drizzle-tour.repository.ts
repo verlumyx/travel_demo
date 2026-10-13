@@ -147,7 +147,7 @@ export class DrizzleTourRepository implements TourRepository {
       .select()
       .from(app_tours)
       .where(where)
-      .orderBy(desc(app_tours.createdAt))
+      .orderBy(desc(app_tours.code))
       .limit(command.limit)
       .offset(command.offset);
 

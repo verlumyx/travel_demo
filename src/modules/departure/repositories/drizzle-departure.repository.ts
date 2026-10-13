@@ -165,7 +165,7 @@ export class DrizzleDepartureRepository implements DepartureRepository {
       .from(departures)
       .innerJoin(tours, eq(departures.tourId, tours.id))
       .where(where)
-      .orderBy(desc(departures.departureDate))
+      .orderBy(desc(departures.code))
       .limit(command.limit)
       .offset(command.offset);
 
