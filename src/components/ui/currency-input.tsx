@@ -16,6 +16,7 @@ export interface CurrencyInputProps
   locale?: string;
   name?: string;
   ref?: React.Ref<HTMLInputElement>;
+  allowEmpty?: boolean;
 }
 
 function clampNumber(value: number, min?: number, max?: number): number {
@@ -63,6 +64,7 @@ export function CurrencyInput({
   onBlur,
   name,
   ref,
+  allowEmpty = false,
   ...props
 }: CurrencyInputProps) {
   const isControlled = value !== undefined;
@@ -70,9 +72,9 @@ export function CurrencyInput({
     if (value !== undefined) return value;
     if (defaultValue !== undefined && defaultValue !== null && defaultValue !== '') {
       const num = typeof defaultValue === 'string' ? parseFloat(defaultValue) : Number(defaultValue);
-      return Number.isNaN(num) ? min : num;
+      return Number.isNaN(num) ? (allowEmpty ? null : min) : num;
     }
-    return min ?? 0;
+    return allowEmpty ? null : (min ?? 0);
   });
 
   const actualValue = isControlled ? value : internalValue;
@@ -113,23 +115,35 @@ export function CurrencyInput({
     setDraft(next);
 
     if (next === '') {
-      const nextVal = min ?? 0;
+      const nextVal = allowEmpty ? null : (min ?? 0);
       if (!isControlled) setInternalValue(nextVal);
-      onValueChange?.(nextVal);
+      onValueChange?.(nextVal ?? 0);
       return;
     }
 
     const parsed = parseFloat(next);
-    const nextVal = Number.isNaN(parsed) ? (min ?? 0) : parsed;
+    const nextVal = Number.isNaN(parsed) ? (allowEmpty ? null : (min ?? 0)) : parsed;
     if (!isControlled) setInternalValue(nextVal);
-    onValueChange?.(nextVal);
+    onValueChange?.(nextVal ?? 0);
   };
 
   const handleBlur = (event: React.FocusEvent<HTMLInputElement>): void => {
     setIsFocused(false);
+    if (draft === '' && allowEmpty) {
+      if (!isControlled) setInternalValue(null);
+      onValueChange?.(0);
+      onBlur?.(event);
+      return;
+    }
     const parsed = parseFloat(draft);
-    const base = Number.isNaN(parsed) ? (min ?? 0) : parsed;
-    const clamped = clampNumber(base, min, max);
+    if (Number.isNaN(parsed)) {
+      const nextVal = allowEmpty ? null : (min ?? 0);
+      if (!isControlled) setInternalValue(nextVal);
+      onValueChange?.(nextVal ?? 0);
+      onBlur?.(event);
+      return;
+    }
+    const clamped = clampNumber(parsed, min, max);
     if (!isControlled) setInternalValue(clamped);
     onValueChange?.(clamped);
     onBlur?.(event);

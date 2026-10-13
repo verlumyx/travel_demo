@@ -37,7 +37,10 @@ export default async function CreateBookingPage({ searchParams }: PageProps) {
 
   const departureOptions = rawDepartures.map((d) => {
     const availableSlots = Math.max(0, d.totalCapacity - d.bookedSlots);
-    const unitPrice = d.priceOverride || d.tourBasePrice;
+    const unitPrice =
+      d.priceOverride && Number(d.priceOverride) > 0
+        ? d.priceOverride
+        : d.tourBasePrice;
 
     return {
       id: d.id,

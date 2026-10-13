@@ -188,7 +188,10 @@ export async function clientCheckoutAction(
 
       // 1. Fetch departure with tour to determine unit price & capacity
       const { departure: dep, tour } = await departureContainer.findService.executeWithTour(data.departureId);
-      const effectiveUnitPrice = dep.priceOverride ? Number(dep.priceOverride) : Number(tour.basePrice);
+      const effectiveUnitPrice =
+        dep.priceOverride && Number(dep.priceOverride) > 0
+          ? Number(dep.priceOverride)
+          : Number(tour.basePrice);
       const totalAmount = (effectiveUnitPrice * data.slotsCount).toFixed(2);
 
       // 2. Find or create/update customer

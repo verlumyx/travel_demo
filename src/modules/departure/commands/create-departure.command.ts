@@ -12,6 +12,14 @@ export class CreateDepartureCommand {
   ) {}
 
   static fromInput(input: any): CreateDepartureCommand {
+    const rawPrice =
+      input.priceOverride !== undefined && input.priceOverride !== null
+        ? String(input.priceOverride).trim()
+        : null;
+    const priceNum = rawPrice ? Number(rawPrice) : NaN;
+    const priceOverride =
+      !isNaN(priceNum) && priceNum > 0 ? priceNum.toFixed(2) : null;
+
     return new CreateDepartureCommand(
       input.id,
       input.tourId,
@@ -19,7 +27,7 @@ export class CreateDepartureCommand {
       input.returnDate ? new Date(input.returnDate) : null,
       input.meetingPoint || null,
       input.meetingTime || null,
-      input.priceOverride || null,
+      priceOverride,
       Number(input.totalCapacity ?? 0),
       input.notes || null,
     );

@@ -187,7 +187,7 @@ export class DrizzleDepartureRepository implements DepartureRepository {
   }
 
   async getActiveScheduled(): Promise<DepartureForBookingOption[]> {
-    return this.db
+    const rows = await this.db
       .select({
         id: departures.id,
         code: departures.code,
@@ -208,6 +208,12 @@ export class DrizzleDepartureRepository implements DepartureRepository {
         ),
       )
       .orderBy(desc(departures.departureDate));
+
+    return rows.map((r) => ({
+      ...r,
+      priceOverride:
+        r.priceOverride && Number(r.priceOverride) > 0 ? r.priceOverride : null,
+    }));
   }
 
   async getUpcomingDepartures(limit: number = 20): Promise<ScheduledDeparturePublicItem[]> {
@@ -247,11 +253,19 @@ export class DrizzleDepartureRepository implements DepartureRepository {
 
     return rows.map((r) => {
       const availableSlots = Math.max(0, r.totalCapacity - r.bookedSlots);
-      const effectivePrice = r.priceOverride ?? r.tourBasePrice;
+      const effectivePrice =
+        r.priceOverride && Number(r.priceOverride) > 0
+          ? r.priceOverride
+          : r.tourBasePrice;
+      const priceOverride =
+        r.priceOverride && Number(r.priceOverride) > 0
+          ? r.priceOverride
+          : null;
       return {
         ...r,
         availableSlots,
         effectivePrice,
+        priceOverride,
         status: r.status as 'scheduled' | 'confirmed',
       };
     });

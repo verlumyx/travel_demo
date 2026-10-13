@@ -44,9 +44,10 @@ export default async function ClientCheckoutPage({ params }: PageProps) {
   });
 
   const availableSlots = departure.totalCapacity - departure.bookedSlots;
-  const effectivePrice = departure.priceOverride
-    ? Number(departure.priceOverride)
-    : Number(tour.basePrice);
+  const effectivePrice =
+    departure.priceOverride && Number(departure.priceOverride) > 0
+      ? Number(departure.priceOverride)
+      : Number(tour.basePrice);
 
   const paymentMethodContainer = createPaymentMethodContainer();
   const rawPaymentMethods = await paymentMethodContainer.repository.getActive();

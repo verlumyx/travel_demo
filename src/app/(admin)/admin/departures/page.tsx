@@ -230,7 +230,7 @@ export default async function DeparturesListPage({ searchParams }: PageProps) {
                         <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                           <Compass className="h-3 w-3 text-muted-foreground" />
                           <span>{dep.tourCode || '-'}</span>
-                          {dep.priceOverride && (
+                          {dep.priceOverride && Number(dep.priceOverride) > 0 && (
                             <span className="text-emerald-600 dark:text-emerald-400 font-semibold ml-2">
                               ${dep.priceOverride} (Especial)
                             </span>

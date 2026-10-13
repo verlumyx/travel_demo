@@ -31,6 +31,9 @@ export function toDepartureDto(
       ? Math.round((row.bookedSlots / row.totalCapacity) * 100)
       : 0;
 
+  const priceOverride =
+    row.priceOverride && Number(row.priceOverride) > 0 ? row.priceOverride : null;
+
   return {
     id: row.id,
     code: row.code,
@@ -39,7 +42,7 @@ export function toDepartureDto(
     returnDate: row.returnDate?.toISOString() ?? null,
     meetingPoint: row.meetingPoint,
     meetingTime: row.meetingTime,
-    priceOverride: row.priceOverride,
+    priceOverride,
     totalCapacity: row.totalCapacity,
     bookedSlots: row.bookedSlots,
     availableSlots,
@@ -80,8 +83,12 @@ export type ScheduledDepartureDto = {
 export function toScheduledDepartureDto(
   item: ScheduledDeparturePublicItem,
 ): ScheduledDepartureDto {
+  const priceOverride =
+    item.priceOverride && Number(item.priceOverride) > 0 ? item.priceOverride : null;
+
   return {
     ...item,
+    priceOverride,
     departureDate: item.departureDate.toISOString(),
     returnDate: item.returnDate ? item.returnDate.toISOString() : null,
   };

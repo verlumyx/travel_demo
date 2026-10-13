@@ -50,6 +50,8 @@ export function DepartureForm({ initialData, tours }: DepartureFormProps) {
 
   // Generate a stable client-side UUID v7 for create
   const [newId] = useState(() => (!isEditing ? uuidv7() : ''));
+  const [selectedTourId, setSelectedTourId] = useState<string>(initialData?.tourId ?? '');
+  const selectedTour = tours.find((t) => t.id === selectedTourId);
 
   return (
     <form action={formAction} autoComplete="off" className="space-y-6 max-w-4xl">
@@ -82,6 +84,7 @@ export function DepartureForm({ initialData, tours }: DepartureFormProps) {
             name="tourId"
             required
             defaultValue={initialData?.tourId ?? ''}
+            onValueChange={(val) => setSelectedTourId(val)}
             placeholder="Seleccione un tour..."
             options={tours.map((t) => ({
               value: t.id,
@@ -179,12 +182,21 @@ export function DepartureForm({ initialData, tours }: DepartureFormProps) {
             <CurrencyInput
               id="priceOverride"
               name="priceOverride"
-              defaultValue={initialData?.priceOverride ? parseFloat(initialData.priceOverride) : null}
-              placeholder="Sobrescribe el precio base del tour si aplica"
+              defaultValue={
+                initialData?.priceOverride && parseFloat(initialData.priceOverride) > 0
+                  ? parseFloat(initialData.priceOverride)
+                  : null
+              }
+              placeholder={
+                selectedTour
+                  ? `Precio base: $${selectedTour.basePrice} ${selectedTour.currency}`
+                  : 'Sobrescribe el precio base del tour si aplica'
+              }
               min={0}
+              allowEmpty
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Si se deja en blanco, se cobrará el precio base configurado en el tour.
+              Si se deja en blanco o en 0, se cobrará el precio base configurado en el tour{selectedTour ? ` ($${selectedTour.basePrice} ${selectedTour.currency})` : ''}.
             </p>
             {state.fieldErrors?.priceOverride && (
               <p className="text-xs text-destructive mt-1">{state.fieldErrors.priceOverride[0]}</p>

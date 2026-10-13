@@ -247,7 +247,10 @@ export default async function TourDetailPage({ params }: PageProps) {
                   {upcomingDepartures.map((dep) => {
                     const depDate = new Date(dep.departureDate);
                     const availableSlots = dep.totalCapacity - dep.bookedSlots;
-                    const price = dep.priceOverride ? Number(dep.priceOverride) : Number(tour.basePrice);
+                    const price =
+                      dep.priceOverride && Number(dep.priceOverride) > 0
+                        ? Number(dep.priceOverride)
+                        : Number(tour.basePrice);
 
                     return (
                       <div

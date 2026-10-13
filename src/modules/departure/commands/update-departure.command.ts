@@ -10,13 +10,21 @@ export class UpdateDepartureCommand {
   ) {}
 
   static fromInput(input: any): UpdateDepartureCommand {
+    const rawPrice =
+      input.priceOverride !== undefined && input.priceOverride !== null
+        ? String(input.priceOverride).trim()
+        : null;
+    const priceNum = rawPrice ? Number(rawPrice) : NaN;
+    const priceOverride =
+      !isNaN(priceNum) && priceNum > 0 ? priceNum.toFixed(2) : null;
+
     return new UpdateDepartureCommand(
       input.tourId,
       new Date(input.departureDate),
       input.returnDate ? new Date(input.returnDate) : null,
       input.meetingPoint || null,
       input.meetingTime || null,
-      input.priceOverride || null,
+      priceOverride,
       input.notes || null,
     );
   }

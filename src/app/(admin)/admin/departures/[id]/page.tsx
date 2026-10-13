@@ -197,7 +197,7 @@ export default async function DepartureDetailPage({ params }: PageProps) {
 
             <div className="pt-2 border-t border-border">
               <span className="text-muted-foreground block">Tarifa Aplicable:</span>
-              {departure.priceOverride ? (
+              {departure.priceOverride && Number(departure.priceOverride) > 0 ? (
                 <div className="mt-0.5">
                   <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
                     ${departure.priceOverride} USD
