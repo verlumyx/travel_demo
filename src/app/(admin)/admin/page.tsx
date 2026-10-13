@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Percent,
+  BookOpen,
 } from 'lucide-react';
 import { PaymentMethodBadge } from '@/modules/payment/ui/PaymentMethodBadge';
 
@@ -57,7 +58,14 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/admin/guia"
+            className="px-3.5 py-2.5 rounded-xl bg-teal-500/25 hover:bg-teal-500/40 active:scale-[0.98] text-teal-100 border border-teal-400/40 font-semibold text-xs transition inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <BookOpen className="h-3.5 w-3.5 text-teal-300" />
+            Guía de Módulos
+          </Link>
           <Link
             href="/admin/bookings/create"
             className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 active:scale-[0.98] text-teal-900 font-semibold text-xs transition shadow-xs inline-flex items-center gap-2 cursor-pointer"
