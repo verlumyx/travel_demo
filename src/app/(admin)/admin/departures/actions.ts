@@ -65,6 +65,7 @@ export async function createDepartureAction(
   }
 
   revalidatePath(departureRoutes.list());
+  revalidatePath(departureRoutes.show(createdId!));
   await setFlash('success', 'Salida programada creada exitosamente.');
   redirect(departureRoutes.show(createdId!));
 }

@@ -22,6 +22,8 @@ import {
   ArrowLeft,
   FileSpreadsheet,
 } from 'lucide-react';
+import { z } from 'zod';
+import { DepartureNotFoundException } from '@/modules/departure/exceptions/departure-not-found.exception';
 
 export const instant = false;
 
@@ -30,8 +32,12 @@ interface PageProps {
 }
 
 export default async function DepartureDetailPage({ params }: PageProps) {
-  await guardPage('departures.show');
   const { id } = await params;
+  await guardPage('departures.show');
+
+  if (!z.string().uuid().safeParse(id).success) {
+    notFound();
+  }
 
   const departureContainer = createDepartureContainer();
   const departureUnitContainer = createDepartureUnitContainer();
@@ -40,8 +46,11 @@ export default async function DepartureDetailPage({ params }: PageProps) {
   let departureData;
   try {
     departureData = await departureContainer.findService.executeWithTour(id);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof DepartureNotFoundException) {
+      notFound();
+    }
+    throw error;
   }
 
   const { departure: rawDeparture, tour } = departureData;

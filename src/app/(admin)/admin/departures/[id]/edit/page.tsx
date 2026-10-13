@@ -5,6 +5,8 @@ import { createTourContainer } from '@/modules/tour/container';
 import { DepartureForm } from '@/modules/departure/ui/DepartureForm';
 import type { TourRow } from '@/modules/tour/models/tour.model';
 import { CalendarDays } from 'lucide-react';
+import { z } from 'zod';
+import { DepartureNotFoundException } from '@/modules/departure/exceptions/departure-not-found.exception';
 
 export const instant = false;
 
@@ -13,8 +15,12 @@ interface PageProps {
 }
 
 export default async function EditDeparturePage({ params }: PageProps) {
-  await guardPage('departures.update');
   const { id } = await params;
+  await guardPage('departures.update');
+
+  if (!z.string().uuid().safeParse(id).success) {
+    notFound();
+  }
 
   const departureContainer = createDepartureContainer();
   const tourContainer = createTourContainer();
@@ -22,8 +28,11 @@ export default async function EditDeparturePage({ params }: PageProps) {
   let departure;
   try {
     departure = await departureContainer.findService.executeOrFail(id);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof DepartureNotFoundException) {
+      notFound();
+    }
+    throw error;
   }
 
   const rawTours: TourRow[] = await tourContainer.repository.getActive();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { initialActionState } from '@/modules/shared/actions/action-state';
 import { createDepartureAction, updateDepartureAction } from '@/app/(admin)/admin/departures/actions';
@@ -48,12 +48,12 @@ export function DepartureForm({ initialData, tours }: DepartureFormProps) {
 
   const [state, formAction, isPending] = useActionState(action, initialActionState);
 
-  // Generate a client-side UUID v7 for create
-  const generatedId = !isEditing ? uuidv7() : undefined;
+  // Generate a stable client-side UUID v7 for create
+  const [newId] = useState(() => (!isEditing ? uuidv7() : ''));
 
   return (
     <form action={formAction} autoComplete="off" className="space-y-6 max-w-4xl">
-      {!isEditing && <input type="hidden" name="id" value={generatedId} />}
+      {!isEditing && <input type="hidden" name="id" value={newId} />}
 
       {state.message && (
         <div
