@@ -14,6 +14,7 @@ import { UpdatePaymentCommand } from '@/modules/payment/commands/update-payment.
 import { createPaymentContainer } from '@/modules/payment/container';
 import { paymentRoutes } from '@/modules/payment/routes';
 import { bookingRoutes } from '@/modules/booking/routes';
+import { storageService } from '@/modules/shared/services/storage.service';
 
 const uuidSchema = z.string().uuid();
 
@@ -30,6 +31,7 @@ export async function createPaymentAction(
 
     const rawId = formData.get('id') || crypto.randomUUID();
     const rawStatus = (formData.get('status') as string) || 'pending';
+    const resolvedProofUrl = await storageService.resolveUploadedFile(formData, 'proofImageUrl', 'payments');
 
     const rawData = {
       id: rawId,
@@ -39,7 +41,7 @@ export async function createPaymentAction(
       currency: formData.get('currency') || 'USD',
       paymentDate: formData.get('paymentDate') || new Date().toISOString(),
       reference: formData.get('reference') || null,
-      proofImageUrl: formData.get('proofImageUrl') || null,
+      proofImageUrl: resolvedProofUrl,
       receivedByName: formData.get('receivedByName') || null,
       verifiedById: rawStatus === 'verified' ? (appUser?.id ?? null) : null,
       verifiedAt: rawStatus === 'verified' ? new Date() : null,
@@ -150,6 +152,8 @@ export async function updatePaymentAction(
       return { status: 'error', message: 'ID de pago inválido.' };
     }
 
+    const resolvedProofUrl = await storageService.resolveUploadedFile(formData, 'proofImageUrl', 'payments');
+
     const rawData = {
       bookingId: formData.get('bookingId'),
       method: formData.get('method'),
@@ -157,7 +161,7 @@ export async function updatePaymentAction(
       currency: formData.get('currency') || 'USD',
       paymentDate: formData.get('paymentDate'),
       reference: formData.get('reference') || null,
-      proofImageUrl: formData.get('proofImageUrl') || null,
+      proofImageUrl: resolvedProofUrl,
       receivedByName: formData.get('receivedByName') || null,
       notes: formData.get('notes') || null,
     };

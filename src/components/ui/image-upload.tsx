@@ -1,17 +1,16 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   UploadCloud,
   Image as ImageIcon,
   X,
-  Loader2,
   ExternalLink,
   Link as LinkIcon,
   AlertCircle,
   RefreshCw,
+  FileCheck,
 } from 'lucide-react';
-import { uploadImageAction } from '@/modules/shared/actions/upload-image.action';
 
 interface ImageUploadProps {
   name?: string;
@@ -21,74 +20,79 @@ interface ImageUploadProps {
   error?: string;
   hint?: string;
   required?: boolean;
+  maxSizeMb?: number;
   onUploadingChange?: (uploading: boolean) => void;
   onUrlChange?: (url: string) => void;
 }
 
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+];
+
 export function ImageUpload({
   name = 'imageUrl',
   defaultValue = '',
-  folder = 'general',
   label = 'Imagen',
   error,
   hint = 'Formatos recomendados: JPG, PNG, WebP o AVIF (máx. 2 MB).',
   required = false,
+  maxSizeMb = 2,
   onUploadingChange,
   onUrlChange,
 }: ImageUploadProps) {
   const [url, setUrl] = useState<string>(defaultValue || '');
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [mode, setMode] = useState<'upload' | 'url'>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const updateUploading = (uploading: boolean) => {
-    setIsUploading(uploading);
-    onUploadingChange?.(uploading);
-  };
+  useEffect(() => {
+    onUploadingChange?.(false);
+  }, [onUploadingChange]);
+
+  // Limpiar URL temporal de preview al desmontar o cambiar archivo
+  useEffect(() => {
+    return () => {
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
+    };
+  }, [localPreviewUrl]);
 
   const updateUrl = (newUrl: string) => {
     setUrl(newUrl);
     onUrlChange?.(newUrl);
   };
 
-  const handleFileSelect = async (file: File) => {
-    setUploadError(null);
+  const handleFileSelect = (file: File) => {
+    setValidationError(null);
 
-    // Validar tipo
-    if (!file.type.startsWith('image/')) {
-      setUploadError('Por favor selecciona un archivo de imagen válido.');
+    // Validar formato
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      setValidationError('Por favor selecciona una imagen válida (JPG, PNG, WebP o AVIF).');
       return;
     }
 
-    // Validar tamaño (2 MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setUploadError('La imagen excede el límite de 2 MB.');
+    // Validar tamaño
+    const maxBytes = maxSizeMb * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setValidationError(`La imagen excede el límite de ${maxSizeMb} MB.`);
       return;
     }
 
-    updateUploading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const result = await uploadImageAction(formData, folder);
-
-      if (!result.success || !result.url) {
-        setUploadError(result.error || 'Error al subir la imagen.');
-      } else {
-        updateUrl(result.url);
-      }
-    } catch {
-      setUploadError('Ocurrió un error inesperado al conectar con el servidor.');
-    } finally {
-      updateUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    // Limpiar preview anterior si existía
+    if (localPreviewUrl) {
+      URL.revokeObjectURL(localPreviewUrl);
     }
+
+    const objectUrl = URL.createObjectURL(file);
+    setSelectedFile(file);
+    setLocalPreviewUrl(objectUrl);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -98,6 +102,17 @@ export function ImageUpload({
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFile = e.dataTransfer.files[0];
       handleFileSelect(droppedFile);
+
+      // Sincronizar el FileList con el input real para que viaje en FormData
+      if (fileInputRef.current) {
+        try {
+          const dt = new DataTransfer();
+          dt.items.add(droppedFile);
+          fileInputRef.current.files = dt.files;
+        } catch {
+          // Si el navegador no soporta DataTransfer constructible, selectedFile persiste en estado
+        }
+      }
     }
   };
 
@@ -112,14 +127,20 @@ export function ImageUpload({
   };
 
   const handleClear = () => {
+    setSelectedFile(null);
+    if (localPreviewUrl) {
+      URL.revokeObjectURL(localPreviewUrl);
+      setLocalPreviewUrl(null);
+    }
     updateUrl('');
-    setUploadError(null);
+    setValidationError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const displayedError = error || uploadError;
+  const displayedError = error || validationError;
+  const currentPreview = localPreviewUrl || url;
 
   return (
     <div className="space-y-2">
@@ -133,7 +154,7 @@ export function ImageUpload({
           type="button"
           onClick={() => {
             setMode(mode === 'upload' ? 'url' : 'upload');
-            setUploadError(null);
+            setValidationError(null);
           }}
           className="text-xs text-teal-600 hover:text-teal-700 font-medium inline-flex items-center gap-1 transition cursor-pointer"
         >
@@ -151,12 +172,18 @@ export function ImageUpload({
         </button>
       </div>
 
-      {/* Input oculto para serialización en el formulario FormData */}
-      <input type="hidden" name={name} value={url} />
+      {/* Input oculto con la URL existente o externa ingresada */}
+      <input
+        type="hidden"
+        name={`${name}Existing`}
+        value={mode === 'url' ? url : (selectedFile ? '' : url)}
+      />
 
-      {/* Input de archivo oculto */}
+      {/* Input de archivo nativo que se enviará en el FormData al guardar */}
       <input
         ref={fileInputRef}
+        id={name}
+        name={name}
         type="file"
         accept="image/jpeg,image/png,image/webp,image/avif"
         className="hidden"
@@ -174,7 +201,14 @@ export function ImageUpload({
             <input
               type="url"
               value={url}
-              onChange={(e) => updateUrl(e.target.value)}
+              onChange={(e) => {
+                setSelectedFile(null);
+                if (localPreviewUrl) {
+                  URL.revokeObjectURL(localPreviewUrl);
+                  setLocalPreviewUrl(null);
+                }
+                updateUrl(e.target.value);
+              }}
               placeholder="https://images.unsplash.com/..."
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm transition"
             />
@@ -182,7 +216,7 @@ export function ImageUpload({
               <button
                 type="button"
                 onClick={handleClear}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -194,50 +228,51 @@ export function ImageUpload({
       {/* Modo Subida o Vista con Imagen Actual */}
       {mode === 'upload' && (
         <>
-          {url ? (
+          {currentPreview ? (
             /* Tarjeta con Preview de la Imagen */
             <div className="relative rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden group">
               <div className="h-48 sm:h-56 w-full relative bg-slate-100 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={url}
+                  src={currentPreview}
                   alt="Vista previa de imagen"
                   className="w-full h-full object-cover"
                 />
-
-                {isUploading && (
-                  <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin text-teal-400" />
-                    <span className="text-xs font-medium">Actualizando imagen en Supabase...</span>
-                  </div>
-                )}
               </div>
 
-              {/* Barra inferior con acciones */}
-              <div className="p-3 bg-white border-t border-slate-100 flex items-center justify-between gap-2">
+              {/* Barra inferior con detalles y acciones */}
+              <div className="p-3 bg-white border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Almacenada en Storage
-                  </span>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-slate-400 hover:text-slate-600 text-xs inline-flex items-center gap-1 truncate max-w-[180px] sm:max-w-xs"
-                    title={url}
-                  >
-                    <ExternalLink className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{url}</span>
-                  </a>
+                  {selectedFile ? (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                      <FileCheck className="h-3.5 w-3.5 text-teal-600" />
+                      Listo para subir al guardar ({selectedFile.name} • {(selectedFile.size / 1024).toFixed(0)} KB)
+                    </span>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Almacenada en Storage
+                      </span>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-slate-400 hover:text-slate-600 text-xs inline-flex items-center gap-1 truncate max-w-[180px] sm:max-w-xs"
+                        title={url}
+                      >
+                        <ExternalLink className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{url}</span>
+                      </a>
+                    </>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
                   >
                     <RefreshCw className="h-3 w-3" />
                     Cambiar
@@ -245,8 +280,7 @@ export function ImageUpload({
                   <button
                     type="button"
                     onClick={handleClear}
-                    disabled={isUploading}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer"
                   >
                     <X className="h-3 w-3" />
                     Quitar
@@ -260,37 +294,25 @@ export function ImageUpload({
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              onClick={() => !isUploading && fileInputRef.current?.click()}
+              onClick={() => fileInputRef.current?.click()}
               className={`relative border-2 border-dashed rounded-2xl p-6 transition-all text-center cursor-pointer ${
                 isDragging
                   ? 'border-teal-500 bg-teal-50/50 scale-[0.99]'
                   : 'border-slate-200 hover:border-teal-400 bg-slate-50/60 hover:bg-slate-50'
-              } ${isUploading ? 'opacity-70 pointer-events-none' : ''}`}
+              }`}
             >
-              {isUploading ? (
-                <div className="flex flex-col items-center justify-center py-4 space-y-3">
-                  <Loader2 className="h-8 w-8 text-teal-600 animate-spin" />
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-semibold text-slate-800">
-                      Subiendo a Supabase Storage...
-                    </p>
-                    <p className="text-xs text-slate-500">Por favor espera un momento</p>
-                  </div>
+              <div className="flex flex-col items-center justify-center py-3 space-y-2.5">
+                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shadow-xs border border-teal-100/60">
+                  <UploadCloud className="h-6 w-6" />
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-3 space-y-2.5">
-                  <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shadow-xs border border-teal-100/60">
-                    <UploadCloud className="h-6 w-6" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-slate-800">
-                      Arrastra tu imagen aquí o{' '}
-                      <span className="text-teal-600 hover:underline">haz clic para examinar</span>
-                    </p>
-                    <p className="text-xs text-slate-500">{hint}</p>
-                  </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-slate-800">
+                    Arrastra tu imagen aquí o{' '}
+                    <span className="text-teal-600 hover:underline">haz clic para examinar</span>
+                  </p>
+                  <p className="text-xs text-slate-500">{hint}</p>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </>
@@ -304,7 +326,7 @@ export function ImageUpload({
             src={url}
             alt="Vista previa URL"
             className="w-full h-full object-cover"
-            onError={() => setUploadError('No se pudo cargar la imagen desde la URL proporcionada.')}
+            onError={() => setValidationError('No se pudo cargar la imagen desde la URL proporcionada.')}
           />
         </div>
       )}

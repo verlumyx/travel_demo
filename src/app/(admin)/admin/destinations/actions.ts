@@ -15,6 +15,7 @@ import { UpdateDestinationCommand } from '@/modules/destination/commands/update-
 import { UpdateStatusDestinationCommand } from '@/modules/destination/commands/update-status-destination.command';
 import { createDestinationContainer } from '@/modules/destination/container';
 import { destinationRoutes } from '@/modules/destination/routes';
+import { storageService } from '@/modules/shared/services/storage.service';
 
 const uuidSchema = z.string().uuid();
 
@@ -27,13 +28,15 @@ export async function createDestinationAction(
   try {
     await requirePermission('destinations.create');
 
+    const resolvedImageUrl = await storageService.resolveUploadedFile(formData, 'imageUrl', 'destinations');
+
     const rawData = {
       id: formData.get('id'),
       categoryId: formData.get('categoryId') || null,
       name: formData.get('name'),
       slug: formData.get('slug'),
       description: formData.get('description') || null,
-      imageUrl: formData.get('imageUrl') || null,
+      imageUrl: resolvedImageUrl,
       state: formData.get('state') || null,
       city: formData.get('city') || null,
       country: formData.get('country') || 'Venezuela',
@@ -78,12 +81,14 @@ export async function updateDestinationAction(
       return { status: 'error', message: 'ID de destino inválido.' };
     }
 
+    const resolvedImageUrl = await storageService.resolveUploadedFile(formData, 'imageUrl', 'destinations');
+
     const rawData = {
       categoryId: formData.get('categoryId') || null,
       name: formData.get('name'),
       slug: formData.get('slug'),
       description: formData.get('description') || null,
-      imageUrl: formData.get('imageUrl') || null,
+      imageUrl: resolvedImageUrl,
       state: formData.get('state') || null,
       city: formData.get('city') || null,
       country: formData.get('country') || 'Venezuela',

@@ -20,6 +20,7 @@ import { updateItineraryStopSchema } from '@/modules/itinerary-stop/validation/u
 import { CreateItineraryStopCommand } from '@/modules/itinerary-stop/commands/create-itinerary-stop.command';
 import { UpdateItineraryStopCommand } from '@/modules/itinerary-stop/commands/update-itinerary-stop.command';
 import { createItineraryStopContainer } from '@/modules/itinerary-stop/container';
+import { storageService } from '@/modules/shared/services/storage.service';
 
 const uuidSchema = z.string().uuid();
 
@@ -32,13 +33,15 @@ export async function createTourAction(
   try {
     await requirePermission('tours.create');
 
+    const resolvedImageUrl = await storageService.resolveUploadedFile(formData, 'imageUrl', 'tours');
+
     const rawData = {
       id: formData.get('id'),
       name: formData.get('name'),
       slug: formData.get('slug'),
       description: formData.get('description') || null,
       shortDescription: formData.get('shortDescription') || null,
-      imageUrl: formData.get('imageUrl') || null,
+      imageUrl: resolvedImageUrl,
       durationDays: formData.get('durationDays') ? Number(formData.get('durationDays')) : 1,
       basePrice: formData.get('basePrice'),
       currency: formData.get('currency') || 'USD',
@@ -85,12 +88,14 @@ export async function updateTourAction(
       return { status: 'error', message: 'ID de tour inválido.' };
     }
 
+    const resolvedImageUrl = await storageService.resolveUploadedFile(formData, 'imageUrl', 'tours');
+
     const rawData = {
       name: formData.get('name'),
       slug: formData.get('slug'),
       description: formData.get('description') || null,
       shortDescription: formData.get('shortDescription') || null,
-      imageUrl: formData.get('imageUrl') || null,
+      imageUrl: resolvedImageUrl,
       durationDays: formData.get('durationDays') ? Number(formData.get('durationDays')) : 1,
       basePrice: formData.get('basePrice'),
       currency: formData.get('currency') || 'USD',

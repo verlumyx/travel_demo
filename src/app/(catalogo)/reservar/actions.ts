@@ -1,7 +1,5 @@
 'use server';
  
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -15,7 +13,7 @@ import { UpdateCustomerCommand } from '@/modules/customer/commands/update-custom
 import { toCustomerDto, type CustomerDto } from '@/modules/customer/serializers/customer.serializer';
 import { CreateBookingCommand } from '@/modules/booking/commands/create-booking.command';
 import { CreatePaymentCommand } from '@/modules/payment/commands/create-payment.command';
-import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { storageService } from '@/modules/shared/services/storage.service';
 import { toActionError, type ActionState } from '@/modules/shared/actions/action-state';
 
 export type CheckCustomerResult = {
@@ -167,45 +165,7 @@ export async function clientCheckoutAction(
     let uploadedProofUrl: string | undefined = undefined;
 
     if (!isCash && proofFile && typeof proofFile === 'object' && proofFile.size > 0 && proofFile.name) {
-      const bytes = await proofFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const rawExt = proofFile.name.split('.').pop()?.toLowerCase() || 'png';
-      const allowedExts = ['png', 'jpg', 'jpeg', 'webp', 'pdf'];
-      const ext = allowedExts.includes(rawExt) ? rawExt : 'png';
-      const fileName = `payments/proof_${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
-
-      try {
-        const supabase = createSupabaseAdminClient();
-        const { error: uploadError } = await supabase.storage
-          .from('travel-media')
-          .upload(fileName, buffer, {
-            contentType: proofFile.type || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg'),
-            cacheControl: '31536000',
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.error('Error al subir comprobante a Supabase Storage:', uploadError);
-          // Fallback a almacenamiento local si Supabase tiene algún inconveniente
-          const localFileName = `proof_${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
-          const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payments');
-          await fs.mkdir(uploadDir, { recursive: true });
-          await fs.writeFile(path.join(uploadDir, localFileName), buffer);
-          uploadedProofUrl = `/uploads/payments/${localFileName}`;
-        } else {
-          const { data: publicData } = supabase.storage
-            .from('travel-media')
-            .getPublicUrl(fileName);
-          uploadedProofUrl = publicData.publicUrl;
-        }
-      } catch (storageErr) {
-        console.error('Excepción al conectar con Supabase Storage:', storageErr);
-        const localFileName = `proof_${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payments');
-        await fs.mkdir(uploadDir, { recursive: true });
-        await fs.writeFile(path.join(uploadDir, localFileName), buffer);
-        uploadedProofUrl = `/uploads/payments/${localFileName}`;
-      }
+      uploadedProofUrl = await storageService.uploadFile(proofFile, { folder: 'payments' });
     }
 
     let effectivePaymentDate = new Date();

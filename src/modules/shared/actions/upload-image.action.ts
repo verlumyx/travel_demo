@@ -1,7 +1,7 @@
 'use server';
 
 import { getSessionUser } from '@/modules/shared/auth/require-permission';
-import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { storageService, type UploadFolder } from '@/modules/shared/services/storage.service';
 
 export interface UploadImageResult {
   success: boolean;
@@ -18,11 +18,10 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
-const BUCKET_NAME = 'travel-media';
 
 export async function uploadImageAction(
   formData: FormData,
-  folder: 'destinations' | 'tours' | 'general' | 'payments' = 'general',
+  folder: UploadFolder = 'general',
 ): Promise<UploadImageResult> {
   try {
     const user = await getSessionUser();
@@ -55,44 +54,14 @@ export async function uploadImageAction(
       };
     }
 
-    const supabase = createSupabaseAdminClient();
-
-    // Sanitizar extensión y armar ruta única
-    const rawExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const ext = ['jpeg', 'jpg', 'png', 'webp', 'avif', 'gif'].includes(rawExt)
-      ? rawExt
-      : 'jpg';
-
-    const timestamp = Date.now();
-    const randomId = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
-    const filePath = `${folder}/${timestamp}-${randomId}.${ext}`;
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(filePath, buffer, {
-        contentType: file.type,
-        cacheControl: '31536000', // 1 año de caché
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error('Error al subir a Supabase Storage:', uploadError);
-      return {
-        success: false,
-        error: `Error al subir la imagen a Supabase Storage: ${uploadError.message}`,
-      };
-    }
-
-    const { data: publicData } = supabase.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(filePath);
+    const url = await storageService.uploadFile(file, {
+      folder,
+      maxSizeBytes: MAX_FILE_SIZE,
+    });
 
     return {
       success: true,
-      url: publicData.publicUrl,
+      url,
     };
   } catch (error: unknown) {
     console.error('Error inesperado en uploadImageAction:', error);
