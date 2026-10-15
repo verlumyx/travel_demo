@@ -24,6 +24,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   X,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -40,7 +41,9 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   UserCog,
   Shield,
   LayoutDashboard,
+  FileText,
 };
+
 
 export interface AdminSidebarProps {
   user?: {

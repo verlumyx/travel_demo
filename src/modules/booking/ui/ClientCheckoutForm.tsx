@@ -199,25 +199,29 @@ export function ClientCheckoutForm({
 
   // Redirigir paso automáticamente si el servidor responde con errores específicos
   useEffect(() => {
-    if (state.status === 'error' && state.fieldErrors) {
-      if (
-        state.fieldErrors.holderFirstName ||
-        state.fieldErrors.holderLastName ||
-        state.fieldErrors.holderDocumentNumber ||
-        state.fieldErrors.holderPhone
-      ) {
-        setStep(3);
-      } else if (state.fieldErrors.holderEmail) {
-        setStep(2);
-      } else if (
-        state.fieldErrors.paymentReference ||
-        state.fieldErrors.paymentDate ||
-        state.fieldErrors.proofFile
-      ) {
-        setStep(4);
+    if (state.status === 'error') {
+      if (state.fieldErrors) {
+        if (
+          state.fieldErrors.holderFirstName ||
+          state.fieldErrors.holderLastName ||
+          state.fieldErrors.holderDocumentNumber ||
+          state.fieldErrors.holderPhone
+        ) {
+          setStep(3);
+        } else if (state.fieldErrors.holderEmail) {
+          setStep(2);
+        } else if (
+          state.fieldErrors.paymentReference ||
+          state.fieldErrors.paymentDate ||
+          state.fieldErrors.proofFile
+        ) {
+          setStep(4);
+        }
       }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [state]);
+
 
   const handleSlotsChange = (newCount: number) => {
     setSlotsCount(newCount);
@@ -1434,7 +1438,19 @@ export function ClientCheckoutForm({
           </div>
         </div>
 
+        {/* Alerta de error en Paso 4 para visualización directa en móviles */}
+        {state.status === 'error' && state.message && (
+          <div className="p-4 rounded-2xl text-xs font-semibold bg-destructive/10 text-destructive border border-destructive/20 flex items-start gap-2.5 animate-in fade-in-50">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold block">No se pudo procesar la reserva</span>
+              <span>{state.message}</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between pt-4 border-t border-border">
+
           <button
             type="button"
             onClick={() => setStep(3)}

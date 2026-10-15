@@ -27,4 +27,6 @@ export const MENU_REGISTRY: MenuEntry[] = [
   { id: 'users', label: 'Usuarios', url: '/admin/users', permission: 'users.list', icon: 'UserCog', order: 100, section: 'config' },
   { id: 'roles', label: 'Roles', url: '/admin/roles', permission: 'roles.list', icon: 'Shield', order: 110, section: 'config' },
   { id: 'payment-methods', label: 'Métodos de Pago', url: '/admin/payment-methods', permission: 'payment-methods.list', icon: 'WalletCards', order: 120, section: 'config' },
+  { id: 'system-logs', label: 'Registro de Errores', url: '/admin/system-logs', permission: 'system-logs.list', icon: 'FileText', order: 130, section: 'config' },
 ];
+

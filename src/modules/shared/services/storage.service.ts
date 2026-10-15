@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { DomainError } from '@/modules/shared/exceptions/domain-error';
+import { logSystemError } from '@/modules/system-log/services/system-logger';
 
 export type UploadFolder = 'destinations' | 'tours' | 'general' | 'payments';
 
@@ -75,6 +76,14 @@ export class StorageService {
 
       if (uploadError) {
         console.error('Error al subir archivo a Supabase Storage:', uploadError);
+        await logSystemError({
+          level: 'error',
+          source: 'storage',
+          action: 'uploadBuffer',
+          message: `Error al subir archivo a Supabase Storage (${bucket}/${filePath}): ${uploadError.message}`,
+          error: uploadError,
+          context: { filePath, bucket, folder, ext, contentType, bufferSize: buffer.length },
+        });
         return await this.saveLocalFallback(buffer, folder, ext);
       }
 
@@ -85,8 +94,17 @@ export class StorageService {
       return publicData.publicUrl;
     } catch (storageErr) {
       console.error('Excepción al conectar con Supabase Storage:', storageErr);
+      await logSystemError({
+        level: 'error',
+        source: 'storage',
+        action: 'uploadBuffer',
+        message: `Excepción de red/conexión con Supabase Storage para ${filePath}`,
+        error: storageErr,
+        context: { filePath, bucket, folder, ext, contentType },
+      });
       return await this.saveLocalFallback(buffer, folder, ext);
     }
+
   }
 
   /**

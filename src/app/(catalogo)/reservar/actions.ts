@@ -16,6 +16,7 @@ import { CreatePaymentCommand } from '@/modules/payment/commands/create-payment.
 import { storageService } from '@/modules/shared/services/storage.service';
 import { toActionError, type ActionState } from '@/modules/shared/actions/action-state';
 import { DomainError } from '@/modules/shared/exceptions/domain-error';
+import { logSystemError } from '@/modules/system-log/services/system-logger';
 
 export type CheckCustomerResult = {
   found: boolean;
@@ -43,9 +44,18 @@ export async function checkCustomerByEmailAction(email: string): Promise<CheckCu
     };
   } catch (error) {
     console.error('Error comprobando correo del cliente:', error);
+    await logSystemError({
+      level: 'warn',
+      source: 'checkout',
+      action: 'checkCustomerByEmailAction',
+      message: 'Error comprobando correo del cliente',
+      error,
+      context: { email },
+    });
     return { found: false, error: 'No se pudo consultar el cliente en el sistema.' };
   }
 }
+
 
 const passengerInputSchema = z.object({
   firstName: z.string().min(1, 'El nombre es obligatorio.'),
@@ -83,38 +93,42 @@ export async function clientCheckoutAction(
 ): Promise<ActionState> {
   let createdBookingCode: string | null = null;
   let createdBookingId: string | null = null;
-  let departureId: string | null = null;
+
+  const rawPaymentMethod = (formData.get('paymentMethod') || '').toString().trim();
+  const isCashExplicit = formData.get('isCash') === 'true';
+  const methodLower = rawPaymentMethod.toLowerCase();
+  const isCash =
+    isCashExplicit ||
+    rawPaymentMethod === 'cash_usd' ||
+    rawPaymentMethod === 'cash_ves' ||
+    methodLower.includes('efectivo') ||
+    methodLower.includes('cash') ||
+    methodLower.includes('taquilla');
+
+  const rawProof = formData.get('proofFile');
+  const proofFile = rawProof && typeof rawProof === 'object' && 'size' in rawProof ? (rawProof as File) : null;
+
+  const rawData = {
+    departureId: formData.get('departureId'),
+    slotsCount: formData.get('slotsCount'),
+    holderFirstName: formData.get('holderFirstName'),
+    holderLastName: formData.get('holderLastName'),
+    holderEmail: formData.get('holderEmail'),
+    holderPhone: formData.get('holderPhone'),
+    holderDocumentType: formData.get('holderDocumentType') || 'cedula',
+    holderDocumentNumber: formData.get('holderDocumentNumber'),
+    emergencyContact: formData.get('emergencyContact') || null,
+    emergencyPhone: formData.get('emergencyPhone') || null,
+    passengersJson: formData.get('passengersJson') || '[]',
+    paymentMethod: rawPaymentMethod,
+    paymentReference: formData.get('paymentReference'),
+    paymentDate: formData.get('paymentDate'),
+    notes: formData.get('notes') || null,
+  };
+
+  let departureId: string | null = (rawData.departureId as string) || null;
 
   try {
-    const rawPaymentMethod = (formData.get('paymentMethod') || '').toString().trim();
-    const isCashExplicit = formData.get('isCash') === 'true';
-    const methodLower = rawPaymentMethod.toLowerCase();
-    const isCash =
-      isCashExplicit ||
-      rawPaymentMethod === 'cash_usd' ||
-      rawPaymentMethod === 'cash_ves' ||
-      methodLower.includes('efectivo') ||
-      methodLower.includes('cash') ||
-      methodLower.includes('taquilla');
-
-    const rawData = {
-      departureId: formData.get('departureId'),
-      slotsCount: formData.get('slotsCount'),
-      holderFirstName: formData.get('holderFirstName'),
-      holderLastName: formData.get('holderLastName'),
-      holderEmail: formData.get('holderEmail'),
-      holderPhone: formData.get('holderPhone'),
-      holderDocumentType: formData.get('holderDocumentType') || 'cedula',
-      holderDocumentNumber: formData.get('holderDocumentNumber'),
-      emergencyContact: formData.get('emergencyContact') || null,
-      emergencyPhone: formData.get('emergencyPhone') || null,
-      passengersJson: formData.get('passengersJson') || '[]',
-      paymentMethod: rawPaymentMethod,
-      paymentReference: formData.get('paymentReference'),
-      paymentDate: formData.get('paymentDate'),
-      notes: formData.get('notes') || null,
-    };
-
     if (!isCash) {
       const refStr = (rawData.paymentReference || '').toString().trim();
       if (refStr.length < 2) {
@@ -162,14 +176,29 @@ export async function clientCheckoutAction(
     }
 
     // Process file upload if provided
-    const proofFile = formData.get('proofFile') as File | null;
     let uploadedProofUrl: string | undefined = undefined;
 
-    if (!isCash && proofFile && typeof proofFile === 'object' && proofFile.size > 0 && proofFile.name) {
+    if (!isCash && proofFile && proofFile.size > 0 && proofFile.name) {
       try {
         uploadedProofUrl = await storageService.uploadFile(proofFile, { folder: 'payments' });
       } catch (uploadError) {
+
         console.error('Error al subir comprobante en clientCheckoutAction:', uploadError);
+        await logSystemError({
+          level: 'error',
+          source: 'storage',
+          action: 'clientCheckoutAction:uploadProofFile',
+          path: `/reservar/${rawData.departureId}`,
+          message: 'Fallo al subir comprobante de pago durante checkout',
+          error: uploadError,
+          context: {
+            departureId: rawData.departureId,
+            holderEmail: rawData.holderEmail,
+            fileName: proofFile.name,
+            fileSize: proofFile.size,
+            fileType: proofFile.type,
+          },
+        });
         const errorMsg =
           uploadError instanceof DomainError
             ? uploadError.message
@@ -183,6 +212,7 @@ export async function clientCheckoutAction(
         };
       }
     }
+
 
     let effectivePaymentDate = new Date();
     if (data.paymentDate && data.paymentDate.trim()) {
@@ -311,7 +341,43 @@ export async function clientCheckoutAction(
     });
   } catch (error) {
     console.error('Error procesando checkout de reserva:', error);
+    await logSystemError({
+      level: 'error',
+      source: 'checkout',
+      action: 'clientCheckoutAction',
+      path: `/reservar/${departureId || (formData.get('departureId') as string)}`,
+      message: error instanceof Error ? error.message : 'Error procesando checkout de reserva online',
+      error,
+      context: {
+        departureId: departureId || (formData.get('departureId') as string),
+        slotsCount: formData.get('slotsCount'),
+        holderEmail: formData.get('holderEmail'),
+        holderName: `${formData.get('holderFirstName') || ''} ${formData.get('holderLastName') || ''}`.trim(),
+        holderPhone: formData.get('holderPhone'),
+        paymentMethod: rawPaymentMethod,
+        paymentReference: formData.get('paymentReference'),
+        hasProofFile: Boolean(proofFile && proofFile.size > 0),
+        proofFileName: proofFile?.name,
+        proofFileSize: proofFile?.size,
+        isCash,
+      },
+    });
+
     if (error instanceof DomainError) {
+      if (
+        error.code === 'DEPARTURE_NOT_FOUND' ||
+        error.message.toLowerCase().includes('not found') ||
+        error.message.toLowerCase().includes('departure with id')
+      ) {
+        return {
+          status: 'error',
+          message:
+            'La salida programada seleccionada ya no se encuentra disponible o ha expirado. Por favor regresa al catálogo de tours para seleccionar una fecha activa.',
+          fieldErrors: {
+            departureId: ['Esta fecha o salida ya no está disponible en el catálogo.'],
+          },
+        };
+      }
       return { status: 'error', message: error.message };
     }
     const errorMsg = error instanceof Error ? error.message : 'Error inesperado';
@@ -320,6 +386,7 @@ export async function clientCheckoutAction(
       message: `No se pudo completar la reserva (${errorMsg}). Por favor verifica los datos o intenta nuevamente.`,
     };
   }
+
 
   revalidatePath('/tours');
   revalidatePath(`/reservar/${departureId}`);
