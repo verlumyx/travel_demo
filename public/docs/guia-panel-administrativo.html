@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TravelDemo - Guía Operativa del Panel Administrativo</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 14mm 16mm 14mm 16mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #1e293b;
+      background: #ffffff;
+      line-height: 1.5;
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      page-break-after: always;
+      position: relative;
+      min-height: 260mm;
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    /* Header & Branding */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #0f766e;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, #0f766e, #115e59);
+      color: white;
+      font-weight: 800;
+      font-size: 18px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-meta {
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.2;
+    }
+
+    .badge-demo {
+      display: inline-block;
+      background: #ccfbf1;
+      color: #0f766e;
+      font-weight: 700;
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid #99f6e4;
+    }
+
+    /* Titles */
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f766e;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin-top: 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+
+    p {
+      color: #475569;
+      margin-bottom: 10px;
+    }
+
+    .lead {
+      font-size: 14px;
+      color: #334155;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    /* Highlight Banner */
+    .banner {
+      background: linear-gradient(135deg, #042f2e 0%, #0f766e 100%);
+      color: #f0fdfa;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(15, 118, 110, 0.15);
+    }
+
+    .banner h2 {
+      color: #ffffff;
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-top: 0;
+      font-size: 17px;
+    }
+
+    .banner p {
+      color: #ccfbf1;
+      margin-bottom: 0;
+      font-size: 12.5px;
+    }
+
+    /* Cards Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .card-accent {
+      border-left: 4px solid #0f766e;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .card-tag {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      color: #475569;
+      text-transform: uppercase;
+    }
+
+    .card-tag.teal {
+      background: #ccfbf1;
+      color: #0f766e;
+    }
+
+    .card-tag.emerald {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .card-tag.amber {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .card ul {
+      margin-left: 16px;
+      color: #475569;
+      font-size: 12px;
+    }
+
+    .card ul li {
+      margin-bottom: 3px;
+    }
+
+    /* Step Box */
+    .step-box {
+      display: flex;
+      gap: 14px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      align-items: flex-start;
+    }
+
+    .step-number {
+      background: #0f766e;
+      color: white;
+      font-weight: 800;
+      font-size: 15px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-content {
+      flex-grow: 1;
+    }
+
+    .step-content h4 {
+      font-size: 13px;
+      color: #0f172a;
+      margin-bottom: 3px;
+    }
+
+    .step-content p {
+      font-size: 12px;
+      margin-bottom: 0;
+      color: #64748b;
+    }
+
+    /* Credentials Callout */
+    .creds-callout {
+      background: #f1f5f9;
+      border: 1px dashed #94a3b8;
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-around;
+      margin-top: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    .creds-item {
+      text-align: center;
+    }
+
+    .creds-label {
+      font-size: 10px;
+      color: #64748b;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .creds-value {
+      font-weight: 600;
+      color: #0f766e;
+      background: #ffffff;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 600;
+      border-bottom: 2px solid #cbd5e1;
+    }
+
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #475569;
+    }
+
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== PÁGINA 1 ==================== -->
+  <div class="page">
+    <div class="header">
+      <div class="logo-container">
+        <div class="logo-badge">TravelDemo</div>
+        <div class="logo-meta">
+          <strong>Plataforma Integral para Agencias de Turismo</strong><br>
+          Manual Operativo y Guía de Módulos
+        </div>
+      </div>
+      <div>
+        <span class="badge-demo">Demo Interactiva</span>
+      </div>
+    </div>
+
+    <h1>Guía del Panel Administrativo</h1>
+    <p class="lead">
+      Bienvenido al centro de mando de tu agencia. Este manual te explica cómo gestionar tus tours, salidas programadas, cupos de transporte, conciliación de pagos y listas de pasajeros en un solo lugar y en tiempo real.
+    </p>
+
+    <div class="banner">
+      <h2>🚀 ¿Qué problemas elimina este sistema en tu agencia?</h2>
+      <p>
+        • <strong>Cero sobreventa (Overbooking):</strong> Los asientos de tus unidades de transporte se descuentan automáticamente con cada reserva.<br>
+        • <strong>Atención 24/7 sin perder ventas:</strong> Los clientes pueden consultar itinerarios y reservar en línea en segundos.<br>
+        • <strong>Fin al caos de pagos:</strong> Concilia fácilmente abonos fraccionados (50% anticipo, Pago Móvil, Zelle, efectivo o divisas).<br>
+        • <strong>Listas de pasajeros en 1 clic:</strong> Manifiesto de abordaje listo para tus choferes y guías turísticos.
+      </p>
+    </div>
+
+    <h2>1. Arquitectura de Módulos Principales</h2>
+
+    <div class="grid-2">
+      <div class="card card-accent">
+        <div class="card-header">
+          <h3>📊 Dashboard en Vivo</h3>
+          <span class="card-tag teal">Mando General</span>
+        </div>
+        <p>Métricas de facturación del mes, tasa de ocupación de flota, alertas de pagos pendientes por auditar y lista de salidas próximas.</p>
+        <ul>
+          <li>Ventas acumuladas y cobradas</li>
+          <li>Gráfica de ocupación por salida</li>
+          <li>Acceso rápido a reservas urgentes</li>
+        </ul>
+      </div>
+
+      <div class="card card-accent">
+        <div class="card-header">
+          <h3>🗺️ Catálogo: Destinos y Tours</h3>
+          <span class="card-tag">Inventario</span>
+        </div>
+        <p>Crea las experiencias que verá el turista en el portal público con itinerarios detallados, paradas y galerías de fotos.</p>
+        <ul>
+          <li>Destinos por región o estado</li>
+          <li>Categorías (Playa, Aventura, Montaña)</li>
+          <li>Paradas del itinerario con horarios</li>
+        </ul>
+      </div>
+
+      <div class="card card-accent">
+        <div class="card-header">
+          <h3>🚌 Salidas y Control de Flota</h3>
+          <span class="card-tag emerald">Operaciones</span>
+        </div>
+        <p>Programa salidas con fecha y hora. Asigna unidades de transporte (autobuses, vans, lanchas) con su aforo exacto de asientos.</p>
+        <ul>
+          <li>Cupos controlados por vehículo</li>
+          <li>Prevención estricta de sobreventa</li>
+          <li>Apertura y cierre de salidas con un clic</li>
+        </ul>
+      </div>
+
+      <div class="card card-accent">
+        <div class="card-header">
+          <h3>🎟️ Reservas y Pasajeros</h3>
+          <span class="card-tag amber">Comercial</span>
+        </div>
+        <p>Audita las reservas que entran desde la web o carga reservas manuales de clientes que acuden a tu oficina o WhatsApp.</p>
+        <ul>
+          <li>Datos de cada pasajero y contactos</li>
+          <li>Exportación de lista de abordaje / manifiesto</li>
+          <li>Control de estados: Pendiente, Confirmada</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>TravelDemo · Sistema de Gestión de Turismo</span>
+      <span>Página 1 de 3</span>
+    </div>
+  </div>
+
+  <!-- ==================== PÁGINA 2 ==================== -->
+  <div class="page">
+    <div class="header">
+      <div class="logo-container">
+        <div class="logo-badge">TravelDemo</div>
+        <div class="logo-meta">Módulos Financieros y Operativos</div>
+      </div>
+      <div>
+        <span class="badge-demo">Demo Interactiva</span>
+      </div>
+    </div>
+
+    <h2>2. Pagos, Conciliación y Clientes</h2>
+
+    <div class="grid-2">
+      <div class="card card-accent">
+        <div class="card-header">
+          <h3>💳 Conciliación de Pagos</h3>
+          <span class="card-tag teal">Finanzas</span>
+        </div>
+        <p>Revisa los comprobantes que cargan los clientes. El sistema soporta abonos parciales (ej. 50% al reservar y 50% antes del viaje).</p>
+        <ul>
+          <li>Aprobación o rechazo con observaciones</li>
+          <li>Cálculo automático de saldos pendientes</li>
+          <li>Soporte de múltiples monedas y tasas</li>
+        </ul>
+      </div>
+
+      <div class="card card-accent">
+        <div class="card-header">
+          <h3>👥 Clientes (CRM) y Usuarios</h3>
+          <span class="card-tag">Administración</span>
+        </div>
+        <p>Directorio centralizado con historial de reservas y gastos de cada viajero. Control de acceso seguro por roles.</p>
+        <ul>
+          <li>Historial de fidelidad por cliente</li>
+          <li>Roles: Administrador, Operador, Vendedor</li>
+          <li>Seguridad y auditoría de acciones</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>3. El Ciclo Operativo de una Salida (Flujo Paso a Paso)</h2>
+
+    <div class="step-box">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <h4>Configurar la Experiencia (Tours y Salidas)</h4>
+        <p>Creas el tour con su precio por persona, seleccionas la fecha de salida y le asignas las unidades de transporte (por ejemplo, 1 Autobús Yutong de 48 puestos). La salida queda publicada en el portal web.</p>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <h4>Venta y Reserva (En línea o por mostrador)</h4>
+        <p>El cliente entra a la web, elige los cupos, ingresa los datos de los pasajeros y reporta su comprobante de pago móvil, Zelle o transferencia. El sistema reserva los puestos de inmediato.</p>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <h4>Auditoría del Pago en el Panel</h4>
+        <p>Tu equipo de administración recibe la alerta en <em>Pagos</em>, verifica el número de referencia y aprueba el abono. El estado de la reserva cambia automáticamente a <strong>Confirmada</strong>.</p>
+      </div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <h4>Día de Salida: Manifiesto de Pasajeros</h4>
+        <p>Desde el módulo de <em>Salidas</em> o <em>Reservas</em>, el coordinador descarga o imprime la lista de abordaje con los nombres, documentos de identidad y teléfonos de emergencia listos para el guía.</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>TravelDemo · Sistema de Gestión de Turismo</span>
+      <span>Página 2 de 3</span>
+    </div>
+  </div>
+
+  <!-- ==================== PÁGINA 3 ==================== -->
+  <div class="page">
+    <div class="header">
+      <div class="logo-container">
+        <div class="logo-badge">TravelDemo</div>
+        <div class="logo-meta">Guía de Prueba Rápida</div>
+      </div>
+      <div>
+        <span class="badge-demo">Demo Interactiva</span>
+      </div>
+    </div>
+
+    <h2>4. ¿Cómo probar la Demo en 5 Minutos? (Ruta Guiada)</h2>
+    <p>Para experimentar la potencia del sistema, te sugerimos seguir estos 4 pasos prácticos:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 22%;">Paso</th>
+          <th style="width: 38%;">Qué hacer</th>
+          <th style="width: 40%;">Qué vas a comprobar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. El Viajero</strong><br><span style="font-size:10px; color:#0f766e;">Portal Público</span></td>
+          <td>Entra a la página principal, haz clic en un tour disponible y simula una reserva para 2 personas.</td>
+          <td>Verás lo fácil e intuitivo que es para tus clientes elegir fecha y registrar pasajeros.</td>
+        </tr>
+        <tr>
+          <td><strong>2. El Operador</strong><br><span style="font-size:10px; color:#0f766e;">Panel Admin</span></td>
+          <td>Ingresa al panel administrativo y dirígete a <strong>Reservas</strong>. Verás la reserva que acabas de emitir.</td>
+          <td>Comprobarás cómo entra la información en tiempo real sin perder datos en chats.</td>
+        </tr>
+        <tr>
+          <td><strong>3. El Administrador</strong><br><span style="font-size:10px; color:#0f766e;">Módulo Pagos</span></td>
+          <td>Entra a <strong>Pagos</strong>, abre el comprobante reportado y haz clic en <em>Aprobar Pago</em>.</td>
+          <td>El saldo pendiente se descuenta y la reserva pasa a estado pagada / confirmada.</td>
+        </tr>
+        <tr>
+          <td><strong>4. La Logística</strong><br><span style="font-size:10px; color:#0f766e;">Salidas y Flota</span></td>
+          <td>Ve a <strong>Salidas</strong> y abre el detalle de la fecha. Observa el gráfico de ocupación del autobús.</td>
+          <td>Verás cómo los 2 puestos quedaron reservados y el manifiesto de abordaje listo.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top: 24px;">5. Credenciales de Acceso a la Demo</h2>
+
+    <div class="creds-callout">
+      <div class="creds-item">
+        <span class="creds-label">Enlace de Acceso</span>
+        <span class="creds-value">https://traveldemo.com/admin</span>
+      </div>
+      <div class="creds-item">
+        <span class="creds-label">Usuario Demo</span>
+        <span class="creds-value">admin@traveldemo.com</span>
+      </div>
+      <div class="creds-item">
+        <span class="creds-label">Contraseña</span>
+        <span class="creds-value">AdminPassword123*</span>
+      </div>
+    </div>
+
+    <div class="banner" style="margin-top: 24px; background: #0f172a;">
+      <h2 style="color: #38bdf8;">¿Listo para digitalizar tu agencia?</h2>
+      <p style="color: #cbd5e1;">
+        Este sistema se personaliza con el logo, colores, métodos de pago y destinos de tu agencia en pocos días. Si deseas una demostración guiada por videollamada o consultar planes de implementación, contáctanos.
+      </p>
+    </div>
+
+    <div class="footer">
+      <span>TravelDemo · Sistema de Gestión de Turismo</span>
+      <span>Página 3 de 3</span>
+    </div>
+  </div>
+
+</body>
+</html>
