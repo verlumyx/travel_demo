@@ -66,6 +66,70 @@ interface CompanionPassenger {
   phone: string;
 }
 
+/**
+ * Comprime imágenes en el navegador antes de enviarlas al servidor.
+ * Convierte fotos pesadas de teléfonos (5-15 MB) a JPEGs optimizados de ~150-300 KB.
+ */
+async function compressImageFile(file: File, maxDimension = 1600, quality = 0.82): Promise<File> {
+  if (typeof window === 'undefined' || !file.type.startsWith('image/') || file.type === 'image/svg+xml') {
+    return file;
+  }
+
+  // Si ya es liviana (menor a 600 KB), no es necesario recomprimir
+  if (file.size <= 600 * 1024) {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return resolve(file);
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob || blob.size >= file.size) {
+              return resolve(file);
+            }
+            const cleanName = file.name.replace(/\.[^.]+$/, '.jpg');
+            const compressedFile = new File([blob], cleanName, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          'image/jpeg',
+          quality,
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ClientCheckoutForm({
   departure,
   tour,
@@ -128,6 +192,8 @@ export function ClientCheckoutForm({
   const [paymentDate, setPaymentDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [selectedProofFile, setSelectedProofFile] = useState<File | null>(null);
   const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
+  const [isOptimizingImage, setIsOptimizingImage] = useState<boolean>(false);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [step4Errors, setStep4Errors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -143,7 +209,11 @@ export function ClientCheckoutForm({
         setStep(3);
       } else if (state.fieldErrors.holderEmail) {
         setStep(2);
-      } else if (state.fieldErrors.paymentReference || state.fieldErrors.paymentDate) {
+      } else if (
+        state.fieldErrors.paymentReference ||
+        state.fieldErrors.paymentDate ||
+        state.fieldErrors.proofFile
+      ) {
         setStep(4);
       }
     }
@@ -317,22 +387,70 @@ export function ClientCheckoutForm({
   };
 
   // Manejo de archivo de comprobante en Paso 4
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null);
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      setSelectedProofFile(file);
 
-      if (file.type.startsWith('image/')) {
-        const objectUrl = URL.createObjectURL(file);
-        setProofPreviewUrl(objectUrl);
-      } else {
-        setProofPreviewUrl(null);
+      // Validar tipo de archivo
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      const isPdf = file.type === 'application/pdf' || fileExt === 'pdf';
+      const isImg = file.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp'].includes(fileExt || '');
+
+      if (!isPdf && !isImg) {
+        setFileError('Formato no admitido. Por favor selecciona una imagen (PNG, JPG, WEBP) o un documento PDF.');
+        handleRemoveFile();
+        return;
+      }
+
+      // Validar PDF (máx 4.5 MB)
+      if (isPdf) {
+        if (file.size > 4.5 * 1024 * 1024) {
+          setFileError('El archivo PDF excede el tamaño máximo permitido (4.5 MB).');
+          handleRemoveFile();
+          return;
+        }
+        setSelectedProofFile(file);
+        if (proofPreviewUrl) {
+          URL.revokeObjectURL(proofPreviewUrl);
+          setProofPreviewUrl(null);
+        }
+        return;
+      }
+
+      // Comprimir imágenes automáticamente para envío rápido móvil
+      setIsOptimizingImage(true);
+      try {
+        const optimizedFile = await compressImageFile(file);
+        setSelectedProofFile(optimizedFile);
+        if (proofPreviewUrl) {
+          URL.revokeObjectURL(proofPreviewUrl);
+        }
+        setProofPreviewUrl(URL.createObjectURL(optimizedFile));
+
+        // Actualizar el FileList del input nativo para que el FormData del formulario envíe el archivo comprimido
+        if (fileInputRef.current) {
+          try {
+            const dt = new DataTransfer();
+            dt.items.add(optimizedFile);
+            fileInputRef.current.files = dt.files;
+          } catch {
+            // Ignorar en entornos donde DataTransfer no permita asignar input.files
+          }
+        }
+      } catch (err) {
+        console.error('Error optimizando imagen de comprobante:', err);
+        setSelectedProofFile(file);
+        setProofPreviewUrl(URL.createObjectURL(file));
+      } finally {
+        setIsOptimizingImage(false);
       }
     }
   };
 
   const handleRemoveFile = () => {
     setSelectedProofFile(null);
+    setFileError(null);
     if (proofPreviewUrl) {
       URL.revokeObjectURL(proofPreviewUrl);
       setProofPreviewUrl(null);
@@ -1274,11 +1392,31 @@ export function ClientCheckoutForm({
                       </button>
                     </div>
                   )}
+                  {/* Indicador de optimización en curso */}
+                  {isOptimizingImage && (
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-primary/10 text-primary text-xs font-medium">
+                      <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                      <span>Optimizando comprobante para envío rápido móvil...</span>
+                    </div>
+                  )}
+
+                  {/* Error de validación local del archivo */}
+                  {fileError && (
+                    <p className="text-destructive text-[11px] font-medium">{fileError}</p>
+                  )}
                 </div>
 
                 {state.fieldErrors?.proofFile && (
-                  <p className="text-destructive text-[11px]">{state.fieldErrors.proofFile[0]}</p>
+                  <p className="text-destructive text-[11px] font-medium">{state.fieldErrors.proofFile[0]}</p>
                 )}
+
+                {/* Nota de soporte y flexibilidad */}
+                <div className="p-3 rounded-xl bg-muted/40 border border-border/60 text-[11px] text-muted-foreground flex items-start gap-2">
+                  <span className="text-sm shrink-0">💡</span>
+                  <span>
+                    <strong>Nota:</strong> Si tienes algún problema subiendo el archivo de comprobante desde tu dispositivo móvil, puedes continuar sin adjuntarlo e ingresar el número de referencia; luego podrás enviar la captura a nuestro equipo por WhatsApp.
+                  </span>
+                </div>
               </div>
             </>
           )}
@@ -1308,13 +1446,18 @@ export function ClientCheckoutForm({
 
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isPending || isOptimizingImage}
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/20 disabled:opacity-50 cursor-pointer"
           >
             {isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Procesando Reserva y Subiendo Comprobante...
+                Procesando Reserva y Guardando Comprobante...
+              </>
+            ) : isOptimizingImage ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Optimizando Comprobante...
               </>
             ) : (
               <>

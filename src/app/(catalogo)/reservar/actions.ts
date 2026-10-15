@@ -15,6 +15,7 @@ import { CreateBookingCommand } from '@/modules/booking/commands/create-booking.
 import { CreatePaymentCommand } from '@/modules/payment/commands/create-payment.command';
 import { storageService } from '@/modules/shared/services/storage.service';
 import { toActionError, type ActionState } from '@/modules/shared/actions/action-state';
+import { DomainError } from '@/modules/shared/exceptions/domain-error';
 
 export type CheckCustomerResult = {
   found: boolean;
@@ -165,7 +166,22 @@ export async function clientCheckoutAction(
     let uploadedProofUrl: string | undefined = undefined;
 
     if (!isCash && proofFile && typeof proofFile === 'object' && proofFile.size > 0 && proofFile.name) {
-      uploadedProofUrl = await storageService.uploadFile(proofFile, { folder: 'payments' });
+      try {
+        uploadedProofUrl = await storageService.uploadFile(proofFile, { folder: 'payments' });
+      } catch (uploadError) {
+        console.error('Error al subir comprobante en clientCheckoutAction:', uploadError);
+        const errorMsg =
+          uploadError instanceof DomainError
+            ? uploadError.message
+            : 'No fue posible subir el comprobante de pago al almacenamiento. Verifica que el archivo no supere los 5 MB o puedes continuar sin adjuntarlo e indicar el número de referencia.';
+        return {
+          status: 'error',
+          message: errorMsg,
+          fieldErrors: {
+            proofFile: [errorMsg],
+          },
+        };
+      }
     }
 
     let effectivePaymentDate = new Date();
@@ -294,7 +310,15 @@ export async function clientCheckoutAction(
       );
     });
   } catch (error) {
-    return toActionError(error);
+    console.error('Error procesando checkout de reserva:', error);
+    if (error instanceof DomainError) {
+      return { status: 'error', message: error.message };
+    }
+    const errorMsg = error instanceof Error ? error.message : 'Error inesperado';
+    return {
+      status: 'error',
+      message: `No se pudo completar la reserva (${errorMsg}). Por favor verifica los datos o intenta nuevamente.`,
+    };
   }
 
   revalidatePath('/tours');

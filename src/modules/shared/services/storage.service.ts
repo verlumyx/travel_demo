@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { DomainError } from '@/modules/shared/exceptions/domain-error';
 
 export type UploadFolder = 'destinations' | 'tours' | 'general' | 'payments';
 
@@ -28,7 +29,9 @@ export class StorageService {
   async uploadFile(file: File, options?: UploadOptions): Promise<string> {
     const maxSizeBytes = options?.maxSizeBytes || DEFAULT_MAX_SIZE;
     if (file.size > maxSizeBytes) {
-      throw new Error(`El archivo excede el tamaño máximo permitido (${(maxSizeBytes / (1024 * 1024)).toFixed(0)} MB).`);
+      throw new DomainError(
+        `El archivo excede el tamaño máximo permitido (${(maxSizeBytes / (1024 * 1024)).toFixed(0)} MB).`,
+      );
     }
 
     const folder = options?.folder || 'general';
@@ -117,14 +120,27 @@ export class StorageService {
   }
 
   /**
-   * Guarda el archivo localmente en public/uploads/{folder} si Supabase no está disponible
+   * Guarda el archivo localmente en public/uploads/{folder} si Supabase no está disponible (solo en desarrollo)
    */
   private async saveLocalFallback(buffer: Buffer, folder: string, ext: string): Promise<string> {
-    const localFileName = `file_${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', folder);
-    await fs.mkdir(uploadDir, { recursive: true });
-    await fs.writeFile(path.join(uploadDir, localFileName), buffer);
-    return `/uploads/${folder}/${localFileName}`;
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      throw new DomainError(
+        'No se pudo conectar con Supabase Storage para guardar el archivo y el almacenamiento local no está disponible en este entorno.',
+      );
+    }
+
+    try {
+      const localFileName = `file_${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', folder);
+      await fs.mkdir(uploadDir, { recursive: true });
+      await fs.writeFile(path.join(uploadDir, localFileName), buffer);
+      return `/uploads/${folder}/${localFileName}`;
+    } catch (fsErr) {
+      console.error('Error guardando archivo en fallback local:', fsErr);
+      throw new DomainError(
+        'No fue posible guardar el archivo en el almacenamiento local.',
+      );
+    }
   }
 }
 
