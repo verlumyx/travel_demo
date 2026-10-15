@@ -66,70 +66,6 @@ interface CompanionPassenger {
   phone: string;
 }
 
-/**
- * Comprime imágenes en el navegador antes de enviarlas al servidor.
- * Convierte fotos pesadas de teléfonos (5-15 MB) a JPEGs optimizados de ~150-300 KB.
- */
-async function compressImageFile(file: File, maxDimension = 1600, quality = 0.82): Promise<File> {
-  if (typeof window === 'undefined' || !file.type.startsWith('image/') || file.type === 'image/svg+xml') {
-    return file;
-  }
-
-  // Si ya es liviana (menor a 600 KB), no es necesario recomprimir
-  if (file.size <= 600 * 1024) {
-    return file;
-  }
-
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxDimension || height > maxDimension) {
-          if (width > height) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          } else {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          return resolve(file);
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob || blob.size >= file.size) {
-              return resolve(file);
-            }
-            const cleanName = file.name.replace(/\.[^.]+$/, '.jpg');
-            const compressedFile = new File([blob], cleanName, {
-              type: 'image/jpeg',
-              lastModified: Date.now(),
-            });
-            resolve(compressedFile);
-          },
-          'image/jpeg',
-          quality,
-        );
-      };
-      img.onerror = () => resolve(file);
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => resolve(file);
-    reader.readAsDataURL(file);
-  });
-}
-
 export function ClientCheckoutForm({
   departure,
   tour,
@@ -192,10 +128,18 @@ export function ClientCheckoutForm({
   const [paymentDate, setPaymentDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [selectedProofFile, setSelectedProofFile] = useState<File | null>(null);
   const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
-  const [isOptimizingImage, setIsOptimizingImage] = useState<boolean>(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [step4Errors, setStep4Errors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Limpiar URL temporal de preview al desmontar o cambiar archivo
+  useEffect(() => {
+    return () => {
+      if (proofPreviewUrl) {
+        URL.revokeObjectURL(proofPreviewUrl);
+      }
+    };
+  }, [proofPreviewUrl]);
 
   // Redirigir paso automáticamente si el servidor responde con errores específicos
   useEffect(() => {
@@ -391,7 +335,7 @@ export function ClientCheckoutForm({
   };
 
   // Manejo de archivo de comprobante en Paso 4
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileError(null);
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
@@ -399,55 +343,34 @@ export function ClientCheckoutForm({
       // Validar tipo de archivo
       const fileExt = file.name.split('.').pop()?.toLowerCase();
       const isPdf = file.type === 'application/pdf' || fileExt === 'pdf';
-      const isImg = file.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp'].includes(fileExt || '');
+      const isImg =
+        file.type.startsWith('image/') ||
+        ['png', 'jpg', 'jpeg', 'webp', 'avif'].includes(fileExt || '');
 
       if (!isPdf && !isImg) {
-        setFileError('Formato no admitido. Por favor selecciona una imagen (PNG, JPG, WEBP) o un documento PDF.');
+        setFileError('Formato no admitido. Por favor selecciona una imagen (PNG, JPG, WEBP, AVIF) o un documento PDF.');
         handleRemoveFile();
         return;
       }
 
-      // Validar PDF (máx 4.5 MB)
-      if (isPdf) {
-        if (file.size > 4.5 * 1024 * 1024) {
-          setFileError('El archivo PDF excede el tamaño máximo permitido (4.5 MB).');
-          handleRemoveFile();
-          return;
-        }
-        setSelectedProofFile(file);
-        if (proofPreviewUrl) {
-          URL.revokeObjectURL(proofPreviewUrl);
-          setProofPreviewUrl(null);
-        }
+      // Validar tamaño máximo permitido (5 MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setFileError('El archivo excede el tamaño máximo permitido (5 MB).');
+        handleRemoveFile();
         return;
       }
 
-      // Comprimir imágenes automáticamente para envío rápido móvil
-      setIsOptimizingImage(true);
-      try {
-        const optimizedFile = await compressImageFile(file);
-        setSelectedProofFile(optimizedFile);
-        if (proofPreviewUrl) {
-          URL.revokeObjectURL(proofPreviewUrl);
-        }
-        setProofPreviewUrl(URL.createObjectURL(optimizedFile));
+      // Limpiar preview anterior si existía
+      if (proofPreviewUrl) {
+        URL.revokeObjectURL(proofPreviewUrl);
+        setProofPreviewUrl(null);
+      }
 
-        // Actualizar el FileList del input nativo para que el FormData del formulario envíe el archivo comprimido
-        if (fileInputRef.current) {
-          try {
-            const dt = new DataTransfer();
-            dt.items.add(optimizedFile);
-            fileInputRef.current.files = dt.files;
-          } catch {
-            // Ignorar en entornos donde DataTransfer no permita asignar input.files
-          }
-        }
-      } catch (err) {
-        console.error('Error optimizando imagen de comprobante:', err);
-        setSelectedProofFile(file);
+      setSelectedProofFile(file);
+
+      // Previsualizar localmente si es imagen
+      if (isImg) {
         setProofPreviewUrl(URL.createObjectURL(file));
-      } finally {
-        setIsOptimizingImage(false);
       }
     }
   };
@@ -505,7 +428,7 @@ export function ClientCheckoutForm({
   };
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={formAction} encType="multipart/form-data" className="space-y-8">
       {/* Campos ocultos de soporte HTTP */}
       <input type="hidden" name="departureId" value={departure.id} />
       <input type="hidden" name="slotsCount" value={slotsCount} />
@@ -1396,13 +1319,6 @@ export function ClientCheckoutForm({
                       </button>
                     </div>
                   )}
-                  {/* Indicador de optimización en curso */}
-                  {isOptimizingImage && (
-                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-primary/10 text-primary text-xs font-medium">
-                      <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-                      <span>Optimizando comprobante para envío rápido móvil...</span>
-                    </div>
-                  )}
 
                   {/* Error de validación local del archivo */}
                   {fileError && (
@@ -1462,18 +1378,13 @@ export function ClientCheckoutForm({
 
           <button
             type="submit"
-            disabled={isPending || isOptimizingImage}
+            disabled={isPending}
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/20 disabled:opacity-50 cursor-pointer"
           >
             {isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Procesando Reserva y Guardando Comprobante...
-              </>
-            ) : isOptimizingImage ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Optimizando Comprobante...
               </>
             ) : (
               <>
